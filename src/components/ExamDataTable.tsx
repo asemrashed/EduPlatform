@@ -116,11 +116,21 @@ export default function ExamDataTable({
     return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
   };
 
-  const formatDate = (date: Date | string) => {
-    return format(new Date(date), 'MMM dd, yyyy');
+  const formatDate = (date?: Date | string | null) => {
+    if (!date) return "N/A";
+  
+    const d = new Date(date);
+    if (Number.isNaN(d.getTime())) return "N/A";
+  
+    return format(d, "MMM dd, yyyy");
   };
 
-  const formatDateTime = (date: Date | string) => {
+  const formatDateTime = (date?: Date | string | null) => {
+    if (!date) return "N/A";
+  
+    const d = new Date(date);
+    if (Number.isNaN(d.getTime())) return "N/A";
+  
     return format(new Date(date), 'MMM dd, yyyy hh:mm a');
   };
 

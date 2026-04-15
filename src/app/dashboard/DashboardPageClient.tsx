@@ -50,7 +50,7 @@ export function DashboardPageClient({ fixedRole }: DashboardPageClientProps) {
   const failed = status === "failed" && error;
 
   return (
-    <div className="mx-auto max-w-screen-2xl px-4 py-6 sm:px-8">
+    <div className="mx-auto w-full min-w-0 max-w-screen-2xl px-4 py-6 sm:px-8">
       <header className="mb-6 space-y-3">
         <div>
           <h1 className="font-[family-name:var(--font-headline)] text-2xl font-black tracking-tight text-foreground md:text-3xl">

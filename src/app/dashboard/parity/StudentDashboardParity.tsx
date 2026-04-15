@@ -267,7 +267,7 @@ export function StudentDashboardParity({
   }
 
   return (
-    <main className="relative z-10 p-2 sm:p-4">
+    <main className="relative z-10 p-2 sm:p-4  w-full max-w-full">
         {/* Welcome Section */}
         <WelcomeSection 
           title={`Welcome back, ${userName || "Student"}! 👋`}

@@ -8,7 +8,7 @@ import { useAppSelector } from "@/store/hooks";
 
 const NAV = [
   { href: "/", label: "Home" },
-  { href: "/student/dashboard", label: "Dashboard" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/courses", label: "All Courses" },
   { href: "/about", label: "About us" },
   { href: "/contact", label: "Contact" },
