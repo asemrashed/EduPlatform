@@ -199,17 +199,7 @@ function InstructorSettingsPageContent() {
   };
 
   const renderGeneralSettings = () => {
-    const instructorSettings = settings.instructor;
-    if (!instructorSettings) {
-      return (
-        <div className="flex items-center justify-center p-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading settings...</p>
-          </div>
-        </div>
-      );
-    }
+    const instructorSettings = settings.instructor || {};
 
     return (
       <div className="space-y-6">
@@ -395,15 +385,12 @@ function InstructorSettingsPageContent() {
           {/* Settings Content */}
           <div className="lg:col-span-3">
             {isLoading ? (
-              <div className="flex items-center justify-center p-8">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <p className="text-gray-600">Loading settings...</p>
-                </div>
+              <div className="mb-4 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                <span>Loading settings...</span>
               </div>
-            ) : (
-              renderTabContent()
-            )}
+            ) : null}
+            {renderTabContent()}
             
             {/* Error Display */}
             {error && (

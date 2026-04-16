@@ -19,6 +19,34 @@ const getLastLessonStorageKey = (courseId: string) => `student-course-last-lesso
 const getLessonPlaybackStorageKey = (courseId: string, lessonId: string) =>
   `student-course-playback:${courseId}:${lessonId}`;
 
+const safeText = (value: unknown, fallback = 'N/A'): string => {
+  if (value == null) return fallback;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    const flattened = value
+      .map((item) => safeText(item, ''))
+      .filter((item) => item.length > 0)
+      .join(', ');
+    return flattened || fallback;
+  }
+  if (typeof value === 'object') {
+    const candidate = value as Record<string, unknown>;
+    for (const key of ['name', 'title', 'label', 'text', 'value']) {
+      const entry = candidate[key];
+      if (
+        typeof entry === 'string' ||
+        typeof entry === 'number' ||
+        typeof entry === 'boolean'
+      ) {
+        return String(entry);
+      }
+    }
+  }
+  return fallback;
+};
+
 export default function StudentCourseLearningPage() {
   const { data: session, status } = useMockSession();
   const router = useRouter();
@@ -1256,12 +1284,14 @@ export default function StudentCourseLearningPage() {
                     <div className="min-w-0 flex-1">
                       <span className="text-gray-500 text-xs sm:text-sm font-semibold uppercase tracking-wide block truncate">Course</span>
                       {course.category && (
-                        <span className="text-gray-600 text-xs font-medium mt-0.5 block truncate">{course.category}</span>
+                        <span className="text-gray-600 text-xs font-medium mt-0.5 block truncate">
+                          {safeText(course.category)}
+                        </span>
                       )}
                     </div>
                   </div>
                   <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 line-clamp-2 sm:line-clamp-3 leading-tight break-words">
-                    {course.title}
+                    {safeText(course.title, 'Untitled Course')}
                   </h1>
                  
                 </div>
@@ -1350,7 +1380,9 @@ export default function StudentCourseLearningPage() {
                         const selected = quizAnswers[q._id];
                         return (
                           <div className="border rounded-lg p-3 sm:p-4 border-blue-300 hover:border-blue-400 transition-colors">
-                            <div className="font-medium mb-2 sm:mb-3 text-sm sm:text-base break-words">{currentQuestionIndex + 1}. {q.question}</div>
+                            <div className="font-medium mb-2 sm:mb-3 text-sm sm:text-base break-words">
+                              {currentQuestionIndex + 1}. {safeText(q.question)}
+                            </div>
                             <div className="grid grid-cols-1 gap-2">
                               {q.options.map((opt: string, i: number) => {
                                 const isActive = selected === i;
@@ -1363,7 +1395,7 @@ export default function StudentCourseLearningPage() {
                                   >
                                     <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
                                       <span className={`inline-block w-4 h-4 sm:w-5 sm:h-5 rounded-full border flex-shrink-0 ${isActive ? 'border-blue-500 bg-blue-500' : 'border-gray-300 bg-white'}`}></span>
-                                      <span className="break-words flex-1">{opt}</span>
+                                      <span className="break-words flex-1">{safeText(opt)}</span>
                                     </div>
                                   </button>
                                 );
@@ -1469,7 +1501,9 @@ export default function StudentCourseLearningPage() {
               {selectedLesson?.description && (
                 <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl">
                   <h3 className="text-sm font-semibold text-gray-800 mb-2">Lesson description</h3>
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{htmlToPlainText(selectedLesson.description)}</p>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                    {htmlToPlainText(safeText(selectedLesson.description, ''))}
+                  </p>
                 </div>
               )}
               {Array.isArray(selectedLesson?.attachments) && selectedLesson.attachments.length > 0 && (
@@ -1489,10 +1523,10 @@ export default function StudentCourseLearningPage() {
                       >
                         <div className="min-w-0">
                           <div className="text-sm font-medium text-blue-900 truncate">
-                            {attachment?.name || `Attachment ${index + 1}`}
+                            {safeText(attachment?.name, `Attachment ${index + 1}`)}
                           </div>
                           <div className="text-xs text-blue-700">
-                            {attachment?.type || 'File'}
+                            {safeText(attachment?.type, 'File')}
                           </div>
                         </div>
                         <Download className="w-4 h-4 text-blue-700 shrink-0" />
@@ -1675,7 +1709,9 @@ export default function StudentCourseLearningPage() {
                           }`}>
                             <div className="flex items-start sm:items-center justify-between gap-2 w-full">
                               <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <div className="text-sm sm:text-base font-semibold break-words flex-1 min-w-0 text-left">{ch.title}</div>
+                                <div className="text-sm sm:text-base font-semibold break-words flex-1 min-w-0 text-left">
+                                  {safeText(ch.title)}
+                                </div>
                                 {isChapterCompleted && (
                                   <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap flex-shrink-0">
                                     
@@ -1745,7 +1781,9 @@ export default function StudentCourseLearningPage() {
                                               <PlayCircle className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
                                             )}
                                             <div className="min-w-0 flex-1">
-                                              <span className="block text-xs sm:text-sm font-medium truncate">{l.order}. {l.title}</span>
+                                              <span className="block text-xs sm:text-sm font-medium truncate">
+                                                {l.order}. {safeText(l.title)}
+                                              </span>
                                             </div>
                                           </div>
                                           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
@@ -1872,13 +1910,13 @@ export default function StudentCourseLearningPage() {
                   </div>
                   {quizResultDetails.questions.map((q) => (
                     <div
-                      key={`${q.order}-${q.question}`}
+                      key={`${q.order}-${safeText(q.question, 'question')}`}
                       className={`rounded-lg border p-3 sm:p-4 ${
                         q.isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
                       }`}
                     >
                       <div className="mb-2 text-sm sm:text-base font-semibold text-gray-900">
-                        {q.order}. {q.question}
+                        {q.order}. {safeText(q.question)}
                       </div>
                       <div className="space-y-1.5">
                         {q.options.map((opt, idx) => {
@@ -1895,7 +1933,7 @@ export default function StudentCourseLearningPage() {
                                   : 'border-gray-200 bg-white text-gray-700'
                               }`}
                             >
-                              {opt}
+                              {safeText(opt)}
                               {isCorrect ? '  (Correct)' : isSelected ? '  (Your Answer)' : ''}
                             </div>
                           );

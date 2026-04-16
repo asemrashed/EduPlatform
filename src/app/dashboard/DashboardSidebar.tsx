@@ -324,14 +324,14 @@ export function DashboardSidebar() {
   if (role === "admin") {
     return (
       <aside
-        className="relative flex w-full shrink-0 flex-col border-b transition-all duration-300 ease-in-out sm:w-80 sm:border-b-0"
+        className="relative fixed top-0 left-0 h-screen w-full shrink-0 flex-col overflow-y-auto border-b transition-all duration-300 ease-in-out sm:w-80 sm:border-b-0"
         style={{
           backgroundColor: "#FFFFFF",
           borderColor: "rgba(123, 44, 191, 0.2)",
         }}
       >
         <header
-          className="rounded-b-2xl transition-all duration-300"
+          className="rounded-b-2xl transition-all z-5 duration-300 sticky top-0"
           style={{
             backgroundColor: "#FFFFFF",
             borderBottom: "1px solid rgba(123, 44, 191, 0.2)",
@@ -355,7 +355,7 @@ export function DashboardSidebar() {
         <AdminNavCategories categories={categories} pathname={pathname} />
 
         <footer
-          className="rounded-t-2xl transition-all duration-300"
+          className="rounded-t-2xl transition-all duration-300 sticky bottom-0"
           style={{
             backgroundColor: "#FFFFFF",
             borderTop: "1px solid rgba(123, 44, 191, 0.2)",
@@ -398,12 +398,12 @@ export function DashboardSidebar() {
   }
 
   const darkShell =
-    "relative flex w-full shrink-0 flex-col border-b border-gray-800 bg-black transition-all duration-300 ease-in-out sm:w-80 sm:border-b-0";
+    "relative fixed top-0 left-0 h-screen w-full shrink-0 flex-col overflow-y-auto border-b border-gray-800 bg-black transition-all duration-300 ease-in-out sm:w-80 sm:border-b-0";
 
   return (
     <aside className={darkShell}>
       {role === "student" ? (
-        <header className="rounded-b-2xl border-b border-gray-700 bg-gray-900 transition-all duration-300">
+        <header className="rounded-b-2xl border-b border-gray-700 bg-gray-900 transition-all z-5 duration-300 sticky top-0">
           <div className="space-y-3 px-4 py-4">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded bg-green-700 text-sm font-bold text-white">
@@ -416,7 +416,7 @@ export function DashboardSidebar() {
           </div>
         </header>
       ) : (
-        <header className="rounded-b-2xl border-b border-gray-700 bg-gray-900 transition-all duration-300">
+        <header className="rounded-b-2xl border-b border-gray-700 bg-gray-900 transition-all z-5 duration-300 sticky top-0">
           <div className="flex items-center gap-3 px-4 py-4">
             {user?.avatar ? (
               <img
@@ -447,7 +447,7 @@ export function DashboardSidebar() {
         pathname={pathname}
       />
 
-      <footer className="rounded-t-2xl border-t border-gray-700 bg-gray-900 transition-all duration-300">
+      <footer className="rounded-t-2xl border-t border-gray-700 bg-gray-900 transition-all duration-300 sticky bottom-0">
         <div className="p-4">
           {role === "instructor" ? (
             <div className="space-y-1">

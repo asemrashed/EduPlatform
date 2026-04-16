@@ -12,9 +12,9 @@ export function DashboardRouteLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-0 w-full flex-1 flex-col md:flex-row">
+    <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden md:flex-row">
       <DashboardSidebar />
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-auto">
+      <div className="flex h-screen min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
         {children}
       </div>
     </div>
