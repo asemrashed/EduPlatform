@@ -41,9 +41,9 @@ export default function RootLayout({
       </head>
       <body className="flex min-h-dvh flex-col bg-background font-sans antialiased">
         <Providers>
-          {/* <SiteHeader /> */}
+          <SiteHeader />
           <main className="flex min-h-0 flex-1 flex-col">{children}</main>
-          {/* <SiteFooter /> */}
+          <SiteFooter />
         </Providers>
       </body>
     </html>

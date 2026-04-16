@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { LuClock as Clock, LuCheck as CheckCircle, LuX as XCircle, LuRefreshCw as RefreshCw, LuDollarSign as DollarSign, LuUser as User, LuBookOpen as BookOpen, LuTriangleAlert as AlertTriangle, LuLoader as Loader2, LuEye as Eye, LuArrowUpDown as ArrowUpDown } from 'react-icons/lu';;
+import { safeDate } from '@/lib/safe';
 
 interface Payment {
   _id: string;
@@ -70,6 +71,11 @@ export default function RefundDataTable({
   const [refundLoading, setRefundLoading] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  const formatSafeDate = (value?: string) => {
+    const parsed = safeDate(value);
+    return parsed ? parsed.toLocaleDateString() : 'N/A';
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -204,7 +210,7 @@ export default function RefundDataTable({
                     <span className="text-sm font-medium text-gray-700">{payment.course.title}</span>
                   </div>
                   <div className="text-sm text-gray-500">
-                    {new Date(payment.completedAt).toLocaleDateString()}
+                    {formatSafeDate(payment.completedAt)}
                   </div>
                 </div>
                 
@@ -226,7 +232,7 @@ export default function RefundDataTable({
 
                 {payment.refundedAt && (
                   <div className="text-sm text-gray-600">
-                    <div>Refunded: {new Date(payment.refundedAt).toLocaleDateString()}</div>
+                    <div>Refunded: {formatSafeDate(payment.refundedAt)}</div>
                     {payment.refundedBy && (
                       <div className="text-xs text-gray-500">
                         by {payment.refundedBy.firstName} {payment.refundedBy.lastName}
@@ -456,7 +462,7 @@ export default function RefundDataTable({
                   <div className="text-sm text-gray-900">
                     {payment.refundedAt ? (
                       <div>
-                        <div>Refunded: {new Date(payment.refundedAt).toLocaleDateString()}</div>
+                        <div>Refunded: {formatSafeDate(payment.refundedAt)}</div>
                         {payment.refundedBy && (
                           <div className="text-xs text-gray-500">
                             by {payment.refundedBy.firstName} {payment.refundedBy.lastName}
@@ -464,7 +470,7 @@ export default function RefundDataTable({
                         )}
                       </div>
                     ) : (
-                      new Date(payment.completedAt).toLocaleDateString()
+                      formatSafeDate(payment.completedAt)
                     )}
                   </div>
                 </TableCell>

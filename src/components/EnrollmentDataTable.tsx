@@ -3,7 +3,7 @@ import DataTable, { Column, Action } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Enrollment } from '@/types/enrollment';
 import { LuPencil as Edit, LuTrash2 as Trash2, LuEye as Eye, LuUser as User, LuBookOpen as BookOpen, LuCalendar as Calendar, LuDollarSign as DollarSign, LuTrendingUp as TrendingUp } from 'react-icons/lu';;
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatCurrency, formatDateTime, formatTimeAgo, getInitials } from '@/lib/formatters';
 
 interface EnrollmentDataTableProps {
   enrollments: Enrollment[];
@@ -31,25 +31,6 @@ const EnrollmentDataTable: React.FC<EnrollmentDataTableProps> = ({
   onPageChange,
   variant = 'table'
 }) => {
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-  };
-
-  const formatDateTime = (date: Date | string) => {
-    return format(new Date(date), 'MMM dd, yyyy hh:mm a');
-  };
-
-  const formatTimeAgo = (date: Date | string) => {
-    return formatDistanceToNow(new Date(date), { addSuffix: true });
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
-
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       active: { color: 'bg-green-100 text-green-800', label: 'Active' },

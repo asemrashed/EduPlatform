@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import VideoWatermark from "@/components/VideoWatermark";
+import { safeDate } from "@/lib/safe";
 
 interface Review {
   _id: string;
@@ -133,6 +134,7 @@ export default function Testimonials() {
   const fetchReviews = async () => {
     try {
       setLoading(true);
+      // TODO: migrate to service layer (Phase 9)
       const response = await fetch(
         "/api/course-reviews?limit=1000&public=true&sortBy=displayOrder&sortOrder=asc",
         { cache: "no-store" }
@@ -152,7 +154,9 @@ export default function Testimonials() {
           const orderA = a.displayOrder ?? Number.MAX_SAFE_INTEGER;
           const orderB = b.displayOrder ?? Number.MAX_SAFE_INTEGER;
           if (orderA !== orderB) return orderA - orderB;
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          const createdAtA = safeDate(a.createdAt);
+          const createdAtB = safeDate(b.createdAt);
+          return (createdAtA?.getTime() ?? 0) - (createdAtB?.getTime() ?? 0);
         })
         .slice(0, 8);
 
