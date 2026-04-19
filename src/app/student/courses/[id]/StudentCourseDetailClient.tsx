@@ -162,9 +162,10 @@ export default function StudentCourseLearningPage() {
 
   useEffect(() => {
     const fetchStudentPhone = async () => {
-      if (!session?.user?.id) return;
+      const userId = session?.user?.id;
+      if (!userId) return;
       try {
-        const response = await fetch(`/api/users/${session.user.id}`, { cache: 'no-store' });
+        const response = await fetch(`/api/users/${userId}`, { cache: 'no-store' });
         if (!response.ok) return;
         const data = await response.json();
         const phone = data?.user?.phone || '';
@@ -642,9 +643,10 @@ export default function StudentCourseLearningPage() {
   // Fetch comprehensive course progress
   const fetchCourseProgress = async () => {
     try {
+      const userId = session?.user?.id;
       const dashboardRequest = fetch(`/api/progress/dashboard?course=${courseId}`);
-      const enrollmentRequest = session?.user?.id
-        ? fetch(`/api/enrollments?student=${session.user.id}&course=${courseId}&limit=1`)
+      const enrollmentRequest = userId
+        ? fetch(`/api/enrollments?student=${userId}&course=${courseId}&limit=1`)
         : null;
 
       const [dashboardRes, enrollmentRes] = await Promise.all([

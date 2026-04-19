@@ -91,7 +91,7 @@ export default function StudentProfile() {
 
   const handleSave = async () => {
     try {
-      const response = await fetch(`/api/users/${session?.user.id}`, {
+      const response = await fetch(`/api/users/${session?.user?.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -115,7 +115,8 @@ export default function StudentProfile() {
   };
 
   const handleAvatarUpload = async (file: File) => {
-    if (!file || !session?.user?.id) return;
+    const userId = session?.user?.id;
+    if (!file || !userId) return;
 
     const result = await uploadAvatar(file);
     if (!result || !result.success || !result.imageUrl) {
@@ -123,7 +124,7 @@ export default function StudentProfile() {
     }
 
     try {
-      const response = await fetch(`/api/users/${session.user.id}`, {
+      const response = await fetch(`/api/users/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ avatar: result.imageUrl }),

@@ -25,11 +25,11 @@ export default function HeaderAuth() {
         LOGOUT
       </button>
       <div className="w-8 h-8 rounded-full overflow-hidden bg-white/20 flex items-center justify-center">
-        {session.user.image ? (
+        {session?.user?.image ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={session.user.image} alt={session.user.name || 'Profile'} className="w-full h-full object-cover" />
+          <img src={session?.user?.image} alt={session?.user?.name || 'Profile'} className="w-full h-full object-cover" />
         ) : (
-          <span className="text-white text-sm font-semibold">{(session.user.name || 'U').charAt(0).toUpperCase()}</span>
+          <span className="text-white text-sm font-semibold">{(session?.user?.name || 'U').charAt(0).toUpperCase()}</span>
         )}
       </div>
     </div>

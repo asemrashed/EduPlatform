@@ -44,9 +44,10 @@ const TeacherSidebar = () => {
       console.log('User not authenticated, redirecting to login');
       router.push('/login');
     } else if (status === 'authenticated' && session?.user) {
-      console.log('User authenticated, checking role:', session.user.role);
-      if (session.user.role !== 'instructor' && session.user.role !== 'admin') {
-        console.log('User role not authorized for instructor routes:', session.user.role);
+      const role = session?.user?.role;
+      console.log('User authenticated, checking role:', role);
+      if (role !== 'instructor' && role !== 'admin') {
+        console.log('User role not authorized for instructor routes:', role);
         router.push('/unauthorized');
       }
     }
@@ -269,7 +270,7 @@ const TeacherSidebar = () => {
         <div className="flex items-center gap-3 px-4 py-4">
           {user?.image ? (
             <img
-              src={user.image}
+              src={user?.image}
               alt={getUserDisplayName()}
               className="size-10 rounded-lg object-cover flex-shrink-0"
             />

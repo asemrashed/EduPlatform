@@ -113,8 +113,9 @@ export default function Courses({ initialCourses, initialContent }: CoursesProps
         return;
       }
 
+      const userId = session?.user?.id;
       try {
-        const response = await fetch(`/api/enrollments?student=${session.user.id}&limit=1000`, {
+        const response = await fetch(`/api/enrollments?student=${userId}&limit=1000`, {
           cache: 'no-store',
         });
         if (!response.ok) return;

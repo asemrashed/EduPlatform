@@ -28,9 +28,15 @@ export default function CoursesList({ courses }: CoursesListProps) {
       return;
     }
 
+    const userId = session?.user?.id;
+    if (!userId) {
+      router.push('/login');
+      return;
+    }
+
     try {
       setEnrolling(courseId);
-      await enrollStudent(session.user.id, courseId);
+      await enrollStudent(userId, courseId);
       router.push('/student/courses');
     } catch (error) {
       console.error('Error enrolling in course:', error);

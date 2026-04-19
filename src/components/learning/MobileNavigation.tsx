@@ -162,15 +162,15 @@ const MobileNavigation = () => {
                     <div className="mt-2 p-4 rounded-lg bg-gray-800 border border-gray-700">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center text-white font-semibold">
-                          {session.user.image ? (
-                            <img src={session.user.image} alt={session.user.name || 'Profile'} className="w-full h-full object-cover" />
+                          {session?.user?.image ? (
+                            <img src={session?.user?.image} alt={session?.user?.name || 'Profile'} className="w-full h-full object-cover" />
                           ) : (
-                            <span>{(session.user.name || 'U').charAt(0).toUpperCase()}</span>
+                            <span>{(session?.user?.name || 'U').charAt(0).toUpperCase()}</span>
                           )}
                         </div>
                         <div className="min-w-0">
-                          <div className="text-white font-medium truncate">{session.user.name || 'User'}</div>
-                          <div className="text-xs text-gray-400 truncate">{session.user.email || ''}</div>
+                          <div className="text-white font-medium truncate">{session?.user?.name || 'User'}</div>
+                          <div className="text-xs text-gray-400 truncate">{session?.user?.email || ''}</div>
                         </div>
                       </div>
                       <div className="mt-4 grid grid-cols-2 gap-2">

@@ -26,7 +26,13 @@ export default function ProtectedRoute({
       return;
     }
 
-    if (allowedRoles.length > 0 && !allowedRoles.includes(session.user.role)) {
+    if (!session.user) {
+      router.push('/auth/signin');
+      return;
+    }
+
+    const role = session.user?.role ?? '';
+    if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
       router.push('/unauthorized');
       return;
     }
@@ -47,7 +53,12 @@ export default function ProtectedRoute({
     return fallback || null;
   }
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(session.user.role)) {
+  if (!session.user) {
+    return fallback || null;
+  }
+
+  const role = session.user?.role ?? '';
+  if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
     return fallback || null;
   }
 

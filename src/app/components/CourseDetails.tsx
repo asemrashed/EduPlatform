@@ -328,9 +328,10 @@ export default function CourseDetails({
       setIsEnrolled(false);
       return;
     }
+    const userId = session?.user?.id;
     const checkEnrollment = async () => {
       try {
-        const res = await fetch(`/api/enrollments?student=${session.user.id}&course=${courseId}&limit=1`, { cache: 'no-store' });
+        const res = await fetch(`/api/enrollments?student=${userId}&course=${courseId}&limit=1`, { cache: 'no-store' });
         const data = await res.json();
         const list = data.data?.enrollments ?? data.enrollments ?? [];
         setIsEnrolled(Array.isArray(list) && list.length > 0);
