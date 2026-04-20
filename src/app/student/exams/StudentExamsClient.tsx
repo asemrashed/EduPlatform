@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useMockSession } from '@/lib/mockSession';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { StudentRoleShell } from '@/components/role-area/StudentRoleShell';
 import PageSection from '@/components/PageSection';
@@ -67,7 +67,7 @@ interface ExamAttempt {
 }
 
 function StudentExamsPageContent() {
-  const { data: session } = useMockSession();
+  const { data: session } = useSession();
   const router = useRouter();
   
   const [hasMounted, setHasMounted] = useState(false);

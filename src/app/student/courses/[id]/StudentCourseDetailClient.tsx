@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { useMockSession } from '@/lib/mockSession';
+import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { StudentRoleShell } from '@/components/role-area/StudentRoleShell';
@@ -48,7 +48,7 @@ const safeText = (value: unknown, fallback = 'N/A'): string => {
 };
 
 export default function StudentCourseLearningPage() {
-  const { data: session, status } = useMockSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const params = useParams();
   const courseId = params.id as string;

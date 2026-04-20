@@ -1,13 +1,15 @@
 'use client';
 
+import type { ReactNode } from 'react';
+import React from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
+  children: ReactNode;
   allowedRoles?: string[];
-  fallback?: React.ReactNode;
+  fallback?: ReactNode;
 }
 
 export default function ProtectedRoute({ 
@@ -22,16 +24,16 @@ export default function ProtectedRoute({
     if (status === 'loading') return;
 
     if (!session) {
-      router.push('/auth/signin');
+      router.push('/login');
       return;
     }
 
     if (!session.user) {
-      router.push('/auth/signin');
+      router.push('/login');
       return;
     }
 
-    const role = session.user?.role ?? '';
+    const role = (session.user as { role?: string } | undefined)?.role ?? '';
     if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
       router.push('/unauthorized');
       return;
@@ -57,7 +59,7 @@ export default function ProtectedRoute({
     return fallback || null;
   }
 
-  const role = session.user?.role ?? '';
+  const role = (session.user as { role?: string } | undefined)?.role ?? '';
   if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
     return fallback || null;
   }

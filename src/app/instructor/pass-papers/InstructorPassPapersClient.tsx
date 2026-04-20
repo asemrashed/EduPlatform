@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useMockSession } from '@/lib/mockSession';
+import { useSession } from 'next-auth/react';
 import { InstructorRoleShell } from '@/components/role-area/InstructorRoleShell';
 import PassPaperDataTable from '@/components/PassPaperDataTable';
 import PassPaperStats from '@/components/PassPaperStats';
@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { LuPlus as Plus, LuSearch as Search, LuX as X } from 'react-icons/lu';;
 
 export default function InstructorPassPapersPage() {
-  const { data: session } = useMockSession();
+  const { data: session } = useSession();
   
   const [passPapers, setPassPapers] = useState<PassPaper[]>([]);
   const [loading, setLoading] = useState(true);

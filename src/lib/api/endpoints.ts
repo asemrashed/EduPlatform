@@ -1,5 +1,5 @@
 /**
- * API path constants — must stay aligned with learning-project `src/app/api/` for Phase 9 parity.
+ * API path constants — must stay aligned with moynamoti-main `src/app/api/` for Phase 9 parity.
  */
 export const API_ENDPOINTS = {
   PUBLIC_COURSES: "/api/public/courses",
@@ -8,7 +8,7 @@ export const API_ENDPOINTS = {
   PUBLIC_LESSONS: "/api/public/lessons",
   PUBLIC_FAQS: "/api/public/faqs",
   /** Phase 4 mock composite; Phase 9 may align with real route. */
-  STUDENT_DASHBOARD: "/api/student/dashboard",
+  STUDENT_DASHBOARD: "/api/student/dashboard", // ❌ no backend route (mock-only, related api's in src/app/api & app/api/student)
   INSTRUCTOR_DASHBOARD: "/api/instructor/dashboard",
   ADMIN_DASHBOARD: "/api/admin/dashboard",
   ENROLLMENTS: "/api/enrollments",

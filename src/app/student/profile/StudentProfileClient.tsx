@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useMockSession } from '@/lib/mockSession';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { StudentRoleShell } from '@/components/role-area/StudentRoleShell';
 import PageSection from '@/components/PageSection';
@@ -30,7 +30,7 @@ interface StudentProfile {
 }
 
 export default function StudentProfile() {
-  const { data: session, status } = useMockSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [loading, setLoading] = useState(true);

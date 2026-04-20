@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { useMockSession } from '@/lib/mockSession';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { StudentRoleShell } from '@/components/role-area/StudentRoleShell';
 import PageSection from '@/components/PageSection';
@@ -20,7 +20,7 @@ import { LuSearch as Search, LuX as X, LuStar as Star, LuFilter as Filter, LuEye
 import { CourseReview, ReviewFilters as ReviewFiltersType } from '@/types/course-review';
 
 function StudentReviewsPageContent() {
-  const { data: session, status } = useMockSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   
   const [reviews, setReviews] = useState<CourseReview[]>([]);

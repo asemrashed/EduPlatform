@@ -3,6 +3,7 @@ import {
   createSlice,
   type PayloadAction,
 } from "@reduxjs/toolkit";
+import { getSession, signOut } from "next-auth/react";
 import type { User } from "@/types/user";
 
 export type AuthStatus =
@@ -30,44 +31,6 @@ function withSessionFields(u: User): User {
   };
 }
 
-const now = new Date().toISOString();
-
-/** Mock student — used when visiting `/student/*` role-area routes. */
-export const MOCK_STUDENT_USER: User = withSessionFields({
-  _id: "mock-user-id",
-  email: "student@eduplatform.local",
-  firstName: "Mock",
-  lastName: "Student",
-  role: "student",
-  isActive: true,
-  createdAt: now,
-  updatedAt: now,
-});
-
-/** Mock instructor — used when visiting `/instructor/*`. */
-export const MOCK_INSTRUCTOR_USER: User = withSessionFields({
-  _id: "507f1f77bcf86cd799439031",
-  email: "karim@example.com",
-  firstName: "Dr. Karim",
-  lastName: "Rahman",
-  role: "instructor",
-  isActive: true,
-  createdAt: now,
-  updatedAt: now,
-});
-
-/** Mock admin — used when visiting `/admin/*`. */
-export const MOCK_ADMIN_USER: User = withSessionFields({
-  _id: "mock-admin",
-  email: "admin@eduplatform.local",
-  firstName: "Admin",
-  lastName: "User",
-  role: "admin",
-  isActive: true,
-  createdAt: now,
-  updatedAt: now,
-});
-
 export const authInitialState: AuthState = {
   status: "unauthenticated",
   user: null,
@@ -78,10 +41,57 @@ export const authInitialState: AuthState = {
 
 export const checkAuthStatus = createAsyncThunk(
   "auth/checkAuthStatus",
-  async () => MOCK_ADMIN_USER,
+  async (_, { rejectWithValue }) => {
+    try {
+      const session = await getSession();
+      const sessionUser = session?.user;
+      if (!sessionUser?.email) return null;
+
+      const names = (sessionUser.name || "").trim().split(/\s+/).filter(Boolean);
+      const firstName = names[0] || "User";
+      const lastName = names.slice(1).join(" ") || "";
+      const sessionRole = sessionUser.role;
+      if (
+        sessionRole !== "admin" &&
+        sessionRole !== "instructor" &&
+        sessionRole !== "student"
+      ) {
+        return rejectWithValue("Invalid session role");
+      }
+
+      const user: User = {
+        _id: sessionUser.id ?? sessionUser.email,
+        id: sessionUser.id,
+        name: sessionUser.name ?? `${firstName} ${lastName}`.trim(),
+        email: sessionUser.email,
+        firstName,
+        lastName,
+        role: sessionRole,
+        isActive: true,
+        image: sessionUser.image ?? undefined,
+        avatar: sessionUser.image ?? undefined,
+        createdAt: "",
+        updatedAt: "",
+      };
+
+      return user;
+    } catch {
+      return rejectWithValue("Auth check failed");
+    }
+  },
 );
 
-export const logoutUser = createAsyncThunk("auth/logoutUser", async () => null);
+export const logoutUser = createAsyncThunk(
+  "auth/logoutUser",
+  async (_, { rejectWithValue }) => {
+    try {
+      await signOut({ redirect: false });
+      return null;
+    } catch {
+      return rejectWithValue("Logout failed");
+    }
+  },
+);
 
 const authSlice = createSlice({
   name: "auth",
@@ -108,12 +118,24 @@ const authSlice = createSlice({
       })
       .addCase(checkAuthStatus.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.error.message ?? "Auth check failed";
+        state.user = null;
+        state.isAuthenticated = false;
+        state.status = "unauthenticated";
+        state.error =
+          (action.payload as string) ??
+          action.error.message ??
+          "Auth check failed";
       })
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
         state.isAuthenticated = false;
         state.status = "unauthenticated";
+      })
+      .addCase(logoutUser.rejected, (state, action) => {
+        state.error =
+          (action.payload as string) ??
+          action.error.message ??
+          "Logout failed";
       });
   },
 });

@@ -8,7 +8,7 @@ export interface EnrollmentListEnrollment {
   enrolledAt: string;
   lastAccessedAt?: string;
   paymentStatus?: string;
-  courseLuInfo?: unknown;
+  courseInfo?: unknown;
   studentInfo?: unknown;
 }
 

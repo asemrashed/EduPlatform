@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useMockSession } from '@/lib/mockSession';
+import { useSession } from 'next-auth/react';
 import { StudentRoleShell } from '@/components/role-area/StudentRoleShell';
 import PageSection from '@/components/PageSection';
 import WelcomeSection from '@/components/WelcomeSection';
@@ -29,7 +29,7 @@ interface AttemptRow {
 }
 
 export default function StudentProgressPage() {
-  const { data: session } = useMockSession();
+  const { data: session } = useSession();
 
   const [attempts, setAttempts] = useState<AttemptRow[]>([]);
   const [loading, setLoading] = useState(true);

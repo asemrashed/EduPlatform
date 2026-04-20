@@ -1,13 +1,45 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Sign in",
-};
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
 
 /** Login.html — layout only; auth wiring in Phase 8. */
 export default function LoginPage() {
+  const router = useRouter();
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const result = await signIn("credentials", {
+        phone: phone.trim(),
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Invalid phone or password.");
+        return;
+      }
+
+      router.replace("/dashboard");
+      router.refresh();
+    } catch {
+      setError("Login failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AuthSplitLayout
       sideTitle="Welcome back"
@@ -18,17 +50,20 @@ export default function LoginPage() {
           Sign in
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Mock UI only — no credentials are sent.
+          Sign in with your phone number and password.
         </p>
-        <form className="mt-8 space-y-4" action="#" method="post">
+        <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
           <label className="block text-sm font-medium text-foreground">
-            Email
+            Phone
             <input
-              type="email"
-              name="email"
-              autoComplete="email"
-              placeholder="you@example.com"
+              type="tel"
+              name="phone"
+              autoComplete="tel"
+              placeholder="01XXXXXXXXX"
               className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-3 text-foreground"
+              value={phone}
+              onChange={(event) => setPhone(event.target.value)}
+              required
             />
           </label>
           <label className="block text-sm font-medium text-foreground">
@@ -38,8 +73,16 @@ export default function LoginPage() {
               name="password"
               autoComplete="current-password"
               className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-3 text-foreground"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
             />
           </label>
+          {error ? (
+            <p className="text-sm text-red-600" role="alert">
+              {error}
+            </p>
+          ) : null}
           <div className="flex items-center justify-between text-sm">
             <label className="flex items-center gap-2 text-muted-foreground">
               <input type="checkbox" name="remember" className="rounded border-border" />
@@ -50,10 +93,11 @@ export default function LoginPage() {
             </Link>
           </div>
           <button
-            type="button"
+            type="submit"
             className="w-full rounded-xl bg-primary py-3 font-bold text-on-primary"
+            disabled={loading}
           >
-            Continue
+            {loading ? "Signing in..." : "Continue"}
           </button>
         </form>
         <p className="mt-6 text-center text-sm text-muted-foreground">

@@ -6,5 +6,5 @@ export const metadata: Metadata = {
 };
 
 export default function StudentDashboardPage() {
-  return <DashboardPageClient fixedRole="student" />;
+  return <DashboardPageClient fixedRole="student" />; // Student dashboard is composed from multiple endpoints (no single API)
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useMockSession } from '@/lib/mockSession';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { InstructorRoleShell } from '@/components/role-area/InstructorRoleShell';
 import PageSection from '@/components/PageSection';
@@ -29,7 +29,7 @@ interface TeacherProfile {
 }
 
 export default function TeacherProfile() {
-  const { data: session, status } = useMockSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [profile, setProfile] = useState<TeacherProfile | null>(null);
   const [loading, setLoading] = useState(true);

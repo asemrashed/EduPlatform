@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useMockSession } from '@/lib/mockSession';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { StudentRoleShell } from '@/components/role-area/StudentRoleShell';
 import PageSection from '@/components/PageSection';
@@ -30,7 +30,7 @@ interface AttemptRow {
 }
 
 export default function ExamHistoryPage() {
-  const { data: session } = useMockSession();
+  const { data: session } = useSession();
   const router = useRouter();
 
   const [attempts, setAttempts] = useState<AttemptRow[]>([]);

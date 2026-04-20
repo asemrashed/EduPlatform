@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useMockSession } from '@/lib/mockSession';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -69,7 +69,7 @@ interface Enrollment {
 }
 
 export default function StudentCourses() {
-  const { data: session, status } = useMockSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);

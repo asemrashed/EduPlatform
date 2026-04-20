@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useMockSession } from '@/lib/mockSession';
+import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import { StudentRoleShell } from '@/components/role-area/StudentRoleShell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -66,7 +66,7 @@ interface ExamAttempt {
 }
 
 function ExamTakingPageContent() {
-  const { data: session } = useMockSession();
+  const { data: session } = useSession();
   const router = useRouter();
   const params = useParams();
   const examId = params.id as string;

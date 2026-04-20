@@ -30,8 +30,8 @@ export interface Enrollment {
 }
 
 export interface CreateEnrollmentRequest {
-  student: string;
   course: string;
+  student?: string;
   paymentStatus?: "pending" | "paid" | "refunded" | "failed";
   paymentAmount?: number;
   paymentMethod?: string;
@@ -100,7 +100,7 @@ export interface EnrollmentListResponse {
 }
 
 export interface EnrollmentSearchParams {
-  q?: string;
+  search?: string;
   student?: string;
   course?: string;
   status?: string;
