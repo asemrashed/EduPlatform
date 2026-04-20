@@ -132,7 +132,7 @@ export function HomePageClient() {
               </h2>
               <p className="text-lg leading-relaxed text-muted-foreground">
                 Curated paths focusing on high-impact skills that the global market
-                demands today.
+                demands today..
               </p>
             </div>
             <Link

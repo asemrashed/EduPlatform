@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
 
+
 /** Login.html — layout only; auth wiring in Phase 8. */
 export default function LoginPage() {
   const router = useRouter();
