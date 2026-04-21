@@ -70,6 +70,18 @@ export const HOME_FEATURED_COURSES: HomeFeaturedCourse[] = [
   },
   {
     image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuCtEnqaLX5DpNws_hG-y8yjltzbzFCjKpirQbdqb-WhfmcgGk9XfvshQwIGUWBkwctPB90eQZya1l5ljThiFX_K6tDhKACQyuPZcI7Hg0gKzjsmfJzor5mBJh5VBVYxoQU1Hi7ILNeUtunjElWQmo8vAtgmJduFHnpV_BPhHS8E7s7CSpgjOpIrOBSMNf1i_KBOefQc-QLOg8pQ7Gtg0tTyI7ZGcMXEIxdQFpwrZptXzEkHTr2wm0UpjFHLT0cQKEtQhRuB_7krwGM",
+    imageAlt: "Web Development",
+    badge: "Web Development",
+    badgeClass: "bg-primary text-on-primary",
+    title: "Mastering Full-Stack React",
+    description:
+      "Build production-ready applications with the latest ecosystem including Next.js, Tailwind, and Prisma.",
+    price: "$89.99",
+    lessons: "24+ Lessons",
+  },
+  {
+    image:
       "https://lh3.googleusercontent.com/aida-public/AB6AXuC7hl9zsOd-3Sn23zsYHepmh7DEakOisLm0syUotKMY1pzJ9pkQOXJtDAanEMcKAb0rKa0tV3tOsrK3U8wRxYnfe0s2iQIbEjVGHzH26nAZ3b-TP4Ag29VY17b7xAQHnCiQo7khFq7MXwcs75gBd7B5-zX4OGq19HRN_l-IrlpqfOrjvgAgglGxvsnp_j02A94moGIGOeHiAip6RGo37rK7_qZcB9qYYGzvEqYdvrMVlDLObPfJeS6H0Y7GbCYcasS6VamUVdsTxqA",
     imageAlt: "Data Science",
     badge: "Data Science",
@@ -103,6 +115,18 @@ export const HOME_FEATURED_COURSES: HomeFeaturedCourse[] = [
       "Protect digital assets with modern defensive techniques, encryption standards, and threat modeling.",
     price: "$110.00",
     lessons: "20+ Lessons",
+  },
+  {
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuCtEnqaLX5DpNws_hG-y8yjltzbzFCjKpirQbdqb-WhfmcgGk9XfvshQwIGUWBkwctPB90eQZya1l5ljThiFX_K6tDhKACQyuPZcI7Hg0gKzjsmfJzor5mBJh5VBVYxoQU1Hi7ILNeUtunjElWQmo8vAtgmJduFHnpV_BPhHS8E7s7CSpgjOpIrOBSMNf1i_KBOefQc-QLOg8pQ7Gtg0tTyI7ZGcMXEIxdQFpwrZptXzEkHTr2wm0UpjFHLT0cQKEtQhRuB_7krwGM",
+    imageAlt: "Web Development",
+    badge: "Web Development",
+    badgeClass: "bg-primary text-on-primary",
+    title: "Mastering Full-Stack React",
+    description:
+      "Build production-ready applications with the latest ecosystem including Next.js, Tailwind, and Prisma.",
+    price: "$89.99",
+    lessons: "24+ Lessons",
   },
 ];
 

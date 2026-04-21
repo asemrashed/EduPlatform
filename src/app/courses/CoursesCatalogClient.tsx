@@ -329,7 +329,7 @@ export function CoursesCatalogClient() {
                         {c.badge}
                       </span>
                     </div>
-                    <div className="flex min-w-0 flex-1 flex-col">
+                    <div className="flex min-w-0 flex-1 flex-col mt-4">
                       <h3
                         className={cn(
                           "mb-3 font-[family-name:var(--font-headline)] text-xl font-extrabold text-foreground",
