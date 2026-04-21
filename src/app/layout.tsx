@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Manrope } from "next/font/google";
 import Providers from "@/components/Providers";
-import { SiteFooter, SiteHeader } from "@/components/layout";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -40,11 +39,7 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-dvh flex-col bg-background font-sans antialiased">
-        <Providers>
-          <SiteHeader />
-          <main className="flex min-h-0 flex-1 flex-col">{children}</main>
-          <SiteFooter />
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

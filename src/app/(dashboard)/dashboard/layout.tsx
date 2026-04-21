@@ -1,4 +1,4 @@
-import { DashboardRouteLayout } from "./DashboardRouteLayout";
+import { DashboardRouteLayout } from "@/app/dashboard/DashboardRouteLayout";
 
 export default function DashboardLayout({
   children,

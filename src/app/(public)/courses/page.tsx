@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CoursesCatalogClient } from "./CoursesCatalogClient";
+import { CoursesCatalogClient } from "@/app/courses/CoursesCatalogClient";
 
 export const metadata: Metadata = {
   title: "All Courses",

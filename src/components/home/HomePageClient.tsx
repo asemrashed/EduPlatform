@@ -18,6 +18,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
+import banner from "@/public/banner.png";
 import {
   HOME_EXPERTS,
   HOME_FAQ,
@@ -36,71 +37,59 @@ export function HomePageClient() {
   return (
     <div className="bg-background text-foreground">
       {/* Hero */}
-      <section className="relative overflow-hidden px-8 pb-24 pt-12">
-        <div className="mx-auto grid max-w-screen-2xl grid-cols-1 items-center gap-12 lg:grid-cols-12">
-          <div className="z-10 lg:col-span-6">
-            <span className="mb-6 inline-block rounded-full bg-surface-container px-4 py-1.5 text-sm font-bold uppercase tracking-wide text-primary">
-              {HOME_HERO.eyebrow}
-            </span>
-            <h1 className="mb-8 font-[family-name:var(--font-headline)] text-6xl font-extrabold leading-[1.05] tracking-tighter text-foreground md:text-7xl">
-              Shape Your Future with the{" "}
-              <span className="text-primary-container">{HOME_HERO.titleAccent}</span>
-            </h1>
-            <p className="mb-10 max-w-xl text-lg leading-relaxed text-muted-foreground">
-              {HOME_HERO.description}
-            </p>
-            <div className="flex flex-wrap gap-4">
-              <Link
-                href="/courses"
-                className="flex items-center gap-2 rounded-xl bg-primary px-8 py-4 font-bold text-on-primary shadow-xl shadow-primary/20 transition-transform hover:scale-105"
-              >
-                Explore All Courses
-                <span className="material-symbols-outlined">arrow_forward</span>
-              </Link>
-              <Link
-                href="/#features"
-                className="rounded-xl bg-surface-container-low px-8 py-4 font-bold text-primary transition-colors hover:bg-surface-container-high"
-              >
-                View Career Paths
-              </Link>
-            </div>
-          </div>
-          <div className="relative lg:col-span-6">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-surface-container shadow-2xl">
-              <Image
-                src={HOME_HERO.heroImage}
-                alt="Student"
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                priority
-              />
-              <div className="absolute left-[-2rem] top-12 flex items-center gap-4 rounded-2xl border border-white/50 bg-white/90 p-6 shadow-2xl backdrop-blur">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-600">
-                  <span className="material-symbols-filled text-[24px]">verified</span>
-                </div>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                    Success Rate
-                  </p>
-                  <p className="text-2xl font-black text-foreground">98.4%</p>
-                </div>
-              </div>
-              <div className="absolute bottom-20 right-[-2rem] flex items-center gap-4 rounded-2xl border border-white/50 bg-white/90 p-6 shadow-2xl backdrop-blur">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                  <span className="material-symbols-filled text-[24px]">menu_book</span>
-                </div>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                    Total Courses
-                  </p>
-                  <p className="text-2xl font-black text-foreground">20k+</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary to-primary-container px-6 py-20 md:px-12 lg:px-20">
+
+  <div className="mx-auto flex max-w-7xl flex-col items-center gap-12 lg:flex-row lg:justify-between">
+
+    {/* LEFT CONTENT */}
+    <div className="max-w-xl text-center lg:text-left">
+      
+      <h1 className="mb-6 text-4xl font-extrabold leading-tight text-white md:text-6xl">
+        {HOME_HERO.titleBefore} <br />
+        {" "}
+        <span className="text-yellow-400">
+          {HOME_HERO.titleAccent}
+        </span>{" "}
+        <br />
+      </h1>
+
+      <p className="mb-8 text-lg text-white/80">
+        {HOME_HERO.description}
+      </p>
+
+      <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
+        <button className="rounded-lg bg-yellow-400 px-6 py-3 font-semibold text-black shadow-lg hover:scale-105 transition">
+          Enroll Now
+        </button>
+      </div>
+    </div>
+
+    {/* RIGHT IMAGE */}
+    <div className="relative w-full max-w-md">
+
+      <div className="relative w-full overflow-hidden rounded-3xl p-6 backdrop-blur-xl">
+
+        <img
+          src={banner.src}
+          alt="Hero"
+          className="w-full object-contain"
+        />
+
+        {/* FLOATING CARD 1 */}
+        {/* <div className="absolute -left-10 top-10 rounded-xl bg-white px-4 py-2 text-sm shadow-lg">
+          ✅ 300+ satisfied clients
+        </div> */}
+
+        {/* FLOATING CARD 2 */}
+        {/* <div className="absolute -right-10 bottom-10 rounded-xl bg-white px-4 py-2 text-sm shadow-lg">
+          🚀 1000+ completed projects
+        </div> */}
+
+      </div>
+    </div>
+
+  </div>
+</section>
 
       {/* Stats */}
       <section className="bg-surface-container-low py-16">

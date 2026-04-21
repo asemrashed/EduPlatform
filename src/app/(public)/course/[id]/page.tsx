@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CourseDetailClient } from "./CourseDetailClient";
+import { CourseDetailClient } from "@/app/course/[id]/CourseDetailClient";
 
 export async function generateMetadata({
   params,

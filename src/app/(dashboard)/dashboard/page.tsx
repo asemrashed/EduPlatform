@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DashboardPageClient } from "./DashboardPageClient";
+import { DashboardPageClient } from "@/app/dashboard/DashboardPageClient";
 
 export const metadata: Metadata = {
   title: "Dashboard",
