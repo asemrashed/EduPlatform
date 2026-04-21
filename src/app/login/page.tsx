@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { getSession, signIn } from "next-auth/react";
 import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
 
 
@@ -32,7 +32,25 @@ export default function LoginPage() {
         return;
       }
 
-      router.replace("/dashboard");
+      const callbackUrl = new URLSearchParams(window.location.search).get(
+        "callbackUrl",
+      );
+      if (callbackUrl) {
+        router.replace(callbackUrl);
+        router.refresh();
+        return;
+      }
+
+      const session = await getSession();
+      const role = session?.user?.role;
+      const redirectTo =
+        role === "admin"
+          ? "/admin/dashboard"
+          : role === "instructor"
+            ? "/instructor/dashboard"
+            : "/student/dashboard";
+
+      router.replace(redirectTo);
       router.refresh();
     } catch {
       setError("Login failed. Please try again.");

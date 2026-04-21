@@ -1,4 +1,4 @@
-/** `GET /api/enrollments` success body — `data` field from learning-project handler. */
+/** `GET /api/enrollments` success body. */
 export interface EnrollmentListEnrollment {
   _id: string;
   student: string;
@@ -8,6 +8,7 @@ export interface EnrollmentListEnrollment {
   enrolledAt: string;
   lastAccessedAt?: string;
   paymentStatus?: string;
+  courseLuInfo?: unknown;
   courseInfo?: unknown;
   studentInfo?: unknown;
 }

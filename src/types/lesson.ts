@@ -10,7 +10,7 @@ export interface Lesson {
   title: string;
   description?: string;
   content?: string;
-  chapter: string;
+  chapter: string | { _id: string; title?: string; order?: number };
   course: string;
   order: number;
   duration?: number;

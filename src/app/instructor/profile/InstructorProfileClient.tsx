@@ -64,7 +64,7 @@ export default function TeacherProfile() {
     try {
       setLoading(true);
       
-      const response = await fetch(`/api/users/${session?.user.id}`);
+      const response = await fetch(`/api/users/${session?.user?.id}`);
       
       if (response.ok) {
         const data = await response.json();
@@ -105,7 +105,7 @@ export default function TeacherProfile() {
 
   const handleSave = async () => {
     try {
-      const response = await fetch(`/api/users/${session?.user.id}`, {
+      const response = await fetch(`/api/users/${session?.user?.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

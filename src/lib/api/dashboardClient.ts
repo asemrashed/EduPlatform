@@ -14,7 +14,7 @@ import type { StudentDashboardComposite } from "@/types/studentDashboard";
 /** Mock-only dashboard reads — no `fetch` (Phase 4). */
 export async function getStudentDashboard(): Promise<StudentDashboardComposite> {
   await Promise.resolve();
-  void API_ENDPOINTS.STUDENT_DASHBOARD;
+  // No dedicated `/api/student/dashboard` route in moynamoti-main.
   return getMockStudentDashboardComposite();
 }
 

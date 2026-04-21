@@ -23,6 +23,10 @@ export interface Enrollment {
   createdAt: string;
   updatedAt: string;
   studentInfo?: Pick<User, "_id" | "firstName" | "lastName" | "email" | "avatar">;
+  courseLuInfo?: Pick<
+    Course,
+    "_id" | "title" | "description" | "thumbnailUrl" | "price" | "category" | "isPaid"
+  >;
   courseInfo?: Pick<
     Course,
     "_id" | "title" | "description" | "thumbnailUrl" | "price" | "category" | "isPaid"

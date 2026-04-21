@@ -54,7 +54,7 @@ export default function StudentProfile() {
     try {
       setLoading(true);
       
-      const response = await fetch(`/api/users/${session?.user.id}`);
+      const response = await fetch(`/api/users/${session?.user?.id}`);
       
       if (response.ok) {
         const data = await response.json();

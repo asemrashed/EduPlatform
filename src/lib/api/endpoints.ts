@@ -7,8 +7,6 @@ export const API_ENDPOINTS = {
   PUBLIC_CHAPTERS: "/api/public/chapters",
   PUBLIC_LESSONS: "/api/public/lessons",
   PUBLIC_FAQS: "/api/public/faqs",
-  /** Phase 4 mock composite; Phase 9 may align with real route. */
-  STUDENT_DASHBOARD: "/api/student/dashboard", // ❌ no backend route (mock-only, related api's in src/app/api & app/api/student)
   INSTRUCTOR_DASHBOARD: "/api/instructor/dashboard",
   ADMIN_DASHBOARD: "/api/admin/dashboard",
   ENROLLMENTS: "/api/enrollments",

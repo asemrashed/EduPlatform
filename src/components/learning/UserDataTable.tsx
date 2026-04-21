@@ -1,6 +1,6 @@
 'use client';
 
-import User, { IUser } from '@/models/User';
+import type { IUser } from '@/models/User';
 import { Badge } from '@/components/ui/badge';
 import DataTable, { Column, Action } from '@/components/ui/data-table';
 import { LuPencil as Edit, LuTrash2 as Trash2, LuEye as Eye, LuUserCheck as UserCheck, LuUserX as UserX } from 'react-icons/lu';

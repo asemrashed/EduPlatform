@@ -11,6 +11,7 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -22,6 +23,11 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+      if (password !== confirmPassword) {
+        setError("Password and confirm password do not match.");
+        return;
+      }
+
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -29,7 +35,7 @@ export default function RegisterPage() {
           name: name.trim(),
           phone: phone.trim(),
           password,
-          role: "student",
+          confirmPassword,
         }),
       });
       const data = await response.json();
@@ -97,6 +103,18 @@ export default function RegisterPage() {
               className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-3 text-foreground"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
+              required
+            />
+          </label>
+          <label className="block text-sm font-medium text-foreground">
+            Confirm password
+            <input
+              type="password"
+              name="confirmPassword"
+              autoComplete="new-password"
+              className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-3 text-foreground"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
               required
             />
           </label>
