@@ -45,7 +45,7 @@ export function HomePageClient() {
     <div className="max-w-xl text-center lg:text-left">
       
       <h1 className="mb-6 text-4xl font-extrabold leading-tight text-white md:text-6xl">
-        {HOME_HERO.titleBefore} <br />
+        {HOME_HERO.titleBefore} 
         {" "}
         <span className="text-yellow-400">
           {HOME_HERO.titleAccent}
@@ -59,7 +59,7 @@ export function HomePageClient() {
 
       <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
         <button className="rounded-lg bg-yellow-400 px-6 py-3 font-semibold text-black shadow-lg hover:scale-105 transition">
-          Enroll Now
+          Join Now
         </button>
       </div>
     </div>
@@ -133,9 +133,9 @@ export function HomePageClient() {
             </Link>
           </div>
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {HOME_FEATURED_COURSES.map((c) => (
+            {HOME_FEATURED_COURSES.map((c, i) => (
               <div
-                key={c.title}
+                key={i}
                 className="flex flex-col rounded-xl bg-surface-container p-4 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-900/5"
               >
                 <div className="relative mb-6 h-56 overflow-hidden rounded-lg">

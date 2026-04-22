@@ -3,8 +3,8 @@ import Link from "next/link";
 export function SiteFooter() {
   return (
     <footer className="mt-auto border-t border-transparent bg-surface-container-low">
-      <div className="mx-auto grid max-w-screen-2xl grid-cols-2 gap-12 px-6 py-16 md:grid-cols-4 md:px-12">
-        <div className="col-span-2 md:col-span-1">
+      <div className="mx-auto grid max-w-screen-2xl grid-cols-2 gap-12 px-6 py-16 md:grid-cols-6 md:px-12">
+        <div className="col-span-2 flex flex-col items-center md:items-start">
           <span className="mb-4 block font-[family-name:var(--font-headline)] text-xl font-bold text-primary">
             EduPlatform
           </span>
@@ -12,7 +12,7 @@ export function SiteFooter() {
             Elevating digital education through premium curation and world-class expert networks.
           </p>
         </div>
-        <div>
+        <div className="flex flex-col items-center md:items-start">
           <h2 className="mb-6 text-xs font-bold uppercase tracking-widest text-primary">
             Platform
           </h2>
@@ -54,7 +54,7 @@ export function SiteFooter() {
             </li>
           </ul>
         </div>
-        <div>
+        <div className="col-span-2 flex flex-col items-center md:items-start">
           <h2 className="mb-6 text-xs font-bold uppercase tracking-widest text-primary">
             Newsletter
           </h2>

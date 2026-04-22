@@ -7,6 +7,8 @@ import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/cn";
 import { useAppSelector } from "@/store/hooks";
 
+import { LuShoppingBag } from "react-icons/lu";
+
 const NAV = [
   { href: "/", label: "Home" },
   { href: "/courses", label: "All Courses" },
@@ -86,9 +88,9 @@ export function SiteHeader() {
           {/* Cart */}
           <Link
             href="/cart"
-            className="relative hidden rounded-full px-3 py-2 text-sm font-semibold text-muted-foreground hover:text-primary sm:inline-flex"
+            className="relative rounded-full px-3 text-sm font-semibold text-muted-foreground hover:text-primary inline-flex"
           >
-            Cart
+            <LuShoppingBag className="text-lg md:text-2xl" />
             {cartCount > 0 && (
               <span className="ml-1.5 min-w-[1.25rem] rounded-full bg-secondary px-1.5 py-0.5 text-xs font-bold text-on-secondary">
                 {cartCount > 99 ? "99+" : cartCount}
@@ -106,7 +108,7 @@ export function SiteHeader() {
               </button>
 
               {avatarOpen && (
-                <div className="absolute right-0 mt-2 w-44 rounded-md md:rounded-xl bg-white shadow-lg border border-border z-50 overflow-hidden">
+                <div className="absolute right-0 mt-2 w-44 rounded-md bg-white shadow-lg border border-border z-50 overflow-hidden">
                   <Link
                     href={dashboardHref}
                     className="block px-4 py-2 text-sm hover:bg-gray-100"
@@ -131,7 +133,7 @@ export function SiteHeader() {
             <>
               <Link
                 href="/login"
-                className="hidden rounded-full px-4 py-2.5 text-sm font-semibold text-muted-foreground hover:text-primary md:inline-block"
+                className="rounded-full px-4 py-2.5 text-sm font-semibold text-muted-foreground hover:text-primary inline-block"
               >
                 Sign in
               </Link>
@@ -156,8 +158,8 @@ export function SiteHeader() {
 
       {/* MOBILE MENU */}
       {open && (
-        <div className="border-t border-border/60 bg-surface px-4 py-4 md:hidden">
-          <nav className="flex flex-col gap-1">
+        <div className="border-t border-border/60 w-full bg-surface px-4 py-4 md:hidden">
+          <nav className="flex max-w-[96%] mx-auto flex-col gap-1">
             {NAV.map(({ href, label }) => (
               <MobileNavLink
                 key={label}
