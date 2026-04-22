@@ -22,6 +22,7 @@ import {
   type CatalogCategoryId,
 } from "@/data/allCoursePageContent";
 import { cn } from "@/lib/cn";
+import CourseCard from "@/components/CourseCard";
 
 type ViewMode = "grid" | "list";
 
@@ -54,7 +55,7 @@ function mapReduxToDisplay(c: PublicCourseRow): DisplayCard {
     (categoryId === "hsc" ? "HSC" : categoryId === "ssc" ? "SSC" : "Academic");
   return {
     key: `redux-${c._id}`,
-    href: `/course/${c._id}`,
+    href: `/${c._id}`,
     image:
       c.thumbnailUrl ||
       STATIC_CATALOG_CARDS[0]?.image ||
@@ -145,7 +146,7 @@ export function CoursesCatalogClient() {
     return (
       <div className="mx-auto max-w-screen-2xl px-8 py-20">
         <div
-          className="rounded-xl border border-destructive/40 bg-error-container/40 p-8 text-on-error-container"
+          className="rounded-xl border border-destructive/40 bg-gradient-to-br from-primary/20 to-primary-container"
           role="alert"
         >
           <p className="font-semibold">Could not load courses</p>
@@ -175,11 +176,11 @@ export function CoursesCatalogClient() {
             sizes="100vw"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/80 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary-container"/>
         </div>
         <div className="relative z-10 mx-auto w-full max-w-screen-2xl px-8">
           <div className="max-w-2xl">
-            <span className="mb-4 block font-[family-name:var(--font-headline)] text-sm font-bold uppercase tracking-[0.2em] text-secondary">
+            <span className="mb-4 block font-[family-name:var(--font-headline)] text-sm font-bold uppercase tracking-[0.2em] text-primary-container">
               Curated Knowledge
             </span>
             <h1 className="font-[family-name:var(--font-headline)] text-6xl font-black leading-[1.1] tracking-tight text-white md:text-7xl">
@@ -304,64 +305,9 @@ export function CoursesCatalogClient() {
                   : "flex flex-col gap-6",
               )}
             >
-              {pageRows.map((c) => (
-                <li key={c.key}>
-                  <article
-                    className={cn(
-                      "group flex flex-col rounded-xl bg-surface-container-low p-4 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-900/5",
-                      view === "list" && "md:flex-row md:items-stretch md:gap-6",
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "relative mb-6 h-56 overflow-hidden rounded-lg md:mb-0",
-                        view === "list" && "md:mb-0 md:w-72 shrink-0",
-                      )}
-                    >
-                      <Image
-                        src={c.image}
-                        alt={c.imageAlt}
-                        fill
-                        className="object-cover transition-transform duration-700 group-hover:scale-105"
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                      />
-                      <span className="absolute left-4 top-4 rounded-full bg-primary px-3 py-1.5 text-[10px] font-bold uppercase tracking-tighter text-white">
-                        {c.badge}
-                      </span>
-                    </div>
-                    <div className="flex min-w-0 flex-1 flex-col mt-4">
-                      <h3
-                        className={cn(
-                          "mb-3 font-[family-name:var(--font-headline)] text-xl font-extrabold text-foreground",
-                          view === "grid" && "line-clamp-2",
-                        )}
-                      >
-                        {c.title}
-                      </h3>
-                      <p className="mb-8 line-clamp-2 text-sm text-muted-foreground">
-                        {c.description}
-                      </p>
-                      <div className="mb-6 mt-auto flex items-center justify-between border-t border-outline-variant/20 pt-6">
-                        <span className="text-2xl font-black text-primary">
-                          {c.price}
-                        </span>
-                        <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
-                          <span className="material-symbols-outlined text-base">
-                            play_lesson
-                          </span>
-                          {c.lessons}
-                        </span>
-                      </div>
-                      <Link
-                        href={c.href}
-                        className="w-full rounded-lg bg-primary py-4 text-center font-bold text-white shadow-md transition-all hover:bg-primary-container active:scale-95"
-                      >
-                        Enroll Course
-                      </Link>
-                    </div>
-                  </article>
-                </li>
-              ))}
+              {pageRows.map((c, i) => 
+                <CourseCard key={i} course={c as any} index={i} />
+              )}
             </ul>
           )}
 

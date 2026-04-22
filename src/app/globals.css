@@ -10,7 +10,7 @@
   /* Primary / brand */
   --color-primary: #0040a1;
   --color-on-primary: #ffffff;
-  --color-primary-container: #0056d2;
+  --color-primary-container: #daecfe;
   --color-on-primary-container: #ccd8ff;
   --color-primary-fixed: #dae2ff;
   --color-primary-fixed-dim: #b2c5ff;
@@ -21,7 +21,7 @@
   /* Secondary */
   --color-secondary: #b52330;
   --color-on-secondary: #ffffff;
-  --color-secondary-container: #ff5a5f;
+  --color-secondary-container: #84aeeb;
   --color-on-secondary-container: #60000e;
   --color-secondary-fixed: #ffdad8;
   --color-secondary-fixed-dim: #ffb3b0;

@@ -30,6 +30,9 @@ import {
   HOME_STATS,
   HOME_TESTIMONIALS,
 } from "@/data/homePageContent";
+import CourseCard from "../CourseCard";
+// import {mapReduxToDisplay} from ""
+
 
 export function HomePageClient() {
   const [openFaq, setOpenFaq] = useState<number | null>(1);
@@ -37,7 +40,7 @@ export function HomePageClient() {
   return (
     <div className="bg-background text-foreground">
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary to-primary-container px-6 py-20 md:px-12 lg:px-20">
+      <section className="relative overflow-hidden bg-gradient-to-br from-secondary-container to-primary-container px-6 py-20 md:px-12 lg:px-20">
 
   <div className="mx-auto flex max-w-7xl flex-col items-center gap-12 lg:flex-row lg:justify-between">
 
@@ -47,7 +50,7 @@ export function HomePageClient() {
       <h1 className="mb-6 text-4xl font-extrabold leading-tight text-white md:text-6xl">
         {HOME_HERO.titleBefore} 
         {" "}
-        <span className="text-yellow-400">
+        <span className="text-primary">
           {HOME_HERO.titleAccent}
         </span>{" "}
         <br />
@@ -58,7 +61,7 @@ export function HomePageClient() {
       </p>
 
       <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
-        <button className="rounded-lg bg-yellow-400 px-6 py-3 font-semibold text-black shadow-lg hover:scale-105 transition">
+        <button className="rounded-lg bg-primary px-6 py-3 font-semibold text-on-primary shadow-lg hover:scale-105 transition">
           Join Now
         </button>
       </div>
@@ -162,7 +165,7 @@ export function HomePageClient() {
                   {c.description}
                 </p>
                 <div className="mb-6 mt-auto flex items-center justify-between border-t border-outline-variant/20 pt-6">
-                  <span className="text-2xl font-black text-primary-container">
+                  <span className="text-2xl font-black text-primary">
                     {c.price}
                   </span>
                   <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
@@ -179,6 +182,7 @@ export function HomePageClient() {
                   Enroll Course
                 </Link>
               </div>
+              // <CourseCard key={i} course={c as any} index={i} />
             ))}
           </div>
         </div>
@@ -285,13 +289,13 @@ export function HomePageClient() {
       </section>
 
       {/* Testimonials */}
-      <section className="bg-primary px-8 py-24 text-on-primary">
+      <section className="bg-gradient-to-br from-primary-container to-secondary-container px-8 py-24 text-on-primary">
         <div className="mx-auto grid max-w-screen-2xl grid-cols-1 items-center gap-16 lg:grid-cols-12">
           <div className="lg:col-span-4">
-            <h2 className="mb-6 font-[family-name:var(--font-headline)] text-5xl font-extrabold tracking-tight">
+            <h2 className="mb-6 font-[family-name:var(--font-headline)] text-5xl font-extrabold text-primary tracking-tight">
               What Our Learners Are Saying
             </h2>
-            <p className="mb-8 text-lg leading-relaxed text-on-primary/80">
+            <p className="mb-8 text-lg leading-relaxed text-primary/60">
               Join a community of high-achievers who have transformed their careers
               through EduPlatform.
             </p>

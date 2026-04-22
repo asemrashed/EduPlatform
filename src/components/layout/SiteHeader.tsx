@@ -133,13 +133,13 @@ export function SiteHeader() {
             <>
               <Link
                 href="/login"
-                className="rounded-full px-4 py-2.5 text-sm font-semibold text-muted-foreground hover:text-primary inline-block"
+                className="rounded-full border border-primary hover:bg-primary transition-all duration-300 hover:text-primary-container px-4 py-2.5 text-sm font-semibold text-muted-foreground hover:text-primary inline-block"
               >
                 Sign in
               </Link>
               <Link
                 href="/register"
-                className="hidden rounded-xl bg-gradient-to-br from-primary to-primary-container px-6 py-3 text-sm font-bold text-on-primary shadow-lg sm:inline-block"
+                className="hidden rounded-xl bg-gradient-to-br from-primary to-primary/50 hover:bg-primary transition-all duration-300 px-6 py-3 text-sm font-bold text-on-primary shadow-lg sm:inline-block"
               >
                 Join for free
               </Link>

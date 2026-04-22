@@ -34,8 +34,9 @@ export default function Contact() {
   };
 
   return (
-    <div className="max-w-5xl h-screen mx-auto grid md:grid-cols-2 gap-12 items-center px-4">
-      <div className="space-y-8">
+    <div className="w-full h-screen mx-auto flex items-center justify-center bg-gradient-to-t from-transparent/40 to-secondary-container">
+      <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
+      <div className="space-y-8 flex-1">
         <div>
              <h1 className="text-4xl font-bold mb-4">Get in Touch</h1>
              <p className="text-gray-500">Have questions about a listing or want to sell your vehicle? We're here to help.</p>
@@ -57,7 +58,7 @@ export default function Contact() {
                 </div>
                  <div>
                     <p className="text-sm font-bold text-gray-400 uppercase">Phone</p>
-                    <p className="font-medium">+1 (555) 123-4567</p>
+                    <p className="font-medium">+880 1717 1717 1717</p>
                 </div>
             </div>
              <div className="flex items-center gap-4">
@@ -66,13 +67,13 @@ export default function Contact() {
                 </div>
                  <div>
                     <p className="text-sm font-bold text-gray-400 uppercase">Headquarters</p>
-                    <p className="font-medium">123 Autostrada Blvd, Los Angeles, CA</p>
+                    <p className="font-medium">123, Road 1, Block A, Mirpur 10, Dhaka 1216</p>
                 </div>
             </div>
         </div>
       </div>
 
-      <div className="bg-surface-container-low p-8 rounded-3xl border border-outline-variant">
+      <div className="flex-1 bg-surface-container-low p-8 rounded-3xl border border-outline-variant">
         <form ref={form} onSubmit={sendEmail} className="space-y-6">
             <div className="space-y-2">
                 <label className="font-bold ml-1">Name</label>
@@ -94,6 +95,7 @@ export default function Contact() {
             {status === 'success' && <p className="text-green-500 text-center font-bold">Message sent successfully!</p>}
             {status === 'error' && <p className="text-red-500 text-center font-bold">Failed to send message. Please try again.</p>}
         </form>
+      </div>
       </div>
     </div>
   );

@@ -340,13 +340,13 @@ export function DashboardSidebar() {
           <div className="space-y-3 px-4 py-4">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded bg-gradient-to-br from-purple-500 to-pink-500 text-sm font-bold text-white">
-                E
+              <Link href={'/'}>E</Link>
               </div>
               <span
                 className="truncate text-base font-semibold"
                 style={{ color: "#7B2CBF" }}
               >
-                EduPlatform
+                <Link href={'/'}>EduPlatform</Link>
               </span>
             </div>
           </div>
@@ -407,10 +407,11 @@ export function DashboardSidebar() {
           <div className="space-y-3 px-4 py-4">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded bg-green-700 text-sm font-bold text-white">
-                E
+              <Link href={'/'}>E</Link>
+                
               </div>
               <span className="truncate text-base font-semibold text-white">
-                EduPlatform
+                <Link href={'/'}>EduPlatform</Link>
               </span>
             </div>
           </div>
