@@ -16,9 +16,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/cn";
 import banner from "@/public/banner.png";
+import { fetchPublicCourses, useAppDispatch, useAppSelector } from "@/store";
+import type { PublicCourseRow } from "@/mock/publicCourses";
 import {
   HOME_EXPERTS,
   HOME_FAQ,
@@ -31,11 +33,32 @@ import {
   HOME_TESTIMONIALS,
 } from "@/data/homePageContent";
 import CourseCard from "../CourseCard";
-// import {mapReduxToDisplay} from ""
 
 
 export function HomePageClient() {
+  const dispatch = useAppDispatch();
+  const { publicList } = useAppSelector((s) => s.courses);
   const [openFaq, setOpenFaq] = useState<number | null>(1);
+
+  useEffect(() => {
+    dispatch(fetchPublicCourses(undefined));
+  }, [dispatch]);
+
+  const featuredCourses = useMemo(() => {
+    const fromApi = publicList.slice(0, 8).map((course: PublicCourseRow, i) => ({
+      href: `/${course._id}`,
+      image: course.thumbnailUrl || HOME_FEATURED_COURSES[i % HOME_FEATURED_COURSES.length]?.image,
+      imageAlt: course.title,
+      badge: course.tags?.[0] || (course.isPaid ? "Premium" : "Free"),
+      badgeClass: "bg-primary text-on-primary",
+      title: course.title,
+      description: course.shortDescription || course.description || "Explore this course.",
+      price: course.isPaid ? `$${course.finalPrice ?? course.price ?? 0}` : "Free",
+      lessons: `${course.lessonCount ?? 0}+ Lessons`,
+    }));
+
+    return fromApi.length > 0 ? fromApi : HOME_FEATURED_COURSES;
+  }, [publicList]);
 
   return (
     <div className="bg-background text-foreground">
@@ -136,53 +159,8 @@ export function HomePageClient() {
             </Link>
           </div>
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {HOME_FEATURED_COURSES.map((c, i) => (
-              <div
-                key={i}
-                className="flex flex-col rounded-xl bg-surface-container p-4 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-900/5"
-              >
-                <div className="relative mb-6 h-56 overflow-hidden rounded-lg">
-                  <Image
-                    src={c.image}
-                    alt={c.imageAlt}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                  />
-                  <span
-                    className={cn(
-                      "absolute left-4 top-4 rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-tighter",
-                      c.badgeClass,
-                    )}
-                  >
-                    {c.badge}
-                  </span>
-                </div>
-                <h3 className="mb-3 text-xl font-extrabold text-foreground">
-                  {c.title}
-                </h3>
-                <p className="mb-8 line-clamp-2 text-sm text-muted-foreground">
-                  {c.description}
-                </p>
-                <div className="mb-6 mt-auto flex items-center justify-between border-t border-outline-variant/20 pt-6">
-                  <span className="text-2xl font-black text-primary">
-                    {c.price}
-                  </span>
-                  <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
-                    <span className="material-symbols-outlined text-base">
-                      play_lesson
-                    </span>
-                    {c.lessons}
-                  </span>
-                </div>
-                <Link
-                  href="/courses"
-                  className="w-full rounded-lg bg-primary py-4 text-center font-bold text-on-primary transition-transform active:scale-95"
-                >
-                  Enroll Course
-                </Link>
-              </div>
-              // <CourseCard key={i} course={c as any} index={i} />
+            {featuredCourses.map((c, i) => (
+              <CourseCard key={`${c.title}-${i}`} course={c as any} index={i} />
             ))}
           </div>
         </div>

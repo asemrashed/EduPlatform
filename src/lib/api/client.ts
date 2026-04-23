@@ -41,18 +41,76 @@ export function readMockEmptyCatalog(): boolean {
  * Phase 9: replace internals with real HTTP while preserving this signature.
  */
 export async function getPublicCourses(
-  _query: PublicCoursesQuery = {},
+  query: PublicCoursesQuery = {},
 ): Promise<PublicCoursesSuccessBody> {
-  if (!readUseMockApi()) {
-    throw new Error(
-      "Real API transport is not wired yet. Set NEXT_PUBLIC_USE_MOCK_API=true until Phase 9.",
-    );
+  const params = new URLSearchParams();
+  if (query.page !== undefined) params.set("page", String(query.page));
+  if (query.limit !== undefined) params.set("limit", String(query.limit));
+  if (query.search) params.set("search", query.search);
+  if (query.category) params.set("category", query.category);
+  if (query.pricing) params.set("pricing", query.pricing);
+  if (query.sortBy) params.set("sortBy", query.sortBy);
+  if (query.sortOrder) params.set("sortOrder", query.sortOrder);
+
+  const requestUrl = params.toString()
+    ? `${publicCoursesPath}?${params.toString()}`
+    : publicCoursesPath;
+
+  try {
+    const response = await fetch(requestUrl, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error(`Public courses request failed: ${response.status}`);
+    }
+
+    const payload = (await response.json()) as PublicCoursesSuccessBody;
+    const courses = payload?.data?.courses;
+    const pagination = payload?.data?.pagination;
+
+    if (
+      payload?.success === true &&
+      Array.isArray(courses) &&
+      pagination &&
+      typeof pagination.page === "number" &&
+      typeof pagination.limit === "number" &&
+      typeof pagination.total === "number" &&
+      typeof pagination.pages === "number"
+    ) {
+      const normalizedPagination = {
+        ...pagination,
+        hasNext:
+          typeof pagination.hasNext === "boolean"
+            ? pagination.hasNext
+            : pagination.page < pagination.pages,
+        hasPrev:
+          typeof pagination.hasPrev === "boolean"
+            ? pagination.hasPrev
+            : pagination.page > 1 && pagination.pages > 0,
+      };
+
+      return {
+        success: true,
+        data: {
+          courses,
+          pagination: normalizedPagination,
+        },
+      };
+    }
+
+    throw new Error("Public courses payload shape mismatch");
+  } catch {
+    // Temporary safety fallback during phased backend rollout.
+    if (readMockEmptyCatalog()) {
+      return getMockPublicCoursesEmpty();
+    }
+    return getMockPublicCoursesSuccess();
   }
-  await Promise.resolve();
-  if (readMockEmptyCatalog()) {
-    return getMockPublicCoursesEmpty();
-  }
-  return getMockPublicCoursesSuccess();
 }
 
 /**

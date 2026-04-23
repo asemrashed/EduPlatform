@@ -4,6 +4,15 @@ import { cn } from '@/lib/cn';
 import Image from 'next/image';
 import Link from 'next/link';
 export default function CourseCard({ course, index }: { course: any, index: number }) {
+  const rawHref = typeof course?.href === "string" ? course.href : "";
+  const targetHref =
+    rawHref.startsWith("/course/") || rawHref.startsWith("/courses")
+      ? rawHref
+      : rawHref.startsWith("/")
+        ? `/course${rawHref}`
+        : rawHref
+          ? `/course/${rawHref}`
+          : "/courses";
 
   return (
       <div
@@ -30,7 +39,7 @@ export default function CourseCard({ course, index }: { course: any, index: numb
         <h3 className="text-xl font-extrabold text-foreground">
           {course.title}
         </h3>
-        <p className="ine-clamp-2 text-sm text-muted-foreground">
+        <p className="line-clamp-2 text-sm text-muted-foreground">
           {course.description}
         </p>
         <div className="flex items-center justify-between border-t border-outline-variant/20 pt-2 md:pt-4">
@@ -45,7 +54,7 @@ export default function CourseCard({ course, index }: { course: any, index: numb
           </span>
         </div>
         <Link
-          href={`course${course.href}`}
+          href={targetHref}
           className="w-full rounded-lg bg-primary py-4 text-center font-bold text-on-primary transition-transform active:scale-95"
         >
           Enroll Course

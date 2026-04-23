@@ -5,21 +5,31 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import {
   addToCart,
-  fetchCourseBundle,
+  fetchPublicCourses,
   useAppDispatch,
   useAppSelector,
 } from "@/store";
+import type { Chapter } from "@/types/chapter";
+import type { CourseFaq } from "@/types/courseFaq";
+import type { Lesson } from "@/types/lesson";
 
 export function CourseDetailClient({ courseId }: { courseId: string }) {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const { status, error, course, chapters, lessons, faqs } = useAppSelector(
-    (s) => s.courseDetail,
-  );
+  const { status, error, publicList } = useAppSelector((s) => s.courses);
+  const chapters: Chapter[] = [];
+  const lessons: Lesson[] = [];
+  const faqs: CourseFaq[] = [];
 
   useEffect(() => {
-    dispatch(fetchCourseBundle(courseId));
-  }, [dispatch, courseId]);
+    // Load a large first page so direct /course/[id] opens with backend data.
+    dispatch(fetchPublicCourses({ page: 1, limit: 500 }));
+  }, [dispatch]);
+
+  const course = useMemo(
+    () => publicList.find((c) => c._id === courseId) ?? null,
+    [publicList, courseId],
+  );
 
   const lessonsByChapter = useMemo(() => {
     const map = new Map<string, typeof lessons>();
@@ -69,7 +79,7 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
           <button
             type="button"
             className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-on-primary"
-            onClick={() => dispatch(fetchCourseBundle(courseId))}
+            onClick={() => dispatch(fetchPublicCourses({ page: 1, limit: 500 }))}
           >
             Retry
           </button>
@@ -85,7 +95,24 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
   }
 
   if (!course) {
-    return null;
+    return (
+      <div
+        className="rounded-xl border border-border bg-card p-8"
+        role="status"
+        aria-live="polite"
+      >
+        <p className="font-semibold text-foreground">Course not found.</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          This course may be outside the current public catalog page range.
+        </p>
+        <Link
+          href="/courses"
+          className="mt-6 inline-block rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground"
+        >
+          Back to catalog
+        </Link>
+      </div>
+    );
   }
 
   return (
@@ -105,32 +132,39 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
           <h2 className="font-[family-name:var(--font-headline)] text-2xl font-bold text-foreground">
             Curriculum
           </h2>
-          <div className="mt-6 space-y-8">
-            {chapters.map((ch) => (
-              <div key={ch._id}>
-                <h3 className="text-lg font-bold text-primary">{ch.title}</h3>
-                {ch.description ? (
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {ch.description}
-                  </p>
-                ) : null}
-                <ul className="mt-4 space-y-3 border-l-2 border-primary/30 pl-4">
-                  {(lessonsByChapter.get(ch._id) ?? []).map((lesson) => (
-                    <li
-                      key={lesson._id}
-                      className="flex flex-wrap items-center justify-between gap-2 text-sm"
-                    >
-                      <span className="text-foreground">{lesson.title}</span>
-                      <span className="text-muted-foreground">
-                        {lesson.duration ? `${lesson.duration} min` : ""}
-                        {lesson.isFree ? " · Preview" : ""}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+          {chapters.length === 0 ? (
+            <p className="mt-6 text-sm text-muted-foreground">
+              Detailed curriculum will appear once chapter/lesson public APIs are
+              connected.
+            </p>
+          ) : (
+            <div className="mt-6 space-y-8">
+              {chapters.map((ch) => (
+                <div key={ch._id}>
+                  <h3 className="text-lg font-bold text-primary">{ch.title}</h3>
+                  {ch.description ? (
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {ch.description}
+                    </p>
+                  ) : null}
+                  <ul className="mt-4 space-y-3 border-l-2 border-primary/30 pl-4">
+                    {(lessonsByChapter.get(ch._id) ?? []).map((lesson) => (
+                      <li
+                        key={lesson._id}
+                        className="flex flex-wrap items-center justify-between gap-2 text-sm"
+                      >
+                        <span className="text-foreground">{lesson.title}</span>
+                        <span className="text-muted-foreground">
+                          {lesson.duration ? `${lesson.duration} min` : ""}
+                          {lesson.isFree ? " · Preview" : ""}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {faqs.length > 0 ? (

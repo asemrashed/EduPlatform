@@ -19,6 +19,7 @@ import type { PublicCourseRow } from "@/mock/publicCourses";
 import {
   CATALOG_SIDEBAR,
   STATIC_CATALOG_CARDS,
+  type CatalogSidebarItem,
   type CatalogCategoryId,
 } from "@/data/allCoursePageContent";
 import { cn } from "@/lib/cn";
@@ -41,18 +42,64 @@ type DisplayCard = {
 };
 
 function inferCategoryFromCourse(c: PublicCourseRow): CatalogCategoryId {
-  const t = (c.title + (c.tags?.join(" ") ?? "")).toLowerCase();
-  if (t.includes("hsc")) return "hsc";
-  if (t.includes("ssc")) return "ssc";
-  if (t.includes("admission") || t.includes("mba")) return "admission";
-  return "academic";
+  const t = (
+    c.title +
+    " " +
+    (c.shortDescription ?? "") +
+    " " +
+    (c.tags?.join(" ") ?? "")
+  ).toLowerCase();
+
+  if (t.includes("web") || t.includes("frontend") || t.includes("backend")) {
+    return "web-development";
+  }
+  if (t.includes("data science") || t.includes("machine learning") || t.includes("ai")) {
+    return "data-science";
+  }
+  if (t.includes("design") || t.includes("ui") || t.includes("ux")) {
+    return "design";
+  }
+  if (t.includes("cloud") || t.includes("aws") || t.includes("azure") || t.includes("devops")) {
+    return "cloud-computing";
+  }
+  if (t.includes("mobile") || t.includes("android") || t.includes("ios") || t.includes("react native")) {
+    return "mobile-development";
+  }
+  if (t.includes("marketing") || t.includes("seo") || t.includes("social media")) {
+    return "marketing";
+  }
+  if (t.includes("database") || t.includes("sql") || t.includes("mongodb")) {
+    return "databases";
+  }
+  if (t.includes("security") || t.includes("cyber")) {
+    return "cybersecurity";
+  }
+  return "programming";
 }
 
 function mapReduxToDisplay(c: PublicCourseRow): DisplayCard {
-  const categoryId = inferCategoryFromCourse(c);
+  const categoryId = c.category
+    ? normalizeCategoryId(String(c.category))
+    : inferCategoryFromCourse(c);
   const badge =
     c.tags?.[0] ??
-    (categoryId === "hsc" ? "HSC" : categoryId === "ssc" ? "SSC" : "Academic");
+    (categoryId === "web-development"
+      ? "Web Development"
+      : categoryId === "data-science"
+        ? "Data Science"
+        : categoryId === "cloud-computing"
+          ? "Cloud"
+          : categoryId === "mobile-development"
+            ? "Mobile Development"
+            : categoryId === "cybersecurity"
+              ? "Cybersecurity"
+              : categoryId === "databases"
+                ? "Databases"
+                : categoryId === "marketing"
+                  ? "Marketing"
+                  : categoryId === "design"
+                    ? "Design"
+                    : "Programming");
   return {
     key: `redux-${c._id}`,
     href: `/${c._id}`,
@@ -92,18 +139,72 @@ function mapStaticToDisplay(
 
 const PAGE_SIZE = 6;
 
+function normalizeCategoryId(value: string): CatalogCategoryId {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
+
 export function CoursesCatalogClient() {
   const dispatch = useAppDispatch();
   const { status, error, publicList } = useAppSelector((s) => s.courses);
   const useMockApi = useAppSelector((s) => s.ui.useMockApi);
 
   const [category, setCategory] = useState<CatalogCategoryId>("all");
+  const [sidebarCategories, setSidebarCategories] =
+    useState<CatalogSidebarItem[]>(CATALOG_SIDEBAR);
   const [page, setPage] = useState(1);
   const [view, setView] = useState<ViewMode>("grid");
 
   useEffect(() => {
     dispatch(fetchPublicCourses(undefined));
   }, [dispatch]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSidebarCategories = async () => {
+      try {
+        const response = await fetch("/api/public/categories", {
+          cache: "no-store",
+        });
+        if (!response.ok) return;
+
+        const payload = await response.json();
+        const rows = Array.isArray(payload?.data) ? payload.data : [];
+        if (!payload?.success || rows.length === 0) return;
+
+        const dynamicRows: CatalogSidebarItem[] = rows
+          .map((row: any) => {
+            const id = normalizeCategoryId(String(row?.id || ""));
+            const label = String(row?.label || "").trim();
+            const count = Number.isFinite(Number(row?.count))
+              ? Number(row.count)
+              : 0;
+            if (!id || !label) return null;
+            return { id, label, count };
+          })
+          .filter(Boolean) as CatalogSidebarItem[];
+
+        if (cancelled || dynamicRows.length === 0) return;
+        const total = dynamicRows.reduce((sum, row) => sum + row.count, 0);
+        setSidebarCategories([
+          { id: "all", label: "All", count: total },
+          ...dynamicRows,
+        ]);
+      } catch {
+        // Keep static sidebar fallback on API failure.
+      }
+    };
+
+    loadSidebarCategories();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const merged = useMemo(() => {
     const fromRedux = publicList.map(mapReduxToDisplay);
@@ -203,7 +304,7 @@ export function CoursesCatalogClient() {
                 Filter by Category
               </h3>
               <ul className="space-y-1">
-                {CATALOG_SIDEBAR.map((row) => {
+                {sidebarCategories.map((row) => {
                   const active = category === row.id;
                   return (
                     <li key={row.id}>
