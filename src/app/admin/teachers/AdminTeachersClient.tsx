@@ -56,8 +56,15 @@ function TeachersPageContent() {
       const data = await response.json();
 
       if (response.ok) {
-        setTeachers(data.teachers);
-        setPagination(data.pagination);
+        setTeachers(Array.isArray(data?.teachers) ? data.teachers : []);
+        setPagination(
+          data?.pagination ?? {
+            page: filters.page,
+            limit: filters.limit,
+            total: 0,
+            pages: 0,
+          },
+        );
       } else {
         console.error('Failed to fetch teachers:', data.error);
       }

@@ -79,6 +79,7 @@ export default function DataTable<T>({
   },
   actionDisplay = 'dropdown',
 }: DataTableProps<T>) {
+  const safeData = Array.isArray(data) ? data : [];
   const [selectedItem, setSelectedItem] = useState<T | null>(null);
   const actionColumnWidthClass = actionDisplay === 'buttons' ? 'w-[360px]' : 'w-20';
 
@@ -192,7 +193,7 @@ export default function DataTable<T>({
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
-          {data.map((item, index) => (
+          {safeData.map((item, index) => (
             <tr 
               key={getItemId(item) || `row-${index}`}
               className={`group hover:bg-gray-50 transition-colors duration-200 ${getRowClassName(item, index)}`}
@@ -279,7 +280,7 @@ export default function DataTable<T>({
 
   const renderCardsVariant = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {data.map((item, index) => (
+      {safeData.map((item, index) => (
         <div 
           key={getItemId(item) || `row-${index}`}
           className={`group bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition-all duration-200 hover:-translate-y-0.5 ${getRowClassName(item, index)}`}
@@ -351,7 +352,7 @@ export default function DataTable<T>({
 
   const renderListVariant = () => (
     <div className="space-y-2">
-      {data.map((item, index) => (
+      {safeData.map((item, index) => (
         <div 
           key={getItemId(item) || `row-${index}`}
           className={`group bg-white rounded-lg p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition-all duration-200 ${getRowClassName(item, index)}`}
@@ -495,7 +496,7 @@ export default function DataTable<T>({
     return <div className={className}>{renderLoadingSkeleton()}</div>;
   }
 
-  if (data.length === 0) {
+  if (safeData.length === 0) {
     return <div className={className}>{renderEmptyState()}</div>;
   }
 
