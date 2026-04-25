@@ -33,6 +33,7 @@ import {
   HOME_TESTIMONIALS,
 } from "@/data/homePageContent";
 import CourseCard from "../CourseCard";
+import ExpertsCarousel from "../carousals/ExpertsCarousel";
 
 
 export function HomePageClient() {
@@ -100,16 +101,6 @@ export function HomePageClient() {
           alt="Hero"
           className="w-full object-contain"
         />
-
-        {/* FLOATING CARD 1 */}
-        {/* <div className="absolute -left-10 top-10 rounded-xl bg-white px-4 py-2 text-sm shadow-lg">
-          ✅ 300+ satisfied clients
-        </div> */}
-
-        {/* FLOATING CARD 2 */}
-        {/* <div className="absolute -right-10 bottom-10 rounded-xl bg-white px-4 py-2 text-sm shadow-lg">
-          🚀 1000+ completed projects
-        </div> */}
 
       </div>
     </div>
@@ -221,7 +212,7 @@ export function HomePageClient() {
       </section>
 
       {/* Experts */}
-      <section className="px-8 py-24">
+      {/* <section className="px-8 py-24">
         <div className="mx-auto mb-16 max-w-screen-2xl text-center">
           <span className="mb-4 inline-block rounded-md bg-blue-50 px-3 py-1 text-xs font-bold uppercase tracking-widest text-blue-800">
             Our Mentors
@@ -264,7 +255,8 @@ export function HomePageClient() {
             </div>
           ))}
         </div>
-      </section>
+      </section> */}
+      <ExpertsCarousel experts={HOME_EXPERTS} />
 
       {/* Testimonials */}
       <section className="bg-gradient-to-br from-primary-container to-secondary-container px-8 py-24 text-on-primary">
@@ -294,7 +286,7 @@ export function HomePageClient() {
               </button>
             </div>
           </div>
-          <div className="lg:col-span-8">
+          <div className="lg:col-span-8 ">
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
               {HOME_TESTIMONIALS.map((t) => (
                 <div

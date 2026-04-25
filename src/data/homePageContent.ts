@@ -185,6 +185,17 @@ export const HOME_EXPERTS = [
     image:
       "https://lh3.googleusercontent.com/aida-public/AB6AXuCpfIr-UhwIGNQ0Z7dTr7dMLKNSt2wYWME0NLWcFBIjNSijzZ8MjBMVYJRUKdQv34DnAdx7xOa0D5pHaoCHmlVof32G7vErbFg1eF-iEyfQl7EnnMt1JrzPBkIYHTzd2SPSS8Aj3cEXwYxpzc-P00zV_Yr_Py_LPBadeO3du9imK-woqaE3oEffG1qKLLZ_SdAaCb_DOAN_EGJdSZTcKAlzI8mn3Y4AcU9nBouOZ06MnWxek-GUoOtWEChz5eVI4jwwdWSrxVfUnMo",
   },
+  {
+    name: "Sarah Jenkinss",
+    role: "Cybersecurity Specialist · InfoSec Lead",
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuDLulBNTCzFvHOvbWajMX9-9jbGn3oe5-p1blgwoKyurRhkbaXC1zdvDXj5TFHeTqJMQDZnp2D2406jOAf4_tBNrwCWIsEIWdavR7B_vMm4SNtGNRTgJ_UVu-Ppe1r0aWT1gf3x3Q2gMZ6trRmdgjp4z6d4UIe4ASQZxHiFXQgkovszeDdtxU1ueH_qvS0cXJB_Y4l5YMLwBMjDW_Rmm16-RAKOK2k3RdHQoDYrRv-LAw9xY24_iZ62KneJbZI9yrrIeRQ0gup-Gmc",
+  },{
+    name: "Dr. Aris Thorneee",
+    role: "Lead AI Researcher · AI Expert",
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuDqdszUZsxyuhbFoxc1mM_EYA1ZI51631E4KDsdxFucXzzqAtwo93vJBgFHWctzHiiN4L8QIQwEA13kZD6AUNbjPsoWI4UPGczwAH83Fr2bG-YOjcE_RLqjt3c8srvn4lLd6ZySEhwqqPyMjcntE9n1FrGNkhNldHyNqUB9Q9pPMoDxCaEQtkfXfWiPmabVmqP82Kin-PWYiE8wclYXxN_u3jooJKQDt9GcTF_u8_nq5KLAkk0893gi08tMUh6pZrdE_x5oPKBSeIU",
+  }
 ];
 
 export const HOME_TESTIMONIALS = [

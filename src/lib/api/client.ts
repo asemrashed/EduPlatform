@@ -3,12 +3,6 @@ import {
   getMockPublicCoursesSuccess,
 } from "@/mock/publicCourses";
 import type { PublicCoursesSuccessBody } from "@/mock/publicCourses";
-import {
-  getMockChaptersForCourse,
-  getMockFaqsForCourse,
-  getMockLessonsForCourse,
-  getMockPublicCourseDetail,
-} from "@/mock/publicCourseDetail";
 import { API_ENDPOINTS } from "./endpoints";
 import type {
   PublicChaptersResponse,
@@ -34,6 +28,22 @@ export function readUseMockApi(): boolean {
 /** Dev-only: force empty success body to verify empty-state UI (same contract shape). */
 export function readMockEmptyCatalog(): boolean {
   return process.env.NEXT_PUBLIC_MOCK_PUBLIC_COURSES_EMPTY === "true";
+}
+
+async function fetchJsonOrThrow<T>(url: string): Promise<T> {
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
+  }
+
+  return (await response.json()) as T;
 }
 
 /**
@@ -113,71 +123,106 @@ export async function getPublicCourses(
   }
 }
 
-/**
- * `GET /api/public/courses/[id]` — mock-only in Phase 3 (throws if unknown id).
- */
 export async function getPublicCourseById(
   id: string,
 ): Promise<PublicCourseByIdResponse> {
-  if (!readUseMockApi()) {
-    throw new Error(
-      "Real API transport is not wired yet. Set NEXT_PUBLIC_USE_MOCK_API=true until Phase 9.",
-    );
+  const trimmed = id.trim();
+  const payload = await fetchJsonOrThrow<PublicCourseByIdResponse>(
+    publicCourseDetailPath(trimmed),
+  );
+
+  if (!payload?.success || !payload?.data?._id) {
+    throw new Error("Public course detail payload shape mismatch");
   }
-  await Promise.resolve();
-  const data = getMockPublicCourseDetail(id.trim());
-  if (!data) {
-    throw new Error("Course not found");
-  }
-  return { success: true, data };
+
+  return payload;
 }
 
-/** `GET /api/public/chapters?course=&isPublished=` */
+/** `GET /api/public/chapters?courseId=&isPublished=` */
 export async function getPublicChapters(
   courseId: string,
-  _query?: { isPublished?: boolean; limit?: number },
+  query?: { isPublished?: boolean; limit?: number },
 ): Promise<PublicChaptersResponse> {
-  if (!readUseMockApi()) {
-    throw new Error(
-      "Real API transport is not wired yet. Set NEXT_PUBLIC_USE_MOCK_API=true until Phase 9.",
-    );
+  const trimmed = courseId.trim();
+  const params = new URLSearchParams();
+  params.set("courseId", trimmed);
+  if (query?.isPublished !== undefined) {
+    params.set("isPublished", String(query.isPublished));
   }
-  await Promise.resolve();
+  if (query?.limit !== undefined) {
+    params.set("limit", String(query.limit));
+  }
+
+  const payload = await fetchJsonOrThrow<PublicChaptersResponse>(
+    `${API_ENDPOINTS.PUBLIC_CHAPTERS}?${params.toString()}`,
+  );
+
+  const chapters = payload?.data?.chapters;
+  if (!payload?.success || !Array.isArray(chapters)) {
+    throw new Error("Public chapters payload shape mismatch");
+  }
+
   return {
     success: true,
-    data: { chapters: getMockChaptersForCourse(courseId.trim()) },
+    data: { chapters },
   };
 }
 
-/** `GET /api/public/lessons?course=&isPublished=` */
+/** `GET /api/public/lessons?courseId=&isPublished=` */
 export async function getPublicLessons(
   courseId: string,
-  _query?: { isPublished?: boolean; limit?: number }
+  query?: { isPublished?: boolean; limit?: number },
 ): Promise<PublicLessonsResponse> {
-  if (!readUseMockApi()) {
-    throw new Error(
-      "Real API transport is not wired yet. Set NEXT_PUBLIC_USE_MOCK_API=true until Phase 9.",
-    );
+  const trimmed = courseId.trim();
+  const params = new URLSearchParams();
+  params.set("courseId", trimmed);
+  if (query?.isPublished !== undefined) {
+    params.set("isPublished", String(query.isPublished));
   }
-  await Promise.resolve();
+  if (query?.limit !== undefined) {
+    params.set("limit", String(query.limit));
+  }
+
+  const payload = await fetchJsonOrThrow<PublicLessonsResponse>(
+    `${API_ENDPOINTS.PUBLIC_LESSONS}?${params.toString()}`,
+  );
+
+  const lessons = payload?.data?.lessons;
+  if (!payload?.success || !Array.isArray(lessons)) {
+    throw new Error("Public lessons payload shape mismatch");
+  }
+
+  const normalizedLessons = lessons.map((lesson) => ({
+    ...lesson,
+    course: String(lesson.course),
+    chapter:
+      lesson.chapter && typeof lesson.chapter === "object"
+        ? String(lesson.chapter._id)
+        : String(lesson.chapter),
+  }));
+
   return {
     success: true,
-    data: { lessons: getMockLessonsForCourse(courseId.trim()) },
+    data: { lessons: normalizedLessons },
   };
 }
 
-/** `GET /api/public/faqs?course=` */
+/** `GET /api/public/faqs?courseId=` */
 export async function getPublicFaqs(
   courseId: string,
 ): Promise<PublicFaqsResponse> {
-  if (!readUseMockApi()) {
-    throw new Error(
-      "Real API transport is not wired yet. Set NEXT_PUBLIC_USE_MOCK_API=true until Phase 9.",
-    );
+  const trimmed = courseId.trim();
+  const payload = await fetchJsonOrThrow<PublicFaqsResponse>(
+    `${API_ENDPOINTS.PUBLIC_FAQS}?courseId=${encodeURIComponent(trimmed)}`,
+  );
+
+  const faqs = payload?.data?.faqs;
+  if (!payload?.success || !Array.isArray(faqs)) {
+    throw new Error("Public FAQs payload shape mismatch");
   }
-  await Promise.resolve();
+
   return {
     success: true,
-    data: { faqs: getMockFaqsForCourse(courseId.trim()) },
+    data: { faqs },
   };
 }

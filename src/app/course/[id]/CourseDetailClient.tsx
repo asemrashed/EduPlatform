@@ -5,31 +5,27 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import {
   addToCart,
-  fetchPublicCourses,
+  clearCourseDetail,
+  fetchCourseBundle,
   useAppDispatch,
   useAppSelector,
 } from "@/store";
-import type { Chapter } from "@/types/chapter";
-import type { CourseFaq } from "@/types/courseFaq";
-import type { Lesson } from "@/types/lesson";
+import CourseCurriculum from "./CourseCurriculum";
+import { Lesson } from "@/types/lesson";
 
 export function CourseDetailClient({ courseId }: { courseId: string }) {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const { status, error, publicList } = useAppSelector((s) => s.courses);
-  const chapters: Chapter[] = [];
-  const lessons: Lesson[] = [];
-  const faqs: CourseFaq[] = [];
+  const { status, error, course, chapters, lessons, faqs } = useAppSelector(
+    (s) => s.courseDetail,
+  );
 
   useEffect(() => {
-    // Load a large first page so direct /course/[id] opens with backend data.
-    dispatch(fetchPublicCourses({ page: 1, limit: 500 }));
-  }, [dispatch]);
-
-  const course = useMemo(
-    () => publicList.find((c) => c._id === courseId) ?? null,
-    [publicList, courseId],
-  );
+    dispatch(fetchCourseBundle(courseId));
+    return () => {
+      dispatch(clearCourseDetail());
+    };
+  }, [dispatch, courseId]);
 
   const lessonsByChapter = useMemo(() => {
     const map = new Map<string, typeof lessons>();
@@ -79,7 +75,7 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
           <button
             type="button"
             className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-on-primary"
-            onClick={() => dispatch(fetchPublicCourses({ page: 1, limit: 500 }))}
+            onClick={() => dispatch(fetchCourseBundle(courseId))}
           >
             Retry
           </button>
@@ -103,7 +99,7 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
       >
         <p className="font-semibold text-foreground">Course not found.</p>
         <p className="mt-2 text-sm text-muted-foreground">
-          This course may be outside the current public catalog page range.
+          This course may be unavailable right now.
         </p>
         <Link
           href="/courses"
@@ -139,30 +135,7 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
             </p>
           ) : (
             <div className="mt-6 space-y-8">
-              {chapters.map((ch) => (
-                <div key={ch._id}>
-                  <h3 className="text-lg font-bold text-primary">{ch.title}</h3>
-                  {ch.description ? (
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {ch.description}
-                    </p>
-                  ) : null}
-                  <ul className="mt-4 space-y-3 border-l-2 border-primary/30 pl-4">
-                    {(lessonsByChapter.get(ch._id) ?? []).map((lesson) => (
-                      <li
-                        key={lesson._id}
-                        className="flex flex-wrap items-center justify-between gap-2 text-sm"
-                      >
-                        <span className="text-foreground">{lesson.title}</span>
-                        <span className="text-muted-foreground">
-                          {lesson.duration ? `${lesson.duration} min` : ""}
-                          {lesson.isFree ? " · Preview" : ""}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+              <CourseCurriculum chapters={chapters} lessons={Array.from(lessonsByChapter.values()).flat() as Lesson[]} />
             </div>
           )}
         </section>
