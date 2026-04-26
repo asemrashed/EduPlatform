@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import {
   addToCart,
-  clearCourseDetail,
   fetchCourseBundle,
   useAppDispatch,
   useAppSelector,
 } from "@/store";
 import CourseCurriculum from "./CourseCurriculum";
 import { Lesson } from "@/types/lesson";
+import Image from "next/image";
 
 export function CourseDetailClient({ courseId }: { courseId: string }) {
   const dispatch = useAppDispatch();
@@ -19,12 +19,9 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
   const { status, error, course, chapters, lessons, faqs } = useAppSelector(
     (s) => s.courseDetail,
   );
-
+  console.log(course, "course");
   useEffect(() => {
     dispatch(fetchCourseBundle(courseId));
-    return () => {
-      dispatch(clearCourseDetail());
-    };
   }, [dispatch, courseId]);
 
   const lessonsByChapter = useMemo(() => {
@@ -135,7 +132,16 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
             </p>
           ) : (
             <div className="mt-6 space-y-8">
-              <CourseCurriculum chapters={chapters} lessons={Array.from(lessonsByChapter.values()).flat() as Lesson[]} />
+          {chapters.map((chapter) => {
+            return (
+              <CourseCurriculum
+                key={chapter._id}
+                chapter={chapter}
+                lessons={lessonsByChapter.get(chapter._id) ?? []}
+                courseId={courseId}
+              />
+            )
+            })}
             </div>
           )}
         </section>
@@ -159,7 +165,9 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
 
       <aside className="lg:col-span-4">
         <div className="sticky top-28 rounded-2xl border border-border bg-card p-6 shadow-editorial">
-          <div className="aspect-video rounded-xl bg-gradient-to-br from-primary/20 to-surface-container-high" />
+          <div className="relative h-56 overflow-hidden rounded-lg">
+            <Image src={course.thumbnailUrl as string} alt={course.title} width={600} height={300} className="object-cover" />
+          </div>
           <div className="mt-6 flex items-baseline justify-between gap-4">
             <span className="text-3xl font-black text-primary">
               {course.isPaid ? `৳${course.finalPrice}` : "Free"}

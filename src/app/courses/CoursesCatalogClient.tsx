@@ -112,7 +112,7 @@ function mapReduxToDisplay(c: PublicCourseRow): DisplayCard {
     badgeClass: "bg-primary text-on-primary",
     title: c.title,
     description: c.shortDescription ?? "",
-    price: c.isPaid ? `$${c.finalPrice ?? c.price ?? 0}` : "Free",
+    price: c.isPaid ? `৳${c.finalPrice ?? c.price ?? 0}` : "Free",
     lessons: `${c.lessonCount ?? 0}+ Lessons`,
     categoryId,
   };
