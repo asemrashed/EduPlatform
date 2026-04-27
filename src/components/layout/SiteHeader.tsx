@@ -32,7 +32,7 @@ export function SiteHeader() {
       ? "/admin/dashboard"
       : role === "instructor"
       ? "/instructor/dashboard"
-      : "/student/courses";
+      : "/student/dashboard";
 
   const avatarLabel =
     session?.user?.name?.trim().charAt(0).toUpperCase() || "U";
