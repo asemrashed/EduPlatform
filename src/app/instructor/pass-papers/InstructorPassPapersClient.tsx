@@ -58,8 +58,15 @@ export default function InstructorPassPapersPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setPassPapers(data.passPapers);
-        setPagination(data.pagination);
+        const passPapersData = data?.data?.passPapers ?? data?.passPapers ?? [];
+        const paginationData = data?.pagination ?? {
+          page: filters.page,
+          limit: filters.limit,
+          total: Array.isArray(passPapersData) ? passPapersData.length : 0,
+          pages: 1,
+        };
+        setPassPapers(Array.isArray(passPapersData) ? passPapersData : []);
+        setPagination(paginationData);
       } else {
         console.error('Failed to fetch pass papers:', data.error);
       }

@@ -4,17 +4,18 @@ import { PassPaper } from '@/types/pass-paper';
 import { LuFileText as LuFileText, LuCheck as CheckCircle, LuX as XCircle, LuBookOpen as BookOpen, LuAward as Award, LuUsers as Users } from 'react-icons/lu';;
 
 interface PassPaperStatsProps {
-  passPapers: PassPaper[];
+  passPapers?: PassPaper[];
   loading?: boolean;
 }
 
 const PassPaperStats = ({ passPapers, loading = false }: PassPaperStatsProps) => {
-  const activePapers = passPapers.filter(paper => paper.isActive).length;
-  const inactivePapers = passPapers.filter(paper => !paper.isActive).length;
-  const totalPapers = passPapers.length;
-  const questionPapers = passPapers.filter(paper => paper.questionPaperUrl).length;
-  const marksPdfs = passPapers.filter(paper => paper.marksPdfUrl).length;
-  const workSolutions = passPapers.filter(paper => paper.workSolutionUrl).length;
+  const safePassPapers = Array.isArray(passPapers) ? passPapers : [];
+  const activePapers = safePassPapers.filter(paper => paper.isActive).length;
+  const inactivePapers = safePassPapers.filter(paper => !paper.isActive).length;
+  const totalPapers = safePassPapers.length;
+  const questionPapers = safePassPapers.filter(paper => paper.questionPaperUrl).length;
+  const marksPdfs = safePassPapers.filter(paper => paper.marksPdfUrl).length;
+  const workSolutions = safePassPapers.filter(paper => paper.workSolutionUrl).length;
 
   const stats = [
     {
