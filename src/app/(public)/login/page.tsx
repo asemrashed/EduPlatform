@@ -47,7 +47,7 @@ export default function LoginPage() {
           ? "/admin/dashboard"
           : role === "instructor"
             ? "/instructor/dashboard"
-            : "/student/courses";
+            : "/student/dashboard";
 
       router.replace(redirectTo);
       router.refresh();

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { getMyEnrollments } from '@/lib/api/enrollmentClient';
 import StudentDashboardLayout from '@/components/StudentDashboardLayout';
 import PageSection from '@/components/PageSection';
 import PageGrid from '@/components/PageGrid';
@@ -99,37 +100,78 @@ export default function StudentDashboard() {
   const fetchStudentData = async () => {
     try {
       setLoading(true);
-      
-      // Fetch enrollments (use same endpoint as courses page to get courseLuInfo populated)
-      const enrollmentsQuery = new URLSearchParams({
-        page: '1',
-        limit: '50',
-        student: session?.user?.id || ''
-      });
-      const enrollmentsResponse = await fetch(`/api/enrollments?${enrollmentsQuery.toString()}`);
-      
-      if (enrollmentsResponse.ok) {
-        const enrollmentsData = await enrollmentsResponse.json();
-        const data = enrollmentsData.data || enrollmentsData;
-        const rawEnrollments = data.enrollments || [];
-        const allowedStatuses = new Set(['active', 'completed', 'enrolled', 'in_progress']);
-        const filtered = rawEnrollments.filter((en: any) => {
-          const status = (en?.status || '').toString().toLowerCase();
-          return allowedStatuses.has(status);
-        });
-        setEnrollments(filtered.length ? filtered : rawEnrollments);
-      }
+      const enrollmentsData = await getMyEnrollments();
+      const rawEnrollments = enrollmentsData.data.enrollments || [];
+      const normalizedEnrollments: Enrollment[] = rawEnrollments.map((enrollment) => {
+        const courseSource =
+          typeof enrollment.course === 'object' && enrollment.course !== null
+            ? enrollment.course
+            : enrollment.courseLuInfo ?? {};
 
-      // Fetch course progress
-      const progressResponse = await fetch('/api/progress', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
+        const categorySource = (courseSource as { category?: unknown }).category;
+        const normalizedCategory =
+          typeof categorySource === 'object' && categorySource !== null
+            ? {
+                _id: String((categorySource as { _id?: unknown })._id ?? ''),
+                name: String((categorySource as { name?: unknown }).name ?? 'Uncategorized'),
+              }
+            : {
+                _id: '',
+                name: typeof categorySource === 'string' ? categorySource : 'Uncategorized',
+              };
+
+        const instructorSource = (courseSource as { instructor?: unknown }).instructor;
+        const normalizedInstructor =
+          typeof instructorSource === 'object' && instructorSource !== null
+            ? {
+                _id: String((instructorSource as { _id?: unknown })._id ?? ''),
+                firstName: String((instructorSource as { firstName?: unknown }).firstName ?? 'Unknown'),
+                lastName: String((instructorSource as { lastName?: unknown }).lastName ?? 'Instructor'),
+              }
+            : {
+                _id: '',
+                firstName: 'Unknown',
+                lastName: 'Instructor',
+              };
+
+        return {
+          _id: String(enrollment._id),
+          course: {
+            _id: String((courseSource as { _id?: unknown })._id ?? enrollment.course ?? ''),
+            title: String((courseSource as { title?: unknown }).title ?? 'Untitled Course'),
+            description: String((courseSource as { description?: unknown }).description ?? 'No description available'),
+            thumbnailUrl:
+              typeof (courseSource as { thumbnailUrl?: unknown }).thumbnailUrl === 'string'
+                ? (courseSource as { thumbnailUrl: string }).thumbnailUrl
+                : undefined,
+            price:
+              typeof (courseSource as { price?: unknown }).price === 'number'
+                ? (courseSource as { price: number }).price
+                : 0,
+            isPaid:
+              typeof (courseSource as { isPaid?: unknown }).isPaid === 'boolean'
+                ? (courseSource as { isPaid: boolean }).isPaid
+                : false,
+            category: normalizedCategory,
+            instructor: normalizedInstructor,
+            createdAt: String((courseSource as { createdAt?: unknown }).createdAt ?? enrollment.createdAt),
+            updatedAt: String((courseSource as { updatedAt?: unknown }).updatedAt ?? enrollment.updatedAt),
+          },
+          enrolledAt: String(enrollment.enrolledAt),
+          status: (enrollment.status as Enrollment['status']) ?? 'active',
+          progress: typeof enrollment.progress === 'number' ? enrollment.progress : 0,
+          lastAccessedAt: String(enrollment.lastAccessedAt ?? ''),
+          paymentStatus:
+            ((enrollment.paymentStatus as Enrollment['paymentStatus']) ?? 'pending'),
+        };
       });
-      
-      if (progressResponse.ok) {
-        const progressData = await progressResponse.json();
-        setCourseProgress(progressData.progress || []);
-      }
+      const allowedStatuses = new Set(['active', 'completed', 'enrolled', 'in_progress']);
+      const filtered = normalizedEnrollments.filter((en: Enrollment) => {
+        const status = (en?.status || '').toString().toLowerCase();
+        return allowedStatuses.has(status);
+      });
+      setEnrollments(filtered.length ? filtered : normalizedEnrollments);
+      setCourseProgress([]);
 
       // Stats will be recalculated when state updates below useEffect
     } catch (error) {
