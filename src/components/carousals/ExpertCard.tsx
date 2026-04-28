@@ -12,7 +12,7 @@ type Expert = {
 
 export default function ExpertCard({ expert }: { expert: Expert }) {
   return (
-    <div className="group rounded-3xl bg-white p-4 shadow-sm transition-all duration-300 hover:shadow-md">
+    <div className="group my-2 rounded-3xl bg-white p-4 shadow-sm transition-all duration-300 hover:shadow-md">
       
       {/* Image */}
       <div className="relative mb-4 aspect-square w-full overflow-hidden rounded-2xl bg-gray-100">
@@ -33,7 +33,7 @@ export default function ExpertCard({ expert }: { expert: Expert }) {
           </h4>
 
           {/* Verified badge */}
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-white text-xs">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white text-xs">
             ✓
           </span>
         </div>

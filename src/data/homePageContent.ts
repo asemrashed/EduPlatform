@@ -209,6 +209,14 @@ export const HOME_TESTIMONIALS = [
   },
   {
     quote:
+      "The editorial quality of the video content is unlike any other platform. It feels like watching a high-end documentary about your future career.",
+    name: "Julianne Moore",
+    role: "Senior Product Manager",
+    avatar:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuDs-W6RydD8iN6HolJVDEHmeJ0oGuvh9Nr-nDoyGpHxDe5yxb07hgh1qizLK3v0FZuAWiZq8FmrkkMyikzcvd5_uZ4mTNPQCAzOSYPddUZM9HWGI8fQXPOP9Y7P_lJjIBaJtSVllTcffIuabP8VaEc7fSafeWcO0r6MCv5tMxdNNM176_QjZtIl8LTMw46e1mi0aMu5N9BodJnd0snjXjBdlgvALAGX8VgT_A9dyAISCDiWTgE7QRJk7x7thMvJnz2cEfUl2ustxa4",
+  },
+  {
+    quote:
       "The mentor network alone is worth the subscription. I secured my latest role through a connection made in the Lumina private forums.",
     name: "David Chen",
     role: "Security Engineer",
@@ -228,7 +236,7 @@ export const HOME_PARTNERS = [
 export const HOME_FAQ = [
   {
     q: "What types of courses do you offer?",
-    a: null,
+    a: `We offer a wide range of courses across various domains including technology, business, design, marketing, and more. Each course is designed to provide in-depth knowledge and practical skills to help you excel in your career.`,
   },
   {
     q: "How can I enroll?",
@@ -236,10 +244,10 @@ export const HOME_FAQ = [
   },
   {
     q: "Do I get a certificate upon completion?",
-    a: null,
+    a: `Yes, upon successful completion of a course, you will receive a certificate that you can download and share.`,
   },
   {
     q: "Is there a group discount for institutions?",
-    a: null,
+    a: `Yes, we offer special pricing for institutions and organizations looking to provide learning opportunities for their teams. Please contact our sales team for more information.`,
   },
 ] as const;

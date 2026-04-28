@@ -30,16 +30,16 @@ import {
   HOME_HERO,
   HOME_PARTNERS,
   HOME_STATS,
-  HOME_TESTIMONIALS,
 } from "@/data/homePageContent";
 import CourseCard from "../CourseCard";
 import ExpertsCarousel from "../carousals/ExpertsCarousel";
+import Testimonials from "./Testimonials";
+import FAQ from "./FAQ";
 
 
 export function HomePageClient() {
   const dispatch = useAppDispatch();
   const { publicList } = useAppSelector((s) => s.courses);
-  const [openFaq, setOpenFaq] = useState<number | null>(1);
 
   useEffect(() => {
     dispatch(fetchPublicCourses(undefined));
@@ -212,115 +212,10 @@ export function HomePageClient() {
       </section>
 
       {/* Experts */}
-      {/* <section className="px-8 py-24">
-        <div className="mx-auto mb-16 max-w-screen-2xl text-center">
-          <span className="mb-4 inline-block rounded-md bg-blue-50 px-3 py-1 text-xs font-bold uppercase tracking-widest text-blue-800">
-            Our Mentors
-          </span>
-          <h2 className="mb-4 font-[family-name:var(--font-headline)] text-5xl font-extrabold tracking-tight text-foreground">
-            Meet Our Expert Mentors
-          </h2>
-          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-            Learn from the best in the industry—our mentors bring years of
-            experience, knowledge, and passion to guide you on your learning journey.
-          </p>
-        </div>
-        <div className="mx-auto grid max-w-screen-2xl grid-cols-1 gap-6 px-4 sm:grid-cols-2 lg:grid-cols-4">
-          {HOME_EXPERTS.map((ex) => (
-            <div key={ex.name} className="group">
-              <div className="mb-4 aspect-[1/1.2] overflow-hidden rounded-3xl border border-outline-variant/30">
-                <div className="relative h-full w-full">
-                  <Image
-                    src={ex.image}
-                    alt={ex.name}
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    sizes="(max-width: 640px) 100vw, 25vw"
-                  />
-                </div>
-              </div>
-              <div className="px-2">
-                <h4 className="mb-0.5 text-xl font-extrabold text-foreground">
-                  {ex.name}
-                </h4>
-                <p className="mb-4 text-sm font-medium text-muted-foreground">
-                  {ex.role}
-                </p>
-                <div className="flex items-center">
-                  <span className="material-symbols-outlined cursor-pointer text-lg text-muted-foreground transition-colors hover:text-primary">
-                    public
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section> */}
       <ExpertsCarousel experts={HOME_EXPERTS} />
 
       {/* Testimonials */}
-      <section className="bg-gradient-to-br from-primary-container to-secondary-container px-8 py-24 text-on-primary">
-        <div className="mx-auto grid max-w-screen-2xl grid-cols-1 items-center gap-16 lg:grid-cols-12">
-          <div className="lg:col-span-4">
-            <h2 className="mb-6 font-[family-name:var(--font-headline)] text-5xl font-extrabold text-primary tracking-tight">
-              What Our Learners Are Saying
-            </h2>
-            <p className="mb-8 text-lg leading-relaxed text-primary/60">
-              Join a community of high-achievers who have transformed their careers
-              through EduPlatform.
-            </p>
-            <div className="flex gap-4">
-              <button
-                type="button"
-                className="flex h-12 w-12 items-center justify-center rounded-full border border-on-primary/30 transition-colors hover:bg-on-primary/10"
-                aria-label="Previous testimonial"
-              >
-                <span className="material-symbols-outlined">arrow_back</span>
-              </button>
-              <button
-                type="button"
-                className="flex h-12 w-12 items-center justify-center rounded-full border border-on-primary/30 text-on-primary transition-colors hover:bg-on-primary/10"
-                aria-label="Next testimonial"
-              >
-                <span className="material-symbols-outlined">arrow_forward</span>
-              </button>
-            </div>
-          </div>
-          <div className="lg:col-span-8 ">
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-              {HOME_TESTIMONIALS.map((t) => (
-                <div
-                  key={t.name}
-                  className="rounded-3xl border border-on-primary/20 bg-on-primary/10 p-8 backdrop-blur"
-                >
-                  <span
-                    className="material-symbols-outlined mb-6 text-4xl text-secondary"
-                    style={{ fontVariationSettings: "'FILL' 1" }}
-                  >
-                    format_quote
-                  </span>
-                  <p className="mb-8 text-xl italic leading-relaxed">{t.quote}</p>
-                  <div className="flex items-center gap-4">
-                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full">
-                      <Image
-                        src={t.avatar}
-                        alt={t.name}
-                        fill
-                        className="object-cover"
-                        sizes="48px"
-                      />
-                    </div>
-                    <div>
-                      <h5 className="font-bold">{t.name}</h5>
-                      <p className="text-sm text-on-primary/70">{t.role}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      <Testimonials />
 
       {/* Partners */}
       <section className="bg-surface px-8 py-20">
@@ -345,7 +240,7 @@ export function HomePageClient() {
       </section>
 
       {/* FAQ */}
-      <section className="mx-auto max-w-4xl px-8 py-24">
+      {/* <section className="mx-auto max-w-4xl px-8 py-24">
         <h2 className="mb-16 text-center font-[family-name:var(--font-headline)] text-4xl font-extrabold tracking-tight">
           Frequently Asked Questions
         </h2>
@@ -387,7 +282,8 @@ export function HomePageClient() {
             );
           })}
         </div>
-      </section>
+      </section> */}
+      <FAQ/>
     </div>
   );
 }
