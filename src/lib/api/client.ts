@@ -21,10 +21,6 @@ export const publicCoursesPath = API_ENDPOINTS.PUBLIC_COURSES;
 export const publicCourseDetailPath = (id: string) =>
   API_ENDPOINTS.publicCourse(id);
 
-export function readUseMockApi(): boolean {
-  return process.env.NEXT_PUBLIC_USE_MOCK_API !== "false";
-}
-
 /** Dev-only: force empty success body to verify empty-state UI (same contract shape). */
 export function readMockEmptyCatalog(): boolean {
   return process.env.NEXT_PUBLIC_MOCK_PUBLIC_COURSES_EMPTY === "true";
