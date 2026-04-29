@@ -24,6 +24,7 @@
 .env
 .env.example
 .env*.local
+.env.production
 
 # debug
 npm-debug.log*
