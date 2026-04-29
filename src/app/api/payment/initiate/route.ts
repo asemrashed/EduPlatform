@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as InitiateRequestBody;
     const courseIdRaw = body.courseId;
     const courseObjectId = asObjectId(courseIdRaw);
-    console.log("COURSE OBJECT ID:", courseObjectId);
+    // console.log("COURSE OBJECT ID:", courseObjectId);
     if (!courseObjectId) {
       return NextResponse.json(
         { success: false, error: "Invalid or missing courseId" },
@@ -78,13 +78,13 @@ export async function POST(request: NextRequest) {
     }
 
     await connectDB();
-    console.log("CONNECTED TO DATABASE");
+    // console.log("CONNECTED TO DATABASE");
     const course = await Course.findOne({
       _id: courseObjectId,
       status: "published",
       isHidden: { $ne: true },
     })
-      .select("_id isPaid price")
+      .select("_id isPaid price salePrice finalPrice")
       .lean();
     console.log("COURSE:", course);
     if (!course) {
@@ -93,9 +93,9 @@ export async function POST(request: NextRequest) {
         { status: 404 },
       );
     }
-
-    const amount = Number(course.price ?? 0);
-    console.log("AMOUNT:", amount);
+    console.log("Course Price:", course);
+    const amount = course.salePrice && course.salePrice < course.price ? course.salePrice : course.price;
+    // console.log("AMOUNT:", amount);
     if (!course.isPaid || !Number.isFinite(amount) || amount <= 0) {
       return NextResponse.json(
         { success: false, error: "Free course, no payment required" },
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
     }
 
     const tokenData = await getShurjopayToken();
-    console.log("TOKEN DATA:", tokenData);
+    // console.log("TOKEN DATA:", tokenData);
 
     const runAttempt = async (transactionId: string) => {
       const enrollment = await Enrollment.findOneAndUpdate(
@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
         courseId: String(courseObjectId),
         userId: String(userId),
       });
-      console.log("GATEWAY INIT:", gatewayInit);
+      // console.log("GATEWAY INIT:", gatewayInit);
       const safeGatewayResponse = {
         checkout_url: gatewayInit.checkout_url,
         sp_order_id: gatewayInit.sp_order_id,

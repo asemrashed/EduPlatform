@@ -12,7 +12,22 @@ import {
 export function CartPageClient() {
   const dispatch = useAppDispatch();
   const items = useAppSelector((s) => s.cart.items);
-
+  const handleCheckout = () => {
+    const checkout = async () => {
+      const response = await fetch("/api/payment/initiate", {
+        method: "POST",
+        body: JSON.stringify({ courseId: items[0].courseId }),
+      });
+      const data = await response.json();
+      console.log("DATA:", data);
+      if (data.success) {
+        window.location.href = data.data.checkout_url; 
+      } else {
+        alert(data.message);
+      }
+    };
+    checkout();
+  };
   const subtotal = items.reduce(
     (sum, line) => sum + line.finalPrice * line.quantity,
     0,
@@ -103,10 +118,10 @@ export function CartPageClient() {
         </p>
         <button
           type="button"
-          disabled
-          className="mt-6 w-full cursor-not-allowed rounded-xl bg-primary/50 py-3 font-bold text-on-primary"
+          onClick={handleCheckout}
+          className="mt-6 w-full rounded-lg cursor-pointer bg-gradient-to-br from-primary to-primary-container py-3.5 text-center font-bold text-on-primary shadow-lg shadow-blue-900/20 transition-transform active:scale-[0.99]"
         >
-          Checkout (coming soon)
+          Checkout
         </button>
       </aside>
     </div>

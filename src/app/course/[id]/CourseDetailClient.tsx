@@ -47,7 +47,7 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
         isPaid: course.isPaid,
       }),
     );
-    router.push("/cart");
+    // router.push("/cart");
   };
 
   if (status === "loading" || status === "idle") {
@@ -185,9 +185,6 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
           >
             {course.isPaid ? "Add to cart" : "Enroll free"}
           </button>
-          <p className="mt-4 text-center text-xs text-muted-foreground">
-            Checkout is mock-only until payment integration (Phase 10).
-          </p>
         </div>
       </aside>
     </div>

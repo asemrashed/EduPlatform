@@ -61,12 +61,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let generatedEmail = `${cleanPhone}@user.local`;
-    const existingEmail = await User.findOne({ email: generatedEmail });
-    if (existingEmail) {
-      generatedEmail = `${cleanPhone}_${Date.now()}@user.local`;
-    }
-
     const { firstName, lastName } = splitName(trimmedName);
     const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -74,7 +68,6 @@ export async function POST(request: NextRequest) {
       name: trimmedName,
       firstName,
       lastName,
-      email: generatedEmail.toLowerCase(),
       phone: cleanPhone,
       password: hashedPassword,
       role: "student",

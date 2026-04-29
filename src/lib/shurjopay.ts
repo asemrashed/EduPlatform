@@ -1,3 +1,6 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "./auth";
+
 type ShurjopayEnvironment = "sandbox" | "live";
 
 type ShurjopayTokenResponse = {
@@ -22,6 +25,7 @@ type ShurjopayInitiateResponse = {
 const PLACEHOLDER_RETURN_URL = process.env.SHURJOPAY_RETURN_URL || 'localhost:3000/payment/success';
 const PLACEHOLDER_CANCEL_URL = process.env.SHURJOPAY_CANCEL_URL || 'localhost:3000/payment/cancel';
 const PLACEHOLDER_CLIENT_IP = process.env.SHURJOPAY_CLIENT_IP || '127.0.0.1';
+const PLACEHOLDER_ORDER_PREFIX = process.env.SHURJOPAY_ORDER_PREFIX || 'NOK';
 
 function readEnvironment(): ShurjopayEnvironment {
   return process.env.SHURJOPAY_ENVIRONMENT === "live" ? "live" : "sandbox";
@@ -60,19 +64,19 @@ function readCredentials(): { username: string; password: string } {
 }
 
 function readClientIp(): string {
-  return process.env.SHURJOPAY_CLIENT_IP || PLACEHOLDER_CLIENT_IP;
+  return PLACEHOLDER_CLIENT_IP;
 }
 
 function readOrderPrefix(): string {
-  return process.env.SHURJOPAY_ORDER_PREFIX || "NOK";
+  return PLACEHOLDER_ORDER_PREFIX;
 }
 
 function readReturnUrl(): string {
-  return process.env.SHURJOPAY_RETURN_URL || PLACEHOLDER_RETURN_URL;
+  return PLACEHOLDER_RETURN_URL;
 }
 
 function readCancelUrl(): string {
-  return process.env.SHURJOPAY_CANCEL_URL || PLACEHOLDER_CANCEL_URL;
+  return PLACEHOLDER_CANCEL_URL;
 }
 
 async function parseJsonOrThrow(response: Response): Promise<unknown> {
@@ -110,7 +114,7 @@ export async function getShurjopayToken(): Promise<ShurjopayTokenResponse> {
     );
   }
 
-  console.log("TOKEN RESPONSE BODY:", payload); 
+  // console.log("TOKEN RESPONSE BODY:", payload); 
 
   // support both formats
   const token =
@@ -146,6 +150,8 @@ export async function initiateShurjopayPayment(
 ): Promise<ShurjopayInitiateResponse> {
   const baseUrl = readBaseUrl();
 
+  const session = await getServerSession(authOptions);
+  const user = session?.user;
   const response = await fetch(`${baseUrl}/api/secret-pay`, {
     method: "POST",
     headers: {
@@ -166,10 +172,10 @@ export async function initiateShurjopayPayment(
       value1: input.userId,
       value2: input.courseId,
       // For Testing
-      customer_name: "Test User",
-      customer_address: "Dhaka",
-      customer_phone: "01700000000",
-      customer_city: "Dhaka",
+      customer_name: user?.name || '',
+      customer_address: user?.email || '',
+      customer_phone: user?.id || '',
+      customer_city: user?.id || '',
     }),
     cache: "no-store",
   });
