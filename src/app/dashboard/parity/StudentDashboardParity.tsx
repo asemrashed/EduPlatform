@@ -35,6 +35,7 @@ import {
   LuUsers as Users,
   LuFileText as LuFileText,
 } from "react-icons/lu";
+import Header from "@/components/Header";
 
 interface Course {
   _id: string;
@@ -267,20 +268,18 @@ export function StudentDashboardParity({
   }
 
   return (
-    <main className="relative z-10 p-2 sm:p-4  w-full max-w-full">
+    <main className="relative z-10 p-2 sm:p-4 w-full max-w-full">
         {/* Welcome Section */}
+        <Header />
         <WelcomeSection 
           title={`Welcome back, ${userName || "Student"}! 👋`}
           description="Here's your learning progress and upcoming activities"
         />
 
         {/* Main Content Grid */}
-        <PageGrid 
-          columns={3} 
-          gap="md"
-        >
+        <PageGrid columns={3} gap="md" className="mt-4">
           {/* Left Column - KPI Cards and Charts */}
-          <div className="xl:col-span-2 flex flex-col space-y-2 sm:space-y-4 min-h-0">
+          <div className="lg:col-span-2 flex flex-col space-y-2 sm:space-y-4 min-h-0">
             <PageSection 
               title="Learning Overview"
               className="flex-shrink-0"
@@ -303,7 +302,7 @@ export function StudentDashboardParity({
           </div>
           
           {/* Right Column - Activities and Quick Actions */}
-          <div className="flex flex-col space-y-2 sm:space-y-4 min-h-0">
+          <div className="md:col-span-1 flex flex-col space-y-2 sm:space-y-4 min-h-0">
             <PageSection 
               title="Recent Activity"
               className="flex-shrink-0"

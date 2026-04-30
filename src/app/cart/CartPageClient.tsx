@@ -1,18 +1,45 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   clearCart,
   removeFromCart,
   setLineQuantity,
   useAppDispatch,
-  useAppSelector,
+  useAppSelector
 } from "@/store";
 
 export function CartPageClient() {
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const items = useAppSelector((s) => s.cart.items);
+  const authUser = useAppSelector((s) => s.auth.user);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<"success" | "error">("success");
+
+  const showToast = (message: string, type: "success" | "error" = "error") => {
+    setToastMessage(message);
+    setToastType(type);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+  const user = authUser?.firstName || authUser?.email || "User";
+  console.log('user', user);
   const handleCheckout = () => {
+    // Check if user is logged in
+    if (!authUser) {
+      alert("Please login to checkout");
+      router.push("/login");
+      return;
+    }
+
+    // Check if user is a student
+    if (authUser.role !== "student") {
+      showToast("Only students can enroll in courses", "error");
+      return;
+    }
+
     const checkout = async () => {
       const response = await fetch("/api/payment/initiate", {
         method: "POST",
@@ -23,7 +50,7 @@ export function CartPageClient() {
       if (data.success) {
         window.location.href = data.data.checkout_url; 
       } else {
-        alert(data.message);
+        alert("Failed to initiate checkout. Please try again.");
       }
     };
     checkout();
@@ -111,7 +138,7 @@ export function CartPageClient() {
       </div>
       <aside className="rounded-2xl border border-border bg-surface-container-low p-6">
         <p className="text-sm font-medium text-muted-foreground">Subtotal</p>
-        <p className="mt-2 text-3xl font-black text-foreground">৳{subtotal}</p>
+        <p className="mt-2 text-3xl font-black text-foreground">৳{Math.floor(subtotal)}</p>
         <p className="mt-4 text-xs text-muted-foreground">
           Payment integration is out of scope for Phase 3; this confirms Redux cart
           state only.
@@ -124,6 +151,33 @@ export function CartPageClient() {
           Checkout
         </button>
       </aside>
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-20 right-4 z-50 animate-fade-in-up">
+          <div className={`${
+            toastType === "error" 
+              ? 'bg-red-500' 
+              : 'bg-green-500'
+          } text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2`}>
+            {toastType === "error" ? (
+              <>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 8V12M12 16H12.01" strokeLinecap="round" />
+                </svg>
+                <span className="font-medium">{toastMessage}</span>
+              </>
+            ) : (
+              <>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span className="font-medium">{toastMessage}</span>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

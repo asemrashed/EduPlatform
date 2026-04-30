@@ -10,6 +10,8 @@ import {
   getDashboardSidebarNavForPath,
   type SidebarNavCategory,
 } from "./dashboardSidebarNav";
+import Image from "next/image";
+import { signOut } from "next-auth/react";
 
 function getUserInitials(name: string) {
   return name
@@ -420,9 +422,11 @@ export function DashboardSidebar() {
         <header className="rounded-b-2xl border-b border-gray-700 bg-gray-900 transition-all z-5 duration-300 sticky top-0">
           <div className="flex items-center gap-3 px-4 py-4">
             {user?.avatar ? (
-              <img
+              <Image
                 src={user.avatar}
                 alt={displayName}
+                width={40}
+                height={40}
                 className="size-10 shrink-0 rounded-lg object-cover"
               />
             ) : (
@@ -464,6 +468,10 @@ export function DashboardSidebar() {
                 </div>
               </Link>
               <Link
+                onClick={(e) => {
+                  e.preventDefault();
+                  signOut({ callbackUrl: "/login" });
+                }}
                 href="/login"
                 className="group relative flex cursor-pointer rounded-lg px-3 py-3 text-red-400 transition-all duration-200 hover:bg-red-900/20 hover:text-red-300"
               >
@@ -476,8 +484,11 @@ export function DashboardSidebar() {
               </Link>
             </div>
           ) : (
-            <Link
-              href="/login"
+            <div
+                onClick={(e) => {
+                  e.preventDefault();
+                  signOut({ callbackUrl: "/login" });
+                }}
               className="group relative flex cursor-pointer rounded-lg px-3 py-3 text-red-400 transition-all duration-200 hover:bg-red-900/20 hover:text-red-300"
             >
               <div className="flex items-center gap-3">
@@ -486,7 +497,7 @@ export function DashboardSidebar() {
                 </div>
                 <span className="text-sm font-medium">Logout</span>
               </div>
-            </Link>
+            </div>
           )}
         </div>
       </footer>

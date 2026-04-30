@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import {
   addToCart,
@@ -10,16 +9,15 @@ import {
   useAppSelector,
 } from "@/store";
 import CourseCurriculum from "./CourseCurriculum";
-import { Lesson } from "@/types/lesson";
 import Image from "next/image";
+import CourseFAQ from "./CourseFAQ";
 
 export function CourseDetailClient({ courseId }: { courseId: string }) {
   const dispatch = useAppDispatch();
-  const router = useRouter();
   const { status, error, course, chapters, lessons, faqs } = useAppSelector(
     (s) => s.courseDetail,
   );
-  console.log(course, "course");
+  
   useEffect(() => {
     dispatch(fetchCourseBundle(courseId));
   }, [dispatch, courseId]);
@@ -132,16 +130,17 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
             </p>
           ) : (
             <div className="mt-6 space-y-8">
-          {chapters.map((chapter) => {
+          {chapters.map((chapter, index) => {
             return (
               <CourseCurriculum
                 key={chapter._id}
                 chapter={chapter}
                 lessons={lessonsByChapter.get(chapter._id) ?? []}
                 courseId={courseId}
+                isFirst={index === 0} 
               />
-            )
-            })}
+            );
+          })}
             </div>
           )}
         </section>
@@ -152,11 +151,8 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
               FAQ
             </h2>
             <dl className="mt-6 space-y-6">
-              {faqs.map((f) => (
-                <div key={f._id}>
-                  <dt className="font-semibold text-foreground">{f.question}</dt>
-                  <dd className="mt-2 text-muted-foreground">{f.answer}</dd>
-                </div>
+              {faqs.map((f,i) => (
+                <CourseFAQ key={i} q={f.question} a={f.answer} courseId={courseId} />
               ))}
             </dl>
           </section>
@@ -181,7 +177,7 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
           <button
             type="button"
             onClick={handleAddToCart}
-            className="mt-6 w-full rounded-xl bg-gradient-to-br from-primary to-primary-container py-3.5 text-center font-bold text-on-primary shadow-lg shadow-blue-900/20 transition-transform active:scale-[0.99]"
+            className="mt-6 w-full rounded-xl cursor-pointer bg-gradient-to-br from-primary to-primary-container py-3.5 text-center font-bold text-on-primary shadow-lg shadow-blue-900/20 transition-transform active:scale-[0.99]"
           >
             {course.isPaid ? "Add to cart" : "Enroll free"}
           </button>

@@ -17,6 +17,7 @@ import {
   LuDollarSign as DollarSign,
 } from "react-icons/lu";
 import type { AdminDashboardApiPayload } from "@/types/dashboard";
+import Header from "@/components/Header";
 
 export interface AdminDashboardParityProps {
   dashboardData: AdminDashboardApiPayload | null;

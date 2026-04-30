@@ -338,7 +338,7 @@ export default function StudentDashboard() {
           gap="md"
         >
           {/* Left Column - KPI Cards and Charts */}
-          <div className="xl:col-span-2 flex flex-col space-y-2 sm:space-y-4 min-h-0">
+          <div className="lg:col-span-2 flex flex-col space-y-2 sm:space-y-4 min-h-0">
             <PageSection 
               title="Learning Overview"
               className="flex-shrink-0"
@@ -473,7 +473,7 @@ export default function StudentDashboard() {
                       <div className="flex-1 min-w-0">
                         <button
                           onClick={() => courseId && router.push(`/student/courses/${courseId}`)}
-                          className="text-left w-full hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors duration-200 group cursor-pointer"
+                          className="text-left max-w-80 hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors duration-200 group cursor-pointer"
                           title="Continue Learning"
                         >
                           <h3 className="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors duration-200">

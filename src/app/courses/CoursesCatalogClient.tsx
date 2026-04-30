@@ -12,7 +12,6 @@
  */
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { fetchPublicCourses, useAppDispatch, useAppSelector } from "@/store";
 import type { PublicCourseRow } from "@/mock/publicCourses";
