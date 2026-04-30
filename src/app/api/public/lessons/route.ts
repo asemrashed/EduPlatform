@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import connectDB from "@/lib/mongodb";
 import Course from "@/models/Course";
 import Lesson from "@/models/Lesson";
-import Chapter from "@/models/Chapter";
+import "@/models/Chapter";
 
 export async function GET(request: NextRequest) {
   try {
