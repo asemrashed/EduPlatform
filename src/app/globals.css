@@ -127,3 +127,13 @@ h4 {
 .material-symbols-filled {
   font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
 }
+
+/* ─── Scrollbar utilities ─────────────────────────────────────────────────── */
+/* Hides the scrollbar track on all browsers while keeping scroll behaviour.   */
+.scrollbar-hide {
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE / old Edge */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;               /* Chrome / Safari / Opera */
+}
