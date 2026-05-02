@@ -5,54 +5,11 @@ import connectDB from "@/lib/mongodb";
 import Payment from "@/models/Payment";
 import Course from "@/models/Course";
 import Enrollment from "@/models/Enrollment";
-import { verifyShurjopayPayment } from "@/lib/shurjopay";
+import { verifyPayment } from "@/lib/paymentGateway/sslcommerz";
 
 type VerifyRequestBody = {
   transactionId?: string;
 };
-
-type VerificationRecord = {
-  sp_code?: number | string;
-  bank_status?: string;
-  amount?: number | string;
-  currency?: string;
-  sp_message?: string;
-  sp_massage?: string;
-  transaction_status?: string;
-  date_time?: string;
-  [key: string]: unknown;
-};
-
-function getPrimaryVerificationRecord(payload: unknown): VerificationRecord {
-  if (Array.isArray(payload) && payload.length > 0) {
-    const first = payload[0];
-    if (first && typeof first === "object") {
-      return first as VerificationRecord;
-    }
-  }
-  if (payload && typeof payload === "object") {
-    return payload as VerificationRecord;
-  }
-  return {};
-}
-
-function toSpCodeNumber(value: unknown): number {
-  if (typeof value === "number") return value;
-  if (typeof value === "string") return Number(value);
-  return NaN;
-}
-
-function safeVerifyGatewayResponse(record: VerificationRecord) {
-  return {
-    sp_code: record.sp_code ?? null,
-    bank_status: record.bank_status ?? null,
-    amount: record.amount ?? null,
-    currency: record.currency ?? null,
-    transaction_status: record.transaction_status ?? null,
-    date_time: record.date_time ?? null,
-    sp_message: record.sp_message ?? record.sp_massage ?? null,
-  };
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -78,7 +35,7 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const payment = await Payment.findOne({ transactionId }).select(
-      "_id user course enrollment status spOrderId transactionId",
+      "_id user course enrollment status gatewayOrderId spOrderId transactionId",
     );
     if (!payment) {
       return NextResponse.json(
@@ -127,13 +84,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const verificationPayload = await verifyShurjopayPayment(payment.spOrderId);
-    const verificationRecord = getPrimaryVerificationRecord(verificationPayload);
-    const spCode = toSpCodeNumber(verificationRecord.sp_code);
-    const verified = spCode === 1000;
-    const safeGatewayResponse = safeVerifyGatewayResponse(verificationRecord);
+    const gatewayOrderId =
+      typeof payment.gatewayOrderId === "string" &&
+      payment.gatewayOrderId.trim()
+        ? payment.gatewayOrderId
+        : typeof payment.spOrderId === "string" && payment.spOrderId.trim()
+          ? payment.spOrderId
+          : payment.transactionId;
 
-    if (verified) {
+    const verificationResult = await verifyPayment(gatewayOrderId);
+    const safeGatewayResponse = verificationResult.raw;
+
+    if (verificationResult.success) {
       await Payment.findByIdAndUpdate(payment._id, {
         $set: {
           status: "success",

@@ -6,7 +6,9 @@ export interface IPayment extends Document {
   enrollment: mongoose.Types.ObjectId;
   amount: number;
   transactionId: string;
-  spOrderId: string;
+  gateway: "sslcommerz" | "shurjopay";
+  gatewayOrderId: string;
+  spOrderId?: string;
   status: "pending" | "success" | "failed";
   gatewayResponse?: unknown;
   createdAt: Date;
@@ -41,9 +43,19 @@ const PaymentSchema = new Schema<IPayment>(
       unique: true,
       trim: true,
     },
-    spOrderId: {
+    gateway: {
+      type: String,
+      enum: ["sslcommerz", "shurjopay"],
+      default: "sslcommerz",
+      required: true,
+    },
+    gatewayOrderId: {
       type: String,
       required: true,
+      trim: true,
+    },
+    spOrderId: {
+      type: String,
       trim: true,
     },
     status: {

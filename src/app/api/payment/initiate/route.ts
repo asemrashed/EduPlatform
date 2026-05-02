@@ -6,10 +6,7 @@ import connectDB from "@/lib/mongodb";
 import Course from "@/models/Course";
 import Enrollment from "@/models/Enrollment";
 import Payment from "@/models/Payment";
-import {
-  getShurjopayToken,
-  initiateShurjopayPayment,
-} from "@/lib/shurjopay";
+import { initiatePayment } from "@/lib/paymentGateway/sslcommerz";
 
 const REUSE_WINDOW_MS = 30 * 60 * 1000;
 
@@ -155,9 +152,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const tokenData = await getShurjopayToken();
-    // console.log("TOKEN DATA:", tokenData);
-
     const runAttempt = async (transactionId: string) => {
       const enrollment = await Enrollment.findOneAndUpdate(
         {
@@ -179,18 +173,19 @@ export async function POST(request: NextRequest) {
         },
       );
 
-      const gatewayInit = await initiateShurjopayPayment({
-        token: tokenData.token,
-        store_id: tokenData.store_id,
-        transactionId,
+      const gatewayInit = await initiatePayment({
         amount,
-        courseId: String(courseObjectId),
-        userId: String(userId),
+        tran_id: transactionId,
+        cus_name: session?.user?.name || "Customer",
+        cus_email: session?.user?.email || "customer@example.com",
+        cus_phone: String(userId).slice(-11) || "01700000000",
+        cus_add1: "N/A",
+        cus_city: "Dhaka",
       });
       // console.log("GATEWAY INIT:", gatewayInit);
       const safeGatewayResponse = {
         checkout_url: gatewayInit.checkout_url,
-        sp_order_id: gatewayInit.sp_order_id,
+        gatewayOrderId: gatewayInit.gatewayOrderId,
         transactionId,
         amount,
         courseId: String(courseObjectId),
@@ -203,7 +198,8 @@ export async function POST(request: NextRequest) {
         enrollment: enrollment._id,
         amount,
         transactionId,
-        spOrderId: gatewayInit.sp_order_id,
+        gateway: "sslcommerz",
+        gatewayOrderId: gatewayInit.gatewayOrderId,
         status: "pending",
         gatewayResponse: safeGatewayResponse,
       });
