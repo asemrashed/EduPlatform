@@ -65,7 +65,7 @@ const StudentDashboardLayout = ({ children }: StudentDashboardLayoutProps) => {
           </div>
 
           {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/10 to-blue-50/10 pointer-events-none"></div>
+          <div className="absolute inset-0 bg-linear-to-br from-transparent via-green-50/10 to-blue-50/10 pointer-events-none"></div>
           
           {children}
         </div>

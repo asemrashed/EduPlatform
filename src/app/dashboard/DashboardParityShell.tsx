@@ -27,10 +27,10 @@ export function DashboardParityShell({
       <div
         className={`pointer-events-none absolute inset-0 ${
           role === "student"
-            ? "bg-gradient-to-br from-transparent via-green-500/10 to-blue-500/10"
+            ? "bg-linear-to-br from-transparent via-green-500/10 to-blue-500/10"
             : role === "instructor"
-              ? "bg-gradient-to-br from-transparent via-purple-500/10 to-indigo-500/10"
-              : "bg-gradient-to-br from-transparent via-pink-500/15 to-purple-500/10"
+              ? "bg-linear-to-br from-transparent via-purple-500/10 to-indigo-500/10"
+              : "bg-linear-to-br from-transparent via-pink-500/15 to-purple-500/10"
         }`}
       />
       <div className="relative z-10">{children}</div>

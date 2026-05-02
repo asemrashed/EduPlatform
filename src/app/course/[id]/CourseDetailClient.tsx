@@ -112,15 +112,15 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
         <p className="text-sm font-semibold uppercase tracking-wider text-secondary">
           {course.difficulty ?? "Course"}
         </p>
-        <h1 className="mt-2 font-[family-name:var(--font-headline)] text-4xl font-extrabold tracking-tight text-foreground md:text-5xl">
+        <h1 className="mt-2 font-headline text-4xl font-extrabold tracking-tight text-foreground md:text-5xl">
           {course.title}
         </h1>
         <p className="mt-4 text-lg text-muted-foreground">
           {course.shortDescription}
         </p>
-
+  {/* CURRICULUM sections */}
         <section className="mt-12">
-          <h2 className="font-[family-name:var(--font-headline)] text-2xl font-bold text-foreground">
+          <h2 className="font-headline text-2xl font-bold text-foreground">
             Curriculum
           </h2>
           {chapters.length === 0 ? (
@@ -145,9 +145,10 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
           )}
         </section>
 
+{/* FAQ sections */}
         {faqs.length > 0 ? (
           <section className="mt-16">
-            <h2 className="font-[family-name:var(--font-headline)] text-2xl font-bold text-foreground">
+            <h2 className="font-headline text-2xl font-bold text-foreground">
               FAQ
             </h2>
             <dl className="mt-6 space-y-6">

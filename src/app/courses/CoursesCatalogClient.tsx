@@ -40,6 +40,12 @@ type DisplayCard = {
   categoryId: CatalogCategoryId;
 };
 
+type Category = {
+  id: CatalogCategoryId;
+  label: string;
+  count: number;
+}
+
 function inferCategoryFromCourse(c: PublicCourseRow): CatalogCategoryId {
   const t = (
     c.title +
@@ -177,7 +183,7 @@ export function CoursesCatalogClient() {
         if (!payload?.success || rows.length === 0) return;
 
         const dynamicRows: CatalogSidebarItem[] = rows
-          .map((row: any) => {
+          .map((row: Category) => {
             const id = normalizeCategoryId(String(row?.id || ""));
             const label = String(row?.label || "").trim();
             const count = Number.isFinite(Number(row?.count))
@@ -234,7 +240,7 @@ export function CoursesCatalogClient() {
     return (
       <div className="pt-20" role="status" aria-busy="true">
         <p className="sr-only">Loading courses</p>
-        <div className="h-[400px] animate-pulse bg-primary/30" />
+        <div className="h-100 animate-pulse bg-primary/30" />
         <div className="mx-auto max-w-screen-2xl px-8 py-20">
           <div className="h-96 animate-pulse rounded-xl bg-muted" />
         </div>
@@ -246,7 +252,7 @@ export function CoursesCatalogClient() {
     return (
       <div className="mx-auto max-w-screen-2xl px-8 py-20">
         <div
-          className="rounded-xl border border-destructive/40 bg-gradient-to-br from-primary/20 to-primary-container"
+          className="rounded-xl border border-destructive/40 bg-linear-to-br from-primary/20 to-primary-container"
           role="alert"
         >
           <p className="font-semibold">Could not load courses</p>
@@ -266,7 +272,7 @@ export function CoursesCatalogClient() {
   return (
     <div className="text-foreground">
       {/* Hero — AllCourse.html */}
-      <section className="relative flex h-[400px] items-center overflow-hidden bg-primary">
+      <section className="relative flex h-100 items-center overflow-hidden bg-primary">
         <div className="absolute inset-0 z-0">
           <Image
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuA49z5j8dNSWa9xyciQauqnApJ20f5WiqAAFt1WC0qJnfhMUz2PJC4u1-22QUWy7ne00W-7hNpWway3iinbaoTxzGVBdugweY_nGDoBhF9xnkL1QPXKw4AlJGLV35u6rQx1eW8GM9DaUFs5Zbl81chOkgg2lD0Fbct348O1Tyr3jCw1xpW7NDWRVmnI2cxsDNVGAeYALh7qYZ3FGBDKOoso9_EjggIWuvXSzy2uRtrm3XaWNlqGjaMQvFd3YkTCU4iLY_xewch068Y"
@@ -276,14 +282,14 @@ export function CoursesCatalogClient() {
             sizes="100vw"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary-container"/>
+          <div className="absolute inset-0 bg-linear-to-br from-primary/10 to-primary-container"/>
         </div>
         <div className="relative z-10 mx-auto w-full max-w-screen-2xl px-8">
           <div className="max-w-2xl">
-            <span className="mb-4 block font-[family-name:var(--font-headline)] text-sm font-bold uppercase tracking-[0.2em] text-primary-container">
+            <span className="mb-4 block Font-headline text-sm font-bold uppercase tracking-[0.2em] text-primary-container">
               Curated Knowledge
             </span>
-            <h1 className="font-[family-name:var(--font-headline)] text-6xl font-black leading-[1.1] tracking-tight text-white md:text-7xl">
+            <h1 className="font-headline text-6xl font-black leading-[1.1] tracking-tight text-white md:text-7xl">
               All Courses
             </h1>
             <p className="mt-6 max-w-lg font-body text-lg leading-relaxed text-on-primary-container opacity-90">
@@ -299,7 +305,7 @@ export function CoursesCatalogClient() {
         <aside className="w-full shrink-0 md:w-64">
           <div className="sticky top-28 space-y-10">
             <div>
-              <h3 className="mb-6 font-[family-name:var(--font-headline)] text-xs font-black uppercase tracking-[0.2em] text-outline">
+              <h3 className="mb-6 font-headline text-xs font-black uppercase tracking-[0.2em] text-outline">
                 Filter by Category
               </h3>
               <ul className="space-y-1">
@@ -406,7 +412,7 @@ export function CoursesCatalogClient() {
               )}
             >
               {pageRows.map((c, i) => 
-                <CourseCard key={i} course={c as any} index={i} />
+                <CourseCard key={i} course={c as DisplayCard} index={i} />
               )}
             </ul>
           )}

@@ -341,7 +341,7 @@ export default function StudentDashboard() {
           <div className="lg:col-span-2 flex flex-col space-y-2 sm:space-y-4 min-h-0">
             <PageSection 
               title="Learning Overview"
-              className="flex-shrink-0"
+              className="shrink-0"
             >
               <StudentKPICards 
                 totalEnrollments={stats.totalEnrollments}
@@ -364,7 +364,7 @@ export default function StudentDashboard() {
           <div className="flex flex-col space-y-2 sm:space-y-4 min-h-0">
             <PageSection 
               title="Recent Activity"
-              className="flex-shrink-0"
+              className="shrink-0"
             >
               <StudentActivities activities={stats.recentActivity} />
             </PageSection>
@@ -453,10 +453,10 @@ export default function StudentDashboard() {
                   const thumbnailUrl = c?.thumbnailUrl || '';
                   return (
                     <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0">
+                      <div className="shrink-0">
                         <button
                           onClick={() => courseId && router.push(`/student/courses/${courseId}`)}
-                          className="w-12 h-12 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg flex items-center justify-center hover:from-blue-100 hover:to-purple-100 transition-all duration-200 cursor-pointer group overflow-hidden"
+                          className="w-12 h-12 bg-linear-to-br from-blue-50 to-purple-50 rounded-lg flex items-center justify-center hover:from-blue-100 hover:to-purple-100 transition-all duration-200 cursor-pointer group overflow-hidden"
                           title="Continue Learning"
                         >
                           {thumbnailUrl ? (
@@ -527,7 +527,7 @@ export default function StudentDashboard() {
                       <Button 
                         size="sm" 
                         onClick={() => courseId && router.push(`/student/courses/${courseId}`)}
-                        className="gap-1 px-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm hover:from-indigo-600 hover:to-purple-600 focus:ring-2 focus:ring-blue-200 transition-colors rounded-md cursor-pointer"
+                        className="gap-1 px-3 bg-linear-to-r from-blue-600 to-indigo-600 text-white shadow-sm hover:from-indigo-600 hover:to-purple-600 focus:ring-2 focus:ring-blue-200 transition-colors rounded-md cursor-pointer"
                       >
                         <PlayCircle className="w-4 h-4" />
                         <span className="hidden sm:inline">Continue</span>
@@ -562,7 +562,7 @@ export default function StudentDashboard() {
         >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {goals.map((g) => (
-              <div key={g.key} className={`p-4 bg-gradient-to-br ${g.cardClass} rounded-lg border`}>
+              <div key={g.key} className={`p-4 bg-linear-to-br ${g.cardClass} rounded-lg border`}>
                 <h4 className={`font-semibold ${g.titleClass} mb-2 flex items-center gap-2`}>
                   <g.Icon className="h-4 w-4" />
                   {g.title}
@@ -575,7 +575,7 @@ export default function StudentDashboard() {
                 </div>
                 <div className={`w-full ${g.barBgClass} rounded-full h-2`}>
                   <div
-                    className={`bg-gradient-to-r ${g.barFillClass} h-2 rounded-full transition-all duration-300`}
+                    className={`bg-linear-to-r ${g.barFillClass} h-2 rounded-full transition-all duration-300`}
                     style={{ width: `${g.percent}%` }}
                   ></div>
                 </div>

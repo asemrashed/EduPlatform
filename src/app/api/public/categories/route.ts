@@ -8,6 +8,11 @@ type SidebarCategory = {
   label: string;
   count: number;
 };
+type Category = {
+  _id: string;
+  name: string;
+  slug: string;
+};
 
 function toSlug(value: string) {
   return value
@@ -28,7 +33,7 @@ export async function GET() {
       .lean();
 
     const data: SidebarCategory[] = await Promise.all(
-      categories.map(async (category: any) => {
+      categories.map(async (category: Category) => {
         const idFromDb = String(category.slug || "").trim();
         const fallbackSlug = toSlug(String(category.name || ""));
         const categoryId = idFromDb || fallbackSlug || String(category._id);

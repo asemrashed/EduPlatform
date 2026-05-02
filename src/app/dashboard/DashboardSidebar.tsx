@@ -90,7 +90,7 @@ function Badge({
   if (role === "admin") {
     return (
       <span
-        className="ml-2 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-2 py-0.5 text-xs font-medium text-white"
+        className="ml-2 flex h-5 min-w-5 items-center justify-center rounded-full px-2 py-0.5 text-xs font-medium text-white"
         style={{
           background: "linear-gradient(135deg, #EC4899 0%, #A855F7 100%)",
         }}
@@ -109,7 +109,7 @@ function Badge({
           : "bg-green-600";
   return (
     <span
-      className={`ml-2 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-2 py-0.5 text-xs font-medium text-white ${cls}`}
+      className={`ml-2 flex h-5 min-w-5 items-center justify-center rounded-full px-2 py-0.5 text-xs font-medium text-white ${cls}`}
     >
       {value}
     </span>
@@ -141,7 +141,7 @@ function NavCategories({
                 <>
                   <div className="flex w-full items-center gap-3">
                     <div
-                      className={`flex h-5 w-5 flex-shrink-0 items-center justify-center transition-colors duration-200 ${c.icon}`}
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center transition-colors duration-200 ${c.icon}`}
                     >
                       <item.icon className="h-5 w-5" />
                     </div>
@@ -224,7 +224,7 @@ function AdminNavCategories({
                 <>
                   <div className="flex w-full items-center gap-3">
                     <div
-                      className="flex h-5 w-5 flex-shrink-0 items-center justify-center transition-colors duration-200"
+                      className="flex h-5 w-5 shrink-0 items-center justify-center transition-colors duration-200"
                       style={{ color: active ? "#EC4899" : "#9CA3AF" }}
                     >
                       <item.icon className="h-5 w-5" />
@@ -312,6 +312,9 @@ export function DashboardSidebar() {
     () => getDashboardSidebarNavForPath(role, pathname),
     [role, pathname],
   );
+  const handleLogOut = () => {
+    signOut({ callbackUrl: "/login" });
+  }
 
   const displayName = user
     ? `${user.firstName} ${user.lastName}`.trim() || user.email
@@ -326,7 +329,7 @@ export function DashboardSidebar() {
   if (role === "admin") {
     return (
       <aside
-        className="relative fixed top-0 left-0 h-screen w-full shrink-0 flex-col overflow-y-auto border-b transition-all duration-300 ease-in-out sm:w-80 sm:border-b-0"
+        className="relative top-0 left-0 h-screen w-full shrink-0 flex-col overflow-y-auto border-b transition-all duration-300 ease-in-out sm:w-80 sm:border-b-0"
         style={{
           backgroundColor: "#FFFFFF",
           borderColor: "rgba(123, 44, 191, 0.2)",
@@ -341,7 +344,7 @@ export function DashboardSidebar() {
         >
           <div className="space-y-3 px-4 py-4">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded bg-gradient-to-br from-purple-500 to-pink-500 text-sm font-bold text-white">
+              <div className="flex h-9 w-9 items-center justify-center rounded bg-linear-to-br from-purple-500 to-pink-500 text-sm font-bold text-white">
               <Link href={'/'}>E</Link>
               </div>
               <span
@@ -371,7 +374,7 @@ export function DashboardSidebar() {
             >
               <div className="flex items-center gap-3">
                 <div
-                  className="flex h-5 w-5 flex-shrink-0 items-center justify-center"
+                  className="flex h-5 w-5 shrink-0 items-center justify-center"
                   style={{ color: "#9CA3AF" }}
                 >
                   <LuSettings className="h-5 w-5" />
@@ -381,18 +384,18 @@ export function DashboardSidebar() {
                 </span>
               </div>
             </Link>
-            <Link
-              href="/login"
-              className="group relative block rounded-lg px-3 py-3 transition-all duration-200"
+            <li
+              onClick={() => handleLogOut()}
+              className="group relative block rounded-lg px-3 py-3 transition-all duration-200 cursor-pointer hover:bg-red-900/20 hover:text-red-300"
               style={{ color: "#EF4444" }}
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center text-red-500">
+                <div className="flex h-5 w-5 shrink-0 items-center justify-center text-red-500">
                   <LuLogOut className="h-5 w-5" />
                 </div>
                 <span className="text-sm font-medium">Logout</span>
               </div>
-            </Link>
+            </li>
           </div>
         </footer>
       </aside>
@@ -461,7 +464,7 @@ export function DashboardSidebar() {
                 className="group relative flex cursor-pointer rounded-lg px-3 py-3 text-gray-300 transition-all duration-200 hover:bg-gray-800 hover:text-white"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center text-gray-400 group-hover:text-gray-300">
+                  <div className="flex h-5 w-5 shrink-0 items-center justify-center text-gray-400 group-hover:text-gray-300">
                     <LuSettings className="h-5 w-5" />
                   </div>
                   <span className="text-sm font-medium">Settings</span>
@@ -476,7 +479,7 @@ export function DashboardSidebar() {
                 className="group relative flex cursor-pointer rounded-lg px-3 py-3 text-red-400 transition-all duration-200 hover:bg-red-900/20 hover:text-red-300"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center text-red-400 group-hover:text-red-300">
+                  <div className="flex h-5 w-5 shrink-0 items-center justify-center text-red-400 group-hover:text-red-300">
                     <LuLogOut className="h-5 w-5" />
                   </div>
                   <span className="text-sm font-medium">Logout</span>
@@ -492,7 +495,7 @@ export function DashboardSidebar() {
               className="group relative flex cursor-pointer rounded-lg px-3 py-3 text-red-400 transition-all duration-200 hover:bg-red-900/20 hover:text-red-300"
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center text-red-400 group-hover:text-red-300">
+                <div className="flex h-5 w-5 shrink-0 items-center justify-center text-red-400 group-hover:text-red-300">
                   <LuLogOut className="h-5 w-5" />
                 </div>
                 <span className="text-sm font-medium">Logout</span>

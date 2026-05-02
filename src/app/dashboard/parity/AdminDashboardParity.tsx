@@ -17,7 +17,7 @@ import {
   LuDollarSign as DollarSign,
 } from "react-icons/lu";
 import type { AdminDashboardApiPayload } from "@/types/dashboard";
-import Header from "@/components/Header";
+// import Header from "@/components/Header";
 
 export interface AdminDashboardParityProps {
   dashboardData: AdminDashboardApiPayload | null;
@@ -153,7 +153,7 @@ export function AdminDashboardParity({
           <div className="flex flex-col space-y-2 sm:space-y-4 min-h-0">
             <PageSection 
               title="Top Performers"
-              className="flex-shrink-0"
+              className="shrink-0"
             >
               <Leaderboard 
                 data={dashboardData?.leaderboard || []} 

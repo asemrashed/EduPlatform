@@ -305,7 +305,7 @@ export function StudentDashboardParity({
           <div className="md:col-span-1 flex flex-col space-y-2 sm:space-y-4 min-h-0">
             <PageSection 
               title="Recent Activity"
-              className="flex-shrink-0"
+              className="shrink-0"
             >
               <StudentActivities activities={stats.recentActivity} />
             </PageSection>

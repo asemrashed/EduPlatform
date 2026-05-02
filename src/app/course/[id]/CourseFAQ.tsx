@@ -12,6 +12,7 @@ type Props = {
   q: string;
   a: string;
     isFirst?: boolean; 
+    courseId?: string;
 };
 
 export default function CourseFAQ({
