@@ -5,11 +5,23 @@ import connectDB from "@/lib/mongodb";
 import Payment from "@/models/Payment";
 import Course from "@/models/Course";
 import Enrollment from "@/models/Enrollment";
-import { verifyPayment } from "@/lib/paymentGateway/sslcommerz";
+import {
+  getValidationAmount,
+  getValidationRecord,
+  getValidationTranId,
+  verifyPayment,
+} from "@/lib/paymentGateway/sslcommerz";
 
-type VerifyRequestBody = {
+type ValidateRequestBody = {
   transactionId?: string;
+  tranId?: string;
+  valId?: string;
+  sessionLuKey?: string;
 };
+
+function amountsMatch(paid: number, expected: number): boolean {
+  return Math.abs(paid - expected) < 0.01;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,9 +34,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = (await request.json()) as VerifyRequestBody;
+    const body = (await request.json()) as ValidateRequestBody;
     const transactionId =
-      typeof body.transactionId === "string" ? body.transactionId.trim() : "";
+      typeof body.transactionId === "string" && body.transactionId.trim()
+        ? body.transactionId.trim()
+        : typeof body.tranId === "string" && body.tranId.trim()
+          ? body.tranId.trim()
+          : "";
+
     if (!transactionId) {
       return NextResponse.json(
         { success: false, error: "transactionId is required" },
@@ -35,8 +52,9 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const payment = await Payment.findOne({ transactionId }).select(
-      "_id user course enrollment status gatewayOrderId transactionId",
+      "_id user course enrollment status gatewayOrderId transactionId amount createdAt",
     );
+
     if (!payment) {
       return NextResponse.json(
         { success: false, error: "Payment not found" },
@@ -48,24 +66,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: "Forbidden" },
         { status: 403 },
-      );
-    }
-
-    if (payment.status === "success") {
-      return NextResponse.json({
-        success: true,
-        message: "Already verified",
-        enrolled: true,
-      });
-    }
-
-    if (payment.status === "failed") {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Payment failed. Please initiate a new payment.",
-        },
-        { status: 400 },
       );
     }
 
@@ -85,19 +85,25 @@ export async function POST(request: NextRequest) {
     }
 
     const gatewayOrderId =
-      typeof payment.gatewayOrderId === "string" &&
-      payment.gatewayOrderId.trim()
+      typeof payment.gatewayOrderId === "string" && payment.gatewayOrderId.trim()
         ? payment.gatewayOrderId
         : payment.transactionId;
 
     const verificationResult = await verifyPayment(gatewayOrderId);
-    const safeGatewayResponse = verificationResult.raw;
+    const record = getValidationRecord(verificationResult.raw);
+    const validatedTranId = getValidationTranId(record);
+    const validatedAmount = getValidationAmount(record);
+    const tranIdMatches =
+      validatedTranId !== "" && validatedTranId === gatewayOrderId;
+    const amountMatches =
+      Number.isFinite(validatedAmount) &&
+      amountsMatch(validatedAmount, Number(payment.amount));
 
-    if (verificationResult.success) {
+    if (verificationResult.success && tranIdMatches && amountMatches) {
       await Payment.findByIdAndUpdate(payment._id, {
         $set: {
           status: "success",
-          gatewayResponse: safeGatewayResponse,
+          gatewayResponse: verificationResult.raw,
         },
       });
 
@@ -117,7 +123,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         data: {
-          enrolled: true,
+          status: "success",
+          transactionId: payment.transactionId,
+          amount: String(payment.amount),
+          currency: "BDT",
+          paymentDate: new Date(payment.createdAt).toISOString(),
+          enrollment: {
+            id: String(payment.enrollment),
+            status: "active",
+            paymentStatus: "paid",
+          },
           courseId: String(payment.course),
         },
       });
@@ -126,17 +141,17 @@ export async function POST(request: NextRequest) {
     await Payment.findByIdAndUpdate(payment._id, {
       $set: {
         status: "failed",
-        gatewayResponse: safeGatewayResponse,
+        gatewayResponse: verificationResult.raw,
       },
     });
 
     return NextResponse.json({
       success: false,
-      message: "Payment verification failed",
+      error: "Payment validation failed",
     });
   } catch {
     return NextResponse.json(
-      { success: false, error: "Failed to verify payment" },
+      { success: false, error: "Failed to validate payment" },
       { status: 500 },
     );
   }

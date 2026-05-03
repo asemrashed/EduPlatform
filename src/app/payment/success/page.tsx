@@ -1,41 +1,42 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LuCheck as CheckCircle, LuArrowRight as ArrowRight, LuBookOpen as BookOpen, LuShare2 as Share2 } from 'react-icons/lu';;
 
 function PaymentSuccessContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
+  const [verified, setVerified] = useState(false);
 
   useEffect(() => {
-    const handleRedirect = () => {
-      // Check if we have transaction parameters in the URL
+    const handleVerification = async () => {
       const tranId = searchParams.get('tran_id');
-      const valId = searchParams.get('val_id');
-      
       if (tranId && tranId !== 'null' && tranId !== 'undefined' && tranId.trim() !== '') {
-        // Redirect to the dynamic route with transaction ID
-        router.replace(`/payment/success/${tranId}`);
+        try {
+          const response = await fetch('/api/payment/validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tranId }),
+          });
+          const result = await response.json();
+          setVerified(Boolean(result?.success));
+        } catch {
+          setVerified(false);
+        } finally {
+          setLoading(false);
+        }
         return;
       }
-      
-      if (valId && valId !== 'null' && valId !== 'undefined' && valId.trim() !== '') {
-        // If we have val_id but no tran_id, we can still show success
-        router.replace(`/payment/success/${valId}`);
-        return;
-      }
-      
-      // If no transaction ID, show generic success
+
       setLoading(false);
     };
 
-    handleRedirect();
-  }, [searchParams, router]);
+    handleVerification();
+  }, [searchParams]);
 
   if (loading) {
     return (
@@ -83,7 +84,9 @@ function PaymentSuccessContent() {
                 <span className="text-green-800 font-medium">Payment Processed Successfully</span>
               </div>
               <p className="text-green-700 text-sm mt-1">
-                Your payment has been processed and your course enrollment is now active.
+                {verified
+                  ? 'Your payment has been verified and your course enrollment is now active.'
+                  : 'We are processing your payment verification. Please check your courses shortly.'}
               </p>
             </div>
 

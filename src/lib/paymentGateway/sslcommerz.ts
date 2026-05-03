@@ -18,6 +18,8 @@ type VerifyPaymentResult = {
   raw: unknown;
 };
 
+export type SSLValidationRecord = Record<string, unknown>;
+
 function readEnv(...keys: string[]): string {
   for (const key of keys) {
     const value = process.env[key];
@@ -161,20 +163,31 @@ function asRecord(raw: unknown): Record<string, unknown> {
   return {};
 }
 
-function isSuccessfulValidation(raw: unknown): boolean {
-  const record = asRecord(raw);
-  const status =
-    typeof record.status === "string" ? record.status.toUpperCase() : "";
-  const apiConnect =
-    typeof record.APIConnect === "string"
-      ? record.APIConnect.toUpperCase()
-      : "";
+export function getValidationRecord(raw: unknown): SSLValidationRecord {
+  return asRecord(raw);
+}
 
-  return (
-    status === "VALID" ||
-    status === "VALIDATED" ||
-    (apiConnect === "DONE" && status === "" && record.tran_id !== undefined)
-  );
+export function getValidationStatus(record: SSLValidationRecord): string {
+  const status =
+    typeof record.status === "string" ? record.status : "";
+  return status.toUpperCase();
+}
+
+export function isSuccessfulValidation(raw: unknown): boolean {
+  const record = getValidationRecord(raw);
+  const status = getValidationStatus(record);
+  return status === "VALID" || status === "VALIDATED";
+}
+
+export function getValidationTranId(record: SSLValidationRecord): string {
+  if (typeof record.tran_id === "string") return record.tran_id.trim();
+  return "";
+}
+
+export function getValidationAmount(record: SSLValidationRecord): number {
+  if (typeof record.amount === "number") return record.amount;
+  if (typeof record.amount === "string") return Number(record.amount);
+  return Number.NaN;
 }
 
 export async function verifyPayment(tran_id: string): Promise<VerifyPaymentResult> {
