@@ -351,7 +351,8 @@ export function DashboardSidebar() {
         ? "Teacher"
         : "Admin";
 
-  const initials = getUserInitials(displayName);
+  const displayLabel = displayName ?? "User";
+  const initials = getUserInitials(displayLabel);
 
   if (role === "admin") {
     return (
@@ -463,7 +464,7 @@ export function DashboardSidebar() {
             {user?.avatar ? (
               <Image
                 src={user.avatar}
-                alt={displayName}
+                alt={displayLabel}
                 width={40}
                 height={40}
                 className="size-10 shrink-0 rounded-lg object-cover"
@@ -475,7 +476,7 @@ export function DashboardSidebar() {
             )}
             <div className="grid min-w-0 flex-1 text-left group-data-[collapsible=icon]:hidden">
               <span className="truncate text-lg font-bold text-white">
-                {user ? displayName : "Teacher"}
+                {user ? displayLabel : "Teacher"}
               </span>
               <span className="hidden truncate text-sm text-gray-300 sm:block">
                 Teacher
