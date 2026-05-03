@@ -15,7 +15,7 @@ const StudentDashboardLayout = ({ children }: StudentDashboardLayoutProps) => {
     <SidebarProvider>
       {/* <StudentSidebar /> */}
       <SidebarInset className="flex flex-col min-h-svh h-svh overflow-hidden bg-background">
-        <Header />
+        {/* <Header /> */}
         <div className="flex-1 relative overflow-y-auto overflow-x-hidden pb-16 lg:pb-0 bg-background">
           {/* Mathematical Symbols Background */}
           <div className="absolute inset-0 opacity-10">

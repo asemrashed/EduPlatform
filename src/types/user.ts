@@ -5,7 +5,8 @@ export interface User {
   id?: string;
   /** Display name for session-style UIs. */
   name?: string;
-  email: string;
+  phone?: string;
+  email?: string;
   firstName: string;
   lastName: string;
   role: "admin" | "instructor" | "student";

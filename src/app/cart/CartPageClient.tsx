@@ -24,7 +24,7 @@ export function CartPageClient() {
     setToastType(type);
     setTimeout(() => setToastMessage(null), 3000);
   };
-  const user = authUser?.firstName || authUser?.email || "User";
+  const user = authUser?.firstName || authUser?.name || "User";
   console.log('user', user);
   const handleCheckout = () => {
     // Check if user is logged in
@@ -35,7 +35,7 @@ export function CartPageClient() {
     }
 
     // Check if user is a student
-    if (authUser.role !== "student") {
+    if (authUser?.role !== "student") {
       showToast("Only students can enroll in courses", "error");
       return;
     }
@@ -90,7 +90,7 @@ export function CartPageClient() {
             <div>
               <Link
                 href={`/course/${line.courseId}`}
-                className="font-[family-name:var(--font-headline)] text-lg font-bold text-primary hover:underline"
+                className="font-headline text-lg font-bold text-primary hover:underline"
               >
                 {line.title}
               </Link>
@@ -146,7 +146,7 @@ export function CartPageClient() {
         <button
           type="button"
           onClick={handleCheckout}
-          className="mt-6 w-full rounded-lg cursor-pointer bg-gradient-to-br from-primary to-primary-container py-3.5 text-center font-bold text-on-primary shadow-lg shadow-blue-900/20 transition-transform active:scale-[0.99]"
+          className="mt-6 w-full rounded-lg cursor-pointer bg-linear-to-br from-primary to-primary-container py-3.5 text-center font-bold text-on-primary shadow-lg shadow-blue-900/20 transition-transform active:scale-[0.99]"
         >
           Checkout
         </button>

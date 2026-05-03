@@ -24,7 +24,7 @@ function isDuplicateKeyError(error: unknown): boolean {
 }
 
 function makeTransactionId(userId: string, withSuffix = false): string {
-  const prefix = process.env.SHURJOPAY_ORDER_PREFIX || "NOK";
+  const prefix = process.env.PAYMENT_ORDER_PREFIX || "NOK";
   const base = `${prefix}-${Date.now()}-${String(userId).slice(-6)}`;
   if (!withSuffix) return base;
   const suffix = Math.floor(100 + Math.random() * 900);

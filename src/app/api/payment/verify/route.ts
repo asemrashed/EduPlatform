@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const payment = await Payment.findOne({ transactionId }).select(
-      "_id user course enrollment status gatewayOrderId spOrderId transactionId",
+      "_id user course enrollment status gatewayOrderId transactionId",
     );
     if (!payment) {
       return NextResponse.json(
@@ -88,9 +88,7 @@ export async function POST(request: NextRequest) {
       typeof payment.gatewayOrderId === "string" &&
       payment.gatewayOrderId.trim()
         ? payment.gatewayOrderId
-        : typeof payment.spOrderId === "string" && payment.spOrderId.trim()
-          ? payment.spOrderId
-          : payment.transactionId;
+        : payment.transactionId;
 
     const verificationResult = await verifyPayment(gatewayOrderId);
     const safeGatewayResponse = verificationResult.raw;

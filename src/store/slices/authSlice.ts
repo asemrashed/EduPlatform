@@ -23,7 +23,7 @@ export interface AuthState {
 function withSessionFields(u: User): User {
   const display =
     u.name ??
-    (`${u.firstName ?? ""} ${u.lastName ?? ""}`.trim() || u.email);
+    (`${u.firstName ?? ""} ${u.lastName ?? ""}`.trim());
   return {
     ...u,
     id: u.id ?? u._id,
@@ -45,7 +45,7 @@ export const checkAuthStatus = createAsyncThunk(
     try {
       const session = await getSession();
       const sessionUser = session?.user;
-      if (!sessionUser?.email) return null;
+      if (!sessionUser?.name) return null;
 
       const names = (sessionUser.name || "").trim().split(/\s+/).filter(Boolean);
       const firstName = names[0] || "User";
@@ -60,10 +60,9 @@ export const checkAuthStatus = createAsyncThunk(
       }
 
       const user: User = {
-        _id: sessionUser.id ?? sessionUser.email,
+        _id: sessionUser.id ?? sessionUser.name ?? "unknown",
         id: sessionUser.id,
         name: sessionUser.name ?? `${firstName} ${lastName}`.trim(),
-        email: sessionUser.email,
         firstName,
         lastName,
         role: sessionRole,
