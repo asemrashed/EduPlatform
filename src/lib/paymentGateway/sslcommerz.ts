@@ -94,6 +94,10 @@ function readCancelUrl(): string {
   );
 }
 
+function readIpnUrl(): string {
+  return requireEnv("SSL IPN URL", "SSL_IPN_URL", "SSLCOMMERZ_IPN_URL");
+}
+
 async function parseJsonOrThrow(response: Response): Promise<unknown> {
   const text = await response.text();
   if (!text) return {};
@@ -120,8 +124,9 @@ export async function initiatePayment(
     success_url: readSuccessUrl(),
     fail_url: readFailUrl(),
     cancel_url: readCancelUrl(),
+    ipn_url: readIpnUrl(),
     cus_name: input.cus_name,
-    cus_email: input.cus_email,
+    cus_email: 'codezynesoft@gmail.com', // input.cus_email, --- IGNORE ---
     cus_phone: input.cus_phone,
     cus_add1: input.cus_add1,
     cus_city: input.cus_city,
@@ -147,9 +152,26 @@ export async function initiatePayment(
     throw new Error(`SSLCommerz initiate failed with status ${response.status}`);
   }
 
-  const checkoutUrl = payload.GatewayPageURL;
+  const checkoutUrlRaw =
+    payload.GatewayPageURL ??
+    payload.gatewayPageURL ??
+    payload.redirectGatewayURL ??
+    payload.directPaymentURL;
+  const checkoutUrl =
+    typeof checkoutUrlRaw === "string" ? checkoutUrlRaw.trim() : "";
+
   if (typeof checkoutUrl !== "string" || !checkoutUrl.trim()) {
-    throw new Error("SSLCommerz initiate response missing GatewayPageURL");
+    const status =
+      typeof payload.status === "string" ? payload.status : "UNKNOWN";
+    const failedReason =
+      typeof payload.failedreason === "string"
+        ? payload.failedreason
+        : typeof payload.failed_reason === "string"
+          ? payload.failed_reason
+          : "No failure reason provided";
+    throw new Error(
+      `SSLCommerz initiate failed: status=${status}, reason=${failedReason}`,
+    );
   }
 
   return {
