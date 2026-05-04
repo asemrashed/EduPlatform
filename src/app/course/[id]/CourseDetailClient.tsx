@@ -11,9 +11,13 @@ import {
 import CourseCurriculum from "./CourseCurriculum";
 import Image from "next/image";
 import CourseFAQ from "./CourseFAQ";
+import PrimaryActionBtn from "@/components/ui/buttons/PrimaryActionBtn";
+import PrimaryOutLineBtn from "@/components/ui/buttons/PrimaryOutLineBtn";
+import { useCheckout } from "@/hooks/useCheckout";
 
 export function CourseDetailClient({ courseId }: { courseId: string }) {
   const dispatch = useAppDispatch();
+  const { handleCheckout } = useCheckout();
   const { status, error, course, chapters, lessons, faqs } = useAppSelector(
     (s) => s.courseDetail,
   );
@@ -166,8 +170,9 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
             <Image src={course.thumbnailUrl as string} alt={course.title} width={600} height={300} className="object-cover" />
           </div>
           <div className="mt-6 flex items-baseline justify-between gap-4">
-            <span className="text-3xl font-black text-primary">
-              {course.isPaid ? `৳${course.finalPrice}` : "Free"}
+            <span className="text-2xl md:text-3xl font-black text-primary">
+              <span className='text-3xl md:text-4xl mr-1'>৳</span>
+              {course.isPaid ? `${course.finalPrice}` : "Free"}
             </span>
             {course.enrollmentCount ? (
               <span className="text-sm text-muted-foreground">
@@ -175,13 +180,8 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
               </span>
             ) : null}
           </div>
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            className="mt-6 w-full rounded-xl cursor-pointer bg-gradient-to-br from-primary to-primary-container py-3.5 text-center font-bold text-on-primary shadow-lg shadow-blue-900/20 transition-transform active:scale-[0.99]"
-          >
-            {course.isPaid ? "Add to cart" : "Enroll free"}
-          </button>
+          <PrimaryOutLineBtn value="Enroll Now" handleBtn={handleCheckout} />
+          <PrimaryActionBtn value={course.isPaid ? "Add to Cart" : "Enroll Now"} handleBtn={handleAddToCart} />
         </div>
       </aside>
     </div>

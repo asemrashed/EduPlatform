@@ -117,7 +117,7 @@ function mapReduxToDisplay(c: PublicCourseRow): DisplayCard {
     badgeClass: "bg-primary text-on-primary",
     title: c.title,
     description: c.shortDescription ?? "",
-    price: c.isPaid ? `৳${c.finalPrice ?? c.price ?? 0}` : "Free",
+    price: c.isPaid ? `${c.finalPrice ?? c.price ?? 0}` : "Free",
     lessons: `${c.lessonCount ?? 0}+ Lessons`,
     categoryId,
   };
@@ -360,10 +360,10 @@ export function CoursesCatalogClient() {
               <h2 className="font-[family-name:var(--font-headline)] text-4xl font-black tracking-tight text-foreground">
                 Curated Courses
               </h2>
-              <p className="mt-2 font-medium text-muted-foreground">
+              {/* <p className="mt-2 font-medium text-muted-foreground">
                 Showing {showingFrom}-{showingTo} of {filtered.length} courses
                 {useMockApi ? " · mock catalog" : ""}
-              </p>
+              </p> */}
             </div>
             <div className="hidden items-center gap-4 rounded-full bg-surface-container-low p-1.5 md:flex">
               <button
@@ -412,7 +412,7 @@ export function CoursesCatalogClient() {
               )}
             >
               {pageRows.map((c, i) => 
-                <CourseCard key={i} course={c as DisplayCard} index={i} />
+                <CourseCard key={i} course={c as DisplayCard} index={i} list={view === 'list' && true} />
               )}
             </ul>
           )}
