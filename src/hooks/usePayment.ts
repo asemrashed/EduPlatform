@@ -1,16 +1,15 @@
 import { useState, useCallback } from 'react';
 
 interface PaymentInitiateRequest {
-  courseId: string;
+  courseId?: string;
+  courseIds?: string[];
   studentId?: string;
 }
 
 interface PaymentInitiateResponse {
   success: boolean;
   data?: {
-    sessionKey: string;
-    gatewayUrl: string;
-    redirectUrl: string;
+    checkout_url: string;
     transactionId: string;
   };
   error?: string;
@@ -68,7 +67,7 @@ export const usePayment = () => {
       }
 
       return { success: true, data: result.data };
-    } catch (error) {
+    } catch {
       const errorMessage = 'Failed to initiate payment';
       setError(errorMessage);
       return { success: false, error: errorMessage };
@@ -99,7 +98,7 @@ export const usePayment = () => {
       }
 
       return { success: true, data: result.data };
-    } catch (error) {
+    } catch {
       const errorMessage = 'Failed to validate payment';
       setError(errorMessage);
       return { success: false, error: errorMessage };
@@ -109,8 +108,8 @@ export const usePayment = () => {
   }, []);
 
   // Redirect to payment gateway
-  const redirectToPayment = useCallback((gatewayUrl: string) => {
-    window.location.href = gatewayUrl;
+  const redirectToPayment = useCallback((checkoutUrl: string) => {
+    window.location.href = checkoutUrl;
   }, []);
 
   // Clear error state

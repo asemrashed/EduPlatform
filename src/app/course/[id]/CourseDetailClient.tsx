@@ -180,7 +180,7 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
               </span>
             ) : null}
           </div>
-          <PrimaryOutLineBtn value="Enroll Now" handleBtn={handleCheckout} />
+          <PrimaryOutLineBtn value="Enroll Now" handleBtn={() => handleCheckout(course._id)} />
           <PrimaryActionBtn value={course.isPaid ? "Add to Cart" : "Enroll Now"} handleBtn={handleAddToCart} />
         </div>
       </aside>

@@ -107,10 +107,11 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      await Enrollment.findOneAndUpdate(
+      await Enrollment.updateMany(
         {
-          _id: payment.enrollment,
-          status: { $ne: "active" },
+          student: userId,
+          paymentId: payment.transactionId,
+          paymentStatus: "pending",
         },
         {
           $set: {

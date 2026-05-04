@@ -5,13 +5,20 @@ import { useState } from "react";
 import { useAppSelector } from "@/store";
 import { usePayment } from "./usePayment";
 
+type CheckoutInput =
+  | string
+  | {
+      courseId?: string;
+      courseIds?: string[];
+    };
+
 export const useCheckout = () => {
   const router = useRouter();
   const authUser = useAppSelector((s) => s.auth.user);
-  // Remove dependency on cart items here to make it more flexible
+  const cartItems = useAppSelector((s) => s.cart.items);
   
   // Use the tools already built into usePayment
-  const { initiatePayment, loading, error: paymentError } = usePayment();
+  const { initiatePayment, loading } = usePayment();
 
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
@@ -20,31 +27,45 @@ export const useCheckout = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleCheckout = async (courseId?: string) => {
-    // 1. Auth Guard
+  const handleCheckout = async (input?: CheckoutInput) => {
     if (!authUser) {
       alert("Please login to checkout");
       router.push("/login");
       return;
     }
 
-    // 2. Role Guard
     if (authUser?.role !== "student") {
       showToast("Only students can enroll in courses", "error");
       return;
     }
 
-    // 3. ID Validation (Check argument OR fallback to cart)
-    if (!courseId) {
+    const explicitCourseId = typeof input === "string" ? input : input?.courseId;
+    const explicitCourseIds =
+      typeof input === "string" ? [] : (input?.courseIds ?? []);
+
+    const sourceIds =
+      explicitCourseIds.length > 0
+        ? explicitCourseIds
+        : explicitCourseId
+          ? [explicitCourseId]
+          : cartItems.map((item) => item.courseId);
+
+    const courseIds = Array.from(new Set(sourceIds.filter(Boolean)));
+
+    if (courseIds.length === 0) {
       showToast("No course selected", "error");
       return;
     }
 
-    // 4. Use your existing hook logic!
-    const result = await initiatePayment({ courseId });
+    const payload =
+      courseIds.length === 1
+        ? { courseId: courseIds[0] }
+        : { courseIds };
 
-    if (result.success && result.data?.gatewayUrl) {
-      window.location.href = result.data.gatewayUrl; 
+    const result = await initiatePayment(payload);
+
+    if (result.success && result.data?.checkout_url) {
+      window.location.href = result.data.checkout_url;
     } else {
       showToast(result.error || "Checkout failed", "error");
     }

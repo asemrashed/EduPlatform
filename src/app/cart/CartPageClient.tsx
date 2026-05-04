@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 import {
   clearCart,
   removeFromCart,
@@ -10,55 +8,17 @@ import {
   useAppDispatch,
   useAppSelector
 } from "@/store";
+import { useCheckout } from "@/hooks/useCheckout";
 
 export function CartPageClient() {
   const dispatch = useAppDispatch();
-  const router = useRouter();
   const items = useAppSelector((s) => s.cart.items);
-  const authUser = useAppSelector((s) => s.auth.user);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [toastType, setToastType] = useState<"success" | "error">("success");
-
-  const showToast = (message: string, type: "success" | "error" = "error") => {
-    setToastMessage(message);
-    setToastType(type);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
-  const user = authUser?.firstName || authUser?.name || "User";
-  console.log('user', user);
-  const handleCheckout = () => {
-    // Check if user is logged in
-    if (!authUser) {
-      alert("Please login to checkout");
-      router.push("/login");
-      return;
-    }
-
-    // Check if user is a student
-    if (authUser?.role !== "student") {
-      showToast("Only students can enroll in courses", "error");
-      return;
-    }
-
-    const checkout = async () => {
-      const response = await fetch("/api/payment/initiate", {
-        method: "POST",
-        body: JSON.stringify({ courseId: items[0].courseId }),
-      });
-      const data = await response.json();
-      console.log("DATA:", data);
-      if (data.success) {
-        window.location.href = data.data.checkout_url; 
-      } else {
-        alert("Failed to initiate checkout. Please try again.");
-      }
-    };
-    checkout();
-  };
+  const { handleCheckout, isPending, toastMessage, toastType } = useCheckout();
   const subtotal = items.reduce(
     (sum, line) => sum + line.finalPrice * line.quantity,
     0,
   );
+  console.log("Cart items:", items); // Debug log for cart items
 
   if (items.length === 0) {
     return (
@@ -140,15 +100,15 @@ export function CartPageClient() {
         <p className="text-sm font-medium text-muted-foreground">Subtotal</p>
         <p className="mt-2 text-3xl font-black text-foreground">৳{Math.floor(subtotal)}</p>
         <p className="mt-4 text-xs text-muted-foreground">
-          Payment integration is out of scope for Phase 3; this confirms Redux cart
-          state only.
+          Secure checkout is powered by SSLCommerz.
         </p>
         <button
           type="button"
-          onClick={handleCheckout}
+          onClick={() => handleCheckout()}
+          disabled={isPending}
           className="mt-6 w-full rounded-lg cursor-pointer bg-linear-to-br from-primary to-primary-container py-3.5 text-center font-bold text-on-primary shadow-lg shadow-blue-900/20 transition-transform active:scale-[0.99]"
         >
-          Checkout
+          {isPending ? "Processing..." : "Checkout"}
         </button>
       </aside>
       {/* Toast Notification */}

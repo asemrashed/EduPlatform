@@ -12,6 +12,7 @@ const REUSE_WINDOW_MS = 30 * 60 * 1000;
 
 type InitiateRequestBody = {
   courseId?: string;
+  courseIds?: string[];
 };
 
 function isDuplicateKeyError(error: unknown): boolean {
@@ -64,60 +65,94 @@ export async function POST(request: NextRequest) {
     }
 
     const body = (await request.json()) as InitiateRequestBody;
-    const courseIdRaw = body.courseId;
-    const courseObjectId = asObjectId(courseIdRaw);
-    // console.log("COURSE OBJECT ID:", courseObjectId);
-    if (!courseObjectId) {
+    const rawCourseIds = [
+      ...(typeof body.courseId === "string" ? [body.courseId] : []),
+      ...(Array.isArray(body.courseIds) ? body.courseIds : []),
+    ];
+    const uniqueCourseIds = Array.from(new Set(rawCourseIds));
+    const courseObjectIds = uniqueCourseIds
+      .map((id) => asObjectId(id))
+      .filter((id): id is mongoose.Types.ObjectId => id !== null);
+
+    if (courseObjectIds.length === 0 || courseObjectIds.length !== uniqueCourseIds.length) {
       return NextResponse.json(
-        { success: false, error: "Invalid or missing courseId" },
+        { success: false, error: "Invalid or missing courseId(s)" },
         { status: 400 },
       );
     }
 
     await connectDB();
     // console.log("CONNECTED TO DATABASE");
-    const course = await Course.findOne({
-      _id: courseObjectId,
+    const courses = await Course.find({
+      _id: { $in: courseObjectIds },
       status: "published",
       isHidden: { $ne: true },
     })
       .select("_id isPaid price salePrice finalPrice")
       .lean();
-    console.log("COURSE:", course);
-    if (!course) {
+
+    if (courses.length !== courseObjectIds.length) {
       return NextResponse.json(
-        { success: false, error: "Course not found or not published" },
+        { success: false, error: "One or more courses not found or not published" },
         { status: 404 },
       );
     }
-    console.log("Course Price:", course);
-    const amount = course.salePrice && course.salePrice < course.price ? course.salePrice : course.price;
-    // console.log("AMOUNT:", amount);
-    if (!course.isPaid || !Number.isFinite(amount) || amount <= 0) {
+
+    const normalizedCourses = courses.map((course) => {
+      const amount =
+        course.salePrice && course.salePrice < course.price
+          ? course.salePrice
+          : course.price;
+      return {
+        id: String(course._id),
+        objectId: course._id,
+        isPaid: course.isPaid,
+        amount,
+      };
+    });
+
+    const invalidPaidCourse = normalizedCourses.find(
+      (course) => !course.isPaid || !Number.isFinite(course.amount) || course.amount <= 0,
+    );
+
+    if (invalidPaidCourse) {
       return NextResponse.json(
-        { success: false, error: "Free course, no payment required" },
+        { success: false, error: "All selected courses must be paid courses" },
         { status: 400 },
       );
     }
 
-    const existingEnrollment = await Enrollment.findOne({
+    const totalAmount = normalizedCourses.reduce((sum, course) => sum + course.amount, 0);
+
+    const existingEnrollments = await Enrollment.find({
       student: userId,
-      course: courseObjectId,
+      course: { $in: courseObjectIds },
     })
-      .select("_id paymentStatus status")
+      .select("_id course paymentStatus status")
       .lean();
-    console.log("EXISTING ENROLLMENT:", existingEnrollment);
-    if (existingEnrollment && isEnrollmentPaidAndActive(existingEnrollment)) {
+
+    const hasAlreadyEnrolled = existingEnrollments.some((enrollment) =>
+      isEnrollmentPaidAndActive(enrollment),
+    );
+
+    if (hasAlreadyEnrolled) {
       return NextResponse.json(
-        { success: false, error: "Already enrolled" },
+        { success: false, error: "One or more selected courses are already enrolled" },
         { status: 409 },
       );
     }
 
-    if (existingEnrollment && isEnrollmentPendingSuspended(existingEnrollment)) {
+    const isSingleCourseCheckout = courseObjectIds.length === 1;
+    const existingEnrollment = isSingleCourseCheckout
+      ? existingEnrollments.find(
+          (enrollment) => String(enrollment.course) === String(courseObjectIds[0]),
+        )
+      : null;
+
+    if (isSingleCourseCheckout && existingEnrollment && isEnrollmentPendingSuspended(existingEnrollment)) {
       const recentPendingPayment = await Payment.findOne({
         user: userId,
-        course: courseObjectId,
+        course: courseObjectIds[0],
         status: "pending",
       })
         .sort({ createdAt: -1 })
@@ -153,28 +188,32 @@ export async function POST(request: NextRequest) {
     }
 
     const runAttempt = async (transactionId: string) => {
-      const enrollment = await Enrollment.findOneAndUpdate(
-        {
-          student: userId,
-          course: courseObjectId,
-        },
-        {
-          $set: {
-            status: "suspended",
-            paymentStatus: "pending",
-            paymentId: transactionId,
-            paymentAmount: amount,
-          },
-        },
-        {
-          new: true,
-          upsert: true,
-          setDefaultsOnInsert: true,
-        },
+      const upsertedEnrollments = await Promise.all(
+        normalizedCourses.map((course) =>
+          Enrollment.findOneAndUpdate(
+            {
+              student: userId,
+              course: course.objectId,
+            },
+            {
+              $set: {
+                status: "suspended",
+                paymentStatus: "pending",
+                paymentId: transactionId,
+                paymentAmount: course.amount,
+              },
+            },
+            {
+              new: true,
+              upsert: true,
+              setDefaultsOnInsert: true,
+            },
+          ),
+        ),
       );
 
       const gatewayInit = await initiatePayment({
-        amount,
+        amount: totalAmount,
         tran_id: transactionId,
         cus_name: session?.user?.name || "Customer",
         cus_email: session?.user?.email || "customer@example.com",
@@ -187,16 +226,16 @@ export async function POST(request: NextRequest) {
         checkout_url: gatewayInit.checkout_url,
         gatewayOrderId: gatewayInit.gatewayOrderId,
         transactionId,
-        amount,
-        courseId: String(courseObjectId),
+        amount: totalAmount,
+        courseIds: normalizedCourses.map((course) => course.id),
         userId: String(userId),
       };
       console.log("SAFE GATEWAY RESPONSE:", safeGatewayResponse);
       const payment = await Payment.create({
         user: userId,
-        course: courseObjectId,
-        enrollment: enrollment._id,
-        amount,
+        course: courseObjectIds[0],
+        enrollment: upsertedEnrollments[0]._id,
+        amount: totalAmount,
         transactionId,
         gateway: "sslcommerz",
         gatewayOrderId: gatewayInit.gatewayOrderId,
