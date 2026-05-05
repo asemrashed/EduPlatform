@@ -51,15 +51,18 @@ interface Enrollment {
 
 interface CourseProgress {
   _id: string;
-  course: string;
-  isCompleted: boolean;
-  completedAt?: string;
+  course: string | { _id: string };
+  status: 'in_progress' | 'completed';
+  lessonProgress: Array<{
+    lesson: string;
+    completed: boolean;
+    completedAt?: string;
+  }>;
   progressPercentage: number;
   totalLessons: number;
   completedLessons: number;
-  totalTimeSpent: number;
-  lastAccessedAt: string;
-  startedAt: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface StudentStats {
@@ -100,7 +103,42 @@ export default function StudentDashboard() {
   const fetchStudentData = async () => {
     try {
       setLoading(true);
-      const enrollmentsData = await getMyEnrollments();
+      const [enrollmentsData, progressRes] = await Promise.all([
+        getMyEnrollments(),
+        fetch('/api/progress', { cache: 'no-store' }),
+      ]);
+      const progressJson = progressRes.ok ? await progressRes.json() : null;
+      const rawProgress = Array.isArray(progressJson?.data?.progress)
+        ? progressJson.data.progress
+        : [];
+      const normalizedProgress: CourseProgress[] = rawProgress.map((p: any) => ({
+        _id: String(p?._id ?? ''),
+        course:
+          p?.course && typeof p.course === 'object'
+            ? { _id: String(p.course._id ?? '') }
+            : String(p?.course ?? ''),
+        status: p?.status === 'completed' ? 'completed' : 'in_progress',
+        lessonProgress: Array.isArray(p?.lessonProgress)
+          ? p.lessonProgress.map((lp: any) => ({
+              lesson: String(lp?.lesson ?? ''),
+              completed: lp?.completed === true,
+              completedAt:
+                typeof lp?.completedAt === 'string' ? lp.completedAt : undefined,
+            }))
+          : [],
+        progressPercentage:
+          typeof p?.progressPercentage === 'number' ? p.progressPercentage : 0,
+        totalLessons: typeof p?.totalLessons === 'number' ? p.totalLessons : 0,
+        completedLessons:
+          typeof p?.completedLessons === 'number' ? p.completedLessons : 0,
+        createdAt: String(p?.createdAt ?? ''),
+        updatedAt: String(p?.updatedAt ?? ''),
+      }));
+      const progressByCourseId = new Map<string, CourseProgress>();
+      normalizedProgress.forEach((p) => {
+        const courseId = typeof p.course === 'object' ? p.course._id : p.course;
+        if (courseId) progressByCourseId.set(courseId, p);
+      });
       const rawEnrollments = enrollmentsData.data.enrollments || [];
       const normalizedEnrollments: Enrollment[] = rawEnrollments.map((enrollment) => {
         const courseSource =
@@ -159,7 +197,11 @@ export default function StudentDashboard() {
           },
           enrolledAt: String(enrollment.enrolledAt),
           status: (enrollment.status as Enrollment['status']) ?? 'active',
-          progress: typeof enrollment.progress === 'number' ? enrollment.progress : 0,
+          progress:
+            progressByCourseId.get(
+              String((courseSource as { _id?: unknown })._id ?? enrollment.course ?? ''),
+            )?.progressPercentage ??
+            (typeof enrollment.progress === 'number' ? enrollment.progress : 0),
           lastAccessedAt: String(enrollment.lastAccessedAt ?? ''),
           paymentStatus:
             ((enrollment.paymentStatus as Enrollment['paymentStatus']) ?? 'pending'),
@@ -171,7 +213,7 @@ export default function StudentDashboard() {
         return allowedStatuses.has(status);
       });
       setEnrollments(filtered.length ? filtered : normalizedEnrollments);
-      setCourseProgress([]);
+      setCourseProgress(normalizedProgress);
 
       // Stats will be recalculated when state updates below useEffect
     } catch (error) {
@@ -189,7 +231,7 @@ export default function StudentDashboard() {
   const calculateStats = () => {
     const activeEnrollments = enrollments.filter(e => e.status === 'active');
     const completedEnrollments = enrollments.filter(e => e.status === 'completed');
-    const totalTime = courseProgress.reduce((sum, cp) => sum + cp.totalTimeSpent, 0);
+    const totalTime = 0;
     const avgProgress = enrollments.length > 0 
       ? enrollments.reduce((sum, e) => sum + e.progress, 0) / enrollments.length 
       : 0;
@@ -227,16 +269,30 @@ export default function StudentDashboard() {
 
     // Add recent completions
     courseProgress
-      .filter(cp => cp.isCompleted)
-      .sort((a, b) => new Date(b.completedAt || '').getTime() - new Date(a.completedAt || '').getTime())
+      .filter(cp => cp.status === 'completed')
+      .sort(
+        (a, b) =>
+          new Date(b.updatedAt || '').getTime() -
+          new Date(a.updatedAt || '').getTime(),
+      )
       .slice(0, 2)
       .forEach(progress => {
-        const course = enrollments.find(e => e.course._id === progress.course);
+        const progressCourseId =
+          typeof progress.course === 'object' ? progress.course._id : progress.course;
+        const course = enrollments.find(e => e.course._id === progressCourseId);
+        const completedAt =
+          progress.lessonProgress
+            .filter((lp) => lp.completed && lp.completedAt)
+            .sort(
+              (a, b) =>
+                new Date(b.completedAt || '').getTime() -
+                new Date(a.completedAt || '').getTime(),
+            )[0]?.completedAt ?? progress.updatedAt;
         if (course) {
           activities.push({
             type: 'completion' as const,
             course: course.course.title,
-            timestamp: progress.completedAt || '',
+            timestamp: completedAt || '',
             description: `Completed ${course.course.title}`
           });
         }

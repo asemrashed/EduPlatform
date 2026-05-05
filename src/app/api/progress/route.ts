@@ -269,6 +269,12 @@ export async function POST(request: NextRequest) {
 
     await doc.save();
 
+    await Enrollment.findOneAndUpdate(
+      { student: userId, course: courseId },
+      { progress: doc.progressPercentage },
+      { new: true }
+    );
+
     const populated = await CourseProgress.findById(doc._id)
       .populate({ path: "course", select: COURSE_SELECT })
       .lean();

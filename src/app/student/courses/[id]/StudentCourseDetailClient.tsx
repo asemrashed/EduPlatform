@@ -373,7 +373,7 @@ export default function StudentCourseLearningPage() {
     if (!courseId || !session?.user?.id) return;
     if (!course?._id) return;
     void fetchCourseProgress();
-  }, [courseId, session?.user?.id, course?._id]);
+  }, [courseId, session?.user?.id, course?._id, chapters.length, lessons.length]);
 
   // Recover YouTube/Plyr player when user switches browser tabs.
   useEffect(() => {
@@ -621,17 +621,30 @@ export default function StudentCourseLearningPage() {
   const checkLessonCompletion = async (lessonId: string) => {
     try {
       setCheckingCompletion(true);
-      
-      const res = await fetch(`/api/progress/lesson-status?course=${courseId}&lesson=${lessonId}`);
+
+      const res = await fetch('/api/progress', { cache: 'no-store' });
       const data = await res.json();
-      
-      if (res.ok && data?.success) {
-        const lessonData = data.data;
-        const isCompleted = lessonData.isCompleted === true;
-        setLessonCompleted(isCompleted);
-      } else {
+      if (!res.ok || !data?.success) {
         setLessonCompleted(false);
+        return;
       }
+
+      const progressRows = Array.isArray(data?.data?.progress) ? data.data.progress : [];
+      const currentCourseProgress = progressRows.find((row: any) => {
+        const rowCourseId =
+          row?.course && typeof row.course === 'object'
+            ? String(row.course._id ?? '')
+            : String(row?.course ?? '');
+        return rowCourseId === String(courseId);
+      });
+
+      const completed = Array.isArray(currentCourseProgress?.lessonProgress)
+        ? currentCourseProgress.lessonProgress.some(
+            (lp: any) =>
+              String(lp?.lesson ?? '') === String(lessonId) && lp?.completed === true,
+          )
+        : false;
+      setLessonCompleted(completed);
     } catch (e) {
       console.error('Failed to check lesson completion:', e);
       setLessonCompleted(false);
@@ -644,27 +657,85 @@ export default function StudentCourseLearningPage() {
   const fetchCourseProgress = async () => {
     try {
       const userId = session?.user?.id;
-      const dashboardRequest = fetch(`/api/progress/dashboard?course=${courseId}`);
+      const progressRequest = fetch('/api/progress', { cache: 'no-store' });
       const enrollmentRequest = userId
         ? fetch(`/api/enrollments?student=${userId}&course=${courseId}&limit=1`)
         : null;
 
-      const [dashboardRes, enrollmentRes] = await Promise.all([
-        dashboardRequest,
+      const [progressRes, enrollmentRes] = await Promise.all([
+        progressRequest,
         enrollmentRequest
       ]);
 
-      const dashboardDataResponse = await dashboardRes.json();
-      if (dashboardRes.ok && dashboardDataResponse?.success) {
-        const dashboardData = dashboardDataResponse.data;
-        setCourseProgress(dashboardData.course);
-
-        // Set chapter progress
-        const chapterProgressMap: Record<string, any> = {};
-        dashboardData.chapters.forEach((chapter: any) => {
-          chapterProgressMap[chapter.id] = chapter;
+      const progressDataResponse = await progressRes.json();
+      if (progressRes.ok && progressDataResponse?.success) {
+        const rows = Array.isArray(progressDataResponse?.data?.progress)
+          ? progressDataResponse.data.progress
+          : [];
+        const currentCourseProgress = rows.find((row: any) => {
+          const rowCourseId =
+            row?.course && typeof row.course === 'object'
+              ? String(row.course._id ?? '')
+              : String(row?.course ?? '');
+          return rowCourseId === String(courseId);
         });
-        setChapterProgress(chapterProgressMap);
+
+        if (currentCourseProgress) {
+          setCourseProgress({
+            progressPercentage:
+              typeof currentCourseProgress.progressPercentage === 'number'
+                ? currentCourseProgress.progressPercentage
+                : 0,
+            completedLessons:
+              typeof currentCourseProgress.completedLessons === 'number'
+                ? currentCourseProgress.completedLessons
+                : 0,
+            totalLessons:
+              typeof currentCourseProgress.totalLessons === 'number'
+                ? currentCourseProgress.totalLessons
+                : 0,
+            totalTimeSpent: 0,
+          });
+
+          const completedSet = new Set<string>();
+          if (Array.isArray(currentCourseProgress.lessonProgress)) {
+            currentCourseProgress.lessonProgress.forEach((lp: any) => {
+              if (lp?.completed) completedSet.add(String(lp.lesson));
+            });
+          }
+
+          const chapterProgressMap: Record<string, any> = {};
+          chapters.forEach((chapter: any) => {
+            const chapterId = String(chapter?._id ?? '');
+            const chapterLessons = (lessonsByChapter[chapterId] || []).map((lesson: any) => ({
+              id: String(lesson._id),
+              isCompleted: completedSet.has(String(lesson._id)),
+            }));
+            const chapterTotal = chapterLessons.length;
+            const chapterCompleted = chapterLessons.filter((l: any) => l.isCompleted).length;
+            const chapterPercentage =
+              chapterTotal > 0 ? Math.round((chapterCompleted / chapterTotal) * 100) : 0;
+
+            chapterProgressMap[chapterId] = {
+              id: chapterId,
+              progressPercentage: chapterPercentage,
+              completedLessons: chapterCompleted,
+              totalLessons: chapterTotal,
+              totalTimeSpent: 0,
+              isCompleted: chapterTotal > 0 && chapterCompleted >= chapterTotal,
+              lessons: chapterLessons,
+            };
+          });
+          setChapterProgress(chapterProgressMap);
+        } else {
+          setCourseProgress({
+            progressPercentage: 0,
+            completedLessons: 0,
+            totalLessons: lessons.length,
+            totalTimeSpent: 0,
+          });
+          setChapterProgress({});
+        }
       }
 
       if (enrollmentRes) {
@@ -827,17 +898,12 @@ export default function StudentCourseLearningPage() {
       setQuizQuestions(null);
       setQuizResult(null);
       
-      // Use the new progress completion API
-      const res = await fetch('/api/progress/completion', {
+      const res = await fetch('/api/progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          course: courseId, 
-          lesson: selectedLesson._id, 
-          isCompleted: true, 
-          progressPercentage: 100,
-          timeSpent: 0, // You can calculate actual time spent
-          type: 'lesson'
+        body: JSON.stringify({
+          courseId,
+          lessonId: selectedLesson._id,
         }),
       });
       const data = await res.json();
