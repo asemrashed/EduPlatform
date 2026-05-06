@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import DataTable, { Column, Action } from '@/components/ui/data-table';
 import { LuBookOpen as BookOpen, LuClock as Clock, LuUsers as Users, LuStar as Star, LuPlay as PlayCircle, LuCheck as CheckCircle, LuDollarSign as DollarSign, LuPlus as Plus, LuEye as Eye, LuArrowRight as ArrowRight } from 'react-icons/lu';
+import { studentLearningService } from '@/services/studentLearningService';
 
 // Fallback when API doesn't return promotional banner
 const DEFAULT_PROMO_HEADLINE = 'আরও কোর্স এক্সপ্লোর করুন';
@@ -121,29 +122,13 @@ export default function StudentCourses() {
   const fetchEnrollments = async () => {
     try {
       setLoading(true);
-      
-      const queryParams = new URLSearchParams({
-        page: filters.page.toString(),
-        limit: filters.limit.toString(),
-        student: session?.user?.id || ''
-      });
-
-      const response = await fetch(`/api/enrollments?${queryParams}`);
-      
-      if (response.ok) {
-        const result = await response.json();
-        const data = result.data || result; // Handle both wrapped and unwrapped responses
-        // Filter enrollments on the client side to show only active and completed
-        const filteredEnrollments = (data.enrollments || []).filter((enrollment: any) => 
-          enrollment.status === 'active' || enrollment.status === 'completed'
-        );
-        setEnrollments(filteredEnrollments);
-        setPagination(data.pagination || { page: 1, limit: 12, total: 0, pages: 0 });
-      } else {
-        console.error('API Error:', response.status, response.statusText);
-        const errorData = await response.json();
-        console.error('Error details:', errorData);
-      }
+      const result = await studentLearningService.getEnrollmentsWithProgress(
+        filters.page,
+        filters.limit,
+      );
+      console.log('result', result);
+      setEnrollments(result.enrollments as Enrollment[]);
+      setPagination(result.pagination);
     } catch (error) {
       console.error('Error fetching enrollments:', error);
     } finally {
@@ -551,7 +536,7 @@ export default function StudentCourses() {
                           ? 'bg-green-100 text-green-800 border-green-200'
                           : 'bg-blue-100 text-blue-800 border-blue-200'}
                       >
-                        {enrollment.status === 'completed' ? 'Completed' : 'In Progress'}
+                        {enrollment?.status}
                       </Badge>
                       {enrollment.certificateUrl ? (
                         <Button

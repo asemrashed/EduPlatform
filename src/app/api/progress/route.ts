@@ -208,10 +208,11 @@ export async function POST(request: NextRequest) {
     const enrollment = await Enrollment.findOne({
       student: userId,
       course: courseId,
-      status: { $in: ["active", "completed"] },
+      status: { $in: ["enrolled", "in_progress", "completed"] },
     })
       .select("_id")
       .lean();
+    
 
     if (!enrollment) {
       return NextResponse.json(

@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Collapsible, CollapsibleContent, CollapsibleHeader } from '@/components/ui/collapsible';
 import confetti from 'canvas-confetti';
 import { htmlToPlainText } from '@/lib/utils';
+import { studentLearningService } from '@/services/studentLearningService';
 
 const DEFAULT_LESSON_BANNER_TITLE = 'আজকের লেসনে স্বাগতম';
 const QUIZ_KEEP_PRACTICING_THRESHOLD = 60;
@@ -201,40 +202,20 @@ export default function StudentCourseLearningPage() {
     try {
       setLoading(true);
       setError(null);
-      const [courseRes, chaptersRes, lessonsRes] = await Promise.all([
-        fetch(`/api/courses/${courseId}`),
-        fetch(`/api/chapters?course=${courseId}&isPublished=true&limit=100`),
-        fetch(`/api/lessons?course=${courseId}&isPublished=true&limit=1000`),
-      ]);
-      
-      if (courseRes.ok) {
-        const cd = await courseRes.json();
-        console.log('Course API response:', cd);
-        // Handle different response structures
-        const courseData = cd.data || cd.course || cd;
-        console.log('Course data extracted:', courseData);
-        if (courseData && (courseData._id || courseData.id)) {
-          setCourse(courseData);
-        } else {
-          console.error('Invalid course data structure:', courseData);
-        }
+      const bundle = await studentLearningService.getCourseBundle(courseId);
+      const courseData = bundle.course;
+      if (courseData && (courseData._id || (courseData as any).id)) {
+        setCourse(courseData);
       } else {
-        const errorData = await courseRes.json().catch(() => ({}));
-        console.error('Failed to fetch course:', courseRes.status, errorData);
-        setError(errorData.error || 'Failed to load course');
+        setError('Failed to load course');
       }
-      
-      let chaptersList: any[] = [];
-      if (chaptersRes.ok) {
-        const d = await chaptersRes.json();
-        chaptersList = d.data?.chapters || d.chapters || [];
-        setChapters(chaptersList);
-      }
-      if (lessonsRes.ok) {
-        const d = await lessonsRes.json();
-        const ls = d.data?.lessons || d.lessons || [];
-        setLessons(ls);
-        if (ls.length > 0) {
+
+      const chaptersList = Array.isArray(bundle.chapters) ? bundle.chapters : [];
+      setChapters(chaptersList);
+
+      const ls = Array.isArray(bundle.lessons) ? bundle.lessons : [];
+      setLessons(ls);
+      if (ls.length > 0) {
           const savedLessonId = typeof window !== 'undefined'
             ? localStorage.getItem(getLastLessonStorageKey(courseId))
             : null;
@@ -263,7 +244,6 @@ export default function StudentCourseLearningPage() {
           if (initialLessonId) {
             setSelectedLessonId(initialLessonId);
           }
-        }
       }
     } catch (e) {
       console.error('Error fetching course content:', e);
@@ -621,22 +601,11 @@ export default function StudentCourseLearningPage() {
   const checkLessonCompletion = async (lessonId: string) => {
     try {
       setCheckingCompletion(true);
-
-      const res = await fetch('/api/progress', { cache: 'no-store' });
-      const data = await res.json();
-      if (!res.ok || !data?.success) {
-        setLessonCompleted(false);
-        return;
-      }
-
-      const progressRows = Array.isArray(data?.data?.progress) ? data.data.progress : [];
-      const currentCourseProgress = progressRows.find((row: any) => {
-        const rowCourseId =
-          row?.course && typeof row.course === 'object'
-            ? String(row.course._id ?? '')
-            : String(row?.course ?? '');
-        return rowCourseId === String(courseId);
-      });
+      const progressData = await studentLearningService.getProgress();
+      const progressRows = Array.isArray(progressData?.data?.progress)
+        ? progressData.data.progress
+        : [];
+      const currentCourseProgress = studentLearningService.findProgressForCourse(progressRows, courseId);
 
       const completed = Array.isArray(currentCourseProgress?.lessonProgress)
         ? currentCourseProgress.lessonProgress.some(
@@ -656,29 +625,15 @@ export default function StudentCourseLearningPage() {
   // Fetch comprehensive course progress
   const fetchCourseProgress = async () => {
     try {
-      const userId = session?.user?.id;
-      const progressRequest = fetch('/api/progress', { cache: 'no-store' });
-      const enrollmentRequest = userId
-        ? fetch(`/api/enrollments?student=${userId}&course=${courseId}&limit=1`)
-        : null;
-
-      const [progressRes, enrollmentRes] = await Promise.all([
-        progressRequest,
-        enrollmentRequest
+      const [progressDataResponse, currentEnrollment] = await Promise.all([
+        studentLearningService.getProgress(),
+        studentLearningService.getCourseEnrollment(courseId),
       ]);
-
-      const progressDataResponse = await progressRes.json();
-      if (progressRes.ok && progressDataResponse?.success) {
-        const rows = Array.isArray(progressDataResponse?.data?.progress)
+      if (progressDataResponse?.success) {
+        const rows = Array.isArray(progressDataResponse.data?.progress)
           ? progressDataResponse.data.progress
           : [];
-        const currentCourseProgress = rows.find((row: any) => {
-          const rowCourseId =
-            row?.course && typeof row.course === 'object'
-              ? String(row.course._id ?? '')
-              : String(row?.course ?? '');
-          return rowCourseId === String(courseId);
-        });
+        const currentCourseProgress = studentLearningService.findProgressForCourse(rows, courseId);
 
         if (currentCourseProgress) {
           setCourseProgress({
@@ -738,38 +693,14 @@ export default function StudentCourseLearningPage() {
         }
       }
 
-      if (enrollmentRes) {
-        const enrollmentDataResponse = await enrollmentRes.json();
-        const currentEnrollment = enrollmentDataResponse?.data?.enrollments?.[0];
-        const certificateUrl = currentEnrollment?.certificateUrl || null;
-        setCertificateInfo({
-          issued: Boolean(currentEnrollment?.certificateIssued) || Boolean(certificateUrl),
-          url: certificateUrl
-        });
-      }
+      const certificateUrl = currentEnrollment?.certificateUrl || null;
+      setCertificateInfo({
+        issued: Boolean(currentEnrollment?.certificateIssued) || Boolean(certificateUrl),
+        url: certificateUrl
+      });
     } catch (e) {
       console.error('Failed to fetch course progress:', e);
     }
-  };
-
-  // Check chapter completion status
-  const checkChapterCompletion = async (chapterId: string) => {
-    try {
-      const res = await fetch(`/api/progress/chapter-status?course=${courseId}&chapter=${chapterId}`);
-      const data = await res.json();
-      
-      if (res.ok && data?.success) {
-        const chapterData = data.data;
-        setChapterProgress(prev => ({
-          ...prev,
-          [chapterId]: chapterData
-        }));
-        return chapterData;
-      }
-    } catch (e) {
-      console.error('Failed to check chapter completion:', e);
-    }
-    return null;
   };
 
   const lessonsByChapter = useMemo(() => {
@@ -897,18 +828,7 @@ export default function StudentCourseLearningPage() {
       setQuizMeta(null);
       setQuizQuestions(null);
       setQuizResult(null);
-      
-      const res = await fetch('/api/progress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          courseId,
-          lessonId: selectedLesson._id,
-        }),
-      });
-      const data = await res.json();
-      
-      if (!res.ok || !data?.success) throw new Error(data?.error || 'Failed to mark complete');
+      await studentLearningService.completeLesson(courseId, selectedLesson._id);
       
       setLessonCompleted(true);
       setShowCongratsModal(true);
@@ -1513,6 +1433,7 @@ export default function StudentCourseLearningPage() {
               {selectedLesson?.youtubeVideoId ? (
                 <>
                   <div ref={videoContainerRef} className="relative w-full h-full" />
+                  {/* <iframe src='https://www.youtube.com/embed/Uh2ebFW8OYM' className='w-full h-full'/> */}
                 </>
               ) : (
                     <div className="w-full h-full flex items-center justify-center text-white text-sm sm:text-base">No video</div>

@@ -7,6 +7,7 @@ export const API_ENDPOINTS = {
   PUBLIC_CHAPTERS: "/api/public/chapters",
   PUBLIC_LESSONS: "/api/public/lessons",
   PUBLIC_FAQS: "/api/public/faqs",
+  PROGRESS: "/api/progress",
   INSTRUCTOR_DASHBOARD: "/api/instructor/dashboard",
   ADMIN_DASHBOARD: "/api/admin/dashboard",
   ENROLLMENTS: "/api/enrollments",
