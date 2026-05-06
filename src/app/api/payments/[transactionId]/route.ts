@@ -62,7 +62,7 @@ export async function GET(
         courseId: String(payment.course),
         enrollment: {
           id: String(payment.enrollment),
-          status: payment.status === "success" ? "active" : "suspended",
+          status: payment.status === "success" ? "enrolled" : "suspended",
           paymentStatus: payment.status === "success" ? "paid" : payment.status,
         },
       },

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAppSelector } from "@/store";
 import { usePayment } from "./usePayment";
+import { getMyEnrollments } from "@/lib/api/enrollmentClient";
 
 type CheckoutInput =
   | string
@@ -57,10 +58,29 @@ export const useCheckout = () => {
       return;
     }
 
+    let filteredCourseIds = courseIds;
+    try {
+      const enrollmentRes = await getMyEnrollments();
+      const blockedStatuses = new Set(["enrolled", "in_progress", "completed"]);
+      const enrolledCourseIds = new Set(
+        enrollmentRes.data.enrollments
+          .filter((row) => blockedStatuses.has(String(row.status || "").toLowerCase()))
+          .map((row) => String(row.course)),
+      );
+      filteredCourseIds = courseIds.filter((id) => !enrolledCourseIds.has(String(id)));
+    } catch {
+      // Keep checkout working; backend still enforces duplicate enrollment protection.
+    }
+
+    if (filteredCourseIds.length === 0) {
+      showToast("Selected courses are already enrolled", "error");
+      return;
+    }
+
     const payload =
-      courseIds.length === 1
-        ? { courseId: courseIds[0] }
-        : { courseIds };
+      filteredCourseIds.length === 1
+        ? { courseId: filteredCourseIds[0] }
+        : { courseIds: filteredCourseIds };
 
     const result = await initiatePayment(payload);
 

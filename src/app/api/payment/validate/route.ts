@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
         },
         {
           $set: {
-            status: "active",
+            status: "enrolled",
             paymentStatus: "paid",
           },
         },
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
           paymentDate: new Date(payment.createdAt).toISOString(),
           enrollment: {
             id: String(payment.enrollment),
-            status: "active",
+            status: "enrolled",
             paymentStatus: "paid",
           },
           courseId: String(payment.course),

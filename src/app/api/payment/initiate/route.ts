@@ -36,7 +36,8 @@ function isEnrollmentPaidAndActive(row: {
   paymentStatus?: string;
   status?: string;
 }): boolean {
-  return row.paymentStatus === "paid" && row.status === "active";
+  if (row.paymentStatus !== "paid") return false;
+  return ["enrolled", "in_progress", "completed"].includes(String(row.status || ""));
 }
 
 function isEnrollmentPendingSuspended(row: {

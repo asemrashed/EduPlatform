@@ -1432,8 +1432,8 @@ export default function StudentCourseLearningPage() {
                 <div className="relative isolate w-full aspect-video bg-gray-100 rounded-lg sm:rounded-xl overflow-hidden shadow-md sm:shadow-lg border border-gray-200">
               {selectedLesson?.youtubeVideoId ? (
                 <>
-                  <div ref={videoContainerRef} className="relative w-full h-full" />
-                  {/* <iframe src='https://www.youtube.com/embed/Uh2ebFW8OYM' className='w-full h-full'/> */}
+                  {/* <div ref={videoContainerRef} className="relative w-full h-full" /> */}
+                  <iframe src={`https://www.youtube.com/embed/${selectedLesson.youtubeVideoId}`} className='w-full h-full'/>
                 </>
               ) : (
                     <div className="w-full h-full flex items-center justify-center text-white text-sm sm:text-base">No video</div>

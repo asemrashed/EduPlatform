@@ -226,21 +226,30 @@ export async function POST(request: NextRequest) {
       isPublished: true,
     });
 
-    let doc = await CourseProgress.findOne({
-      student: userId,
-      course: courseId,
-    });
-
-    if (!doc) {
-      doc = await CourseProgress.create({
+    // Use findOneAndUpdate with upsert to avoid race conditions
+    let doc = await CourseProgress.findOneAndUpdate(
+      {
         student: userId,
         course: courseId,
-        lessonProgress: [],
-        completedLessons: 0,
-        totalLessons,
-        progressPercentage: 0,
-        status: "in_progress",
-      });
+      },
+      {
+        $setOnInsert: {
+          lessonProgress: [],
+          completedLessons: 0,
+          totalLessons,
+          progressPercentage: 0,
+          status: "in_progress",
+        },
+      },
+      {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true,
+      },
+    );
+
+    if (!doc) {
+      throw new Error("Failed to create or retrieve course progress");
     }
 
     const lessonObjectId = new mongoose.Types.ObjectId(lessonId);

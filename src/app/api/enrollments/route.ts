@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
     const enrollment = await Enrollment.create({
       student: userId,
       course: courseId,
-      status: "active",
+      status: "enrolled",
       paymentStatus: isPaid ? "pending" : "paid",
       paymentAmount: isPaid ? (courseDoc.price ?? 0) : 0,
     });

@@ -39,7 +39,9 @@ export const studentPassPapersService = {
       },
       stats: {
         total: enr.data.enrollments.length,
-        active: enr.data.enrollments.filter((e) => e.status === "active").length,
+        active: enr.data.enrollments.filter((e) =>
+          ["enrolled", "in_progress"].includes(String(e.status || "").toLowerCase()),
+        ).length,
         completed: enr.data.enrollments.filter((e) => e.status === "completed").length,
         dropped: enr.data.enrollments.filter((e) => e.status === "dropped").length,
         suspended: enr.data.enrollments.filter((e) => e.status === "suspended").length,
