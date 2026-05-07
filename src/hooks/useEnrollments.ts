@@ -280,7 +280,7 @@ export const useEnrollments = () => {
 
   // Reactivate enrollment
   const reactivateEnrollment = useCallback(async (id: string): Promise<Enrollment | null> => {
-    return await updateEnrollment(id, { status: 'active' });
+    return await updateEnrollment(id, { status: 'enrolled' });
   }, [updateEnrollment]);
 
   return {

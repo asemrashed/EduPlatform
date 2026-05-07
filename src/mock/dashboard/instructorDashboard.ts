@@ -19,7 +19,7 @@ export function getMockInstructorDashboard(): InstructorDashboardApiPayload {
         studentEmail: "nadia@example.com",
         courseTitle: "HSC Physics — Full syllabus (Bangladesh)",
         enrolledAt: new Date("2026-04-11T08:00:00.000Z").toISOString(),
-        status: "active",
+        status: "enrolled",
       },
       {
         id: "65f1a1a1a1a1a1a1a1a1a1a2",
@@ -27,7 +27,7 @@ export function getMockInstructorDashboard(): InstructorDashboardApiPayload {
         studentEmail: "imran@example.com",
         courseTitle: "Introduction to Web Development",
         enrolledAt: new Date("2026-04-10T19:15:00.000Z").toISOString(),
-        status: "active",
+        status: "enrolled",
       },
     ],
     trends: {

@@ -56,7 +56,7 @@ export function getMockAdminDashboardFull(): AdminDashboardApiPayload {
         studentEmail: "samira@example.com",
         courseTitle: "HSC Physics — Full syllabus (Bangladesh)",
         enrolledAt: new Date("2026-04-11T10:05:00.000Z").toISOString(),
-        status: "active",
+        status: "enrolled",
       },
       {
         id: "65f2b2b2b2b2b2b2b2b2b2b2b2",
@@ -64,7 +64,7 @@ export function getMockAdminDashboardFull(): AdminDashboardApiPayload {
         studentEmail: "rafi@example.com",
         courseTitle: "Introduction to Web Development",
         enrolledAt: new Date("2026-04-11T09:40:00.000Z").toISOString(),
-        status: "active",
+        status: "enrolled",
       },
     ],
     courseStats: [

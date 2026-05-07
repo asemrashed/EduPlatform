@@ -146,7 +146,7 @@ export async function getCourseById(courseId: string): Promise<CourseDetailsData
         // Get enrollment count
         const enrollmentCount = await Enrollment.countDocuments({
           course: courseId,
-          status: { $in: ['active', 'completed'] }
+          status: { $in: ['enrolled', 'in_progress', 'completed'] }
         });
 
         // Get category info

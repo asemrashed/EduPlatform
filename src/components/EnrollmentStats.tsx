@@ -17,7 +17,7 @@ const EnrollmentStats: React.FC<EnrollmentStatsProps> = ({ enrollments, loading 
     
     // Fallback to calculating from enrollments array
     const total = enrollments.length;
-    const active = enrollments.filter(e => e.status === 'active').length;
+    const active = enrollments.filter(e => e.status === 'enrolled' || e.status === 'in_progress').length;
     const completed = enrollments.filter(e => e.status === 'completed').length;
     const dropped = enrollments.filter(e => e.status === 'dropped').length;
     const suspended = enrollments.filter(e => e.status === 'suspended').length;
