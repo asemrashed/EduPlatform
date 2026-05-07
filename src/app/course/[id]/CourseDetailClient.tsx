@@ -17,7 +17,7 @@ import { useCheckout } from "@/hooks/useCheckout";
 
 export function CourseDetailClient({ courseId }: { courseId: string }) {
   const dispatch = useAppDispatch();
-  const { handleCheckout } = useCheckout();
+  const { handleCheckout, isPending } = useCheckout();
   const { status, error, course, chapters, lessons, faqs } = useAppSelector(
     (s) => s.courseDetail,
   );
@@ -180,8 +180,8 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
               </span>
             ) : null}
           </div>
-          <PrimaryOutLineBtn value="Enroll Now" handleBtn={() => handleCheckout(course._id)} />
-          <PrimaryActionBtn value={course.isPaid ? "Add to Cart" : "Enroll Now"} handleBtn={handleAddToCart} />
+          <PrimaryOutLineBtn value={isPending ? "Loading..." : "Enroll Now"} handleBtn={() => handleCheckout(course._id)} disabled={isPending} />
+          <PrimaryActionBtn value={isPending ? "Loading..." : (course.isPaid ? "Add to Cart" : "Enroll Now")} handleBtn={handleAddToCart} disabled={isPending} />
         </div>
       </aside>
     </div>

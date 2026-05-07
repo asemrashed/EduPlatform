@@ -16,6 +16,7 @@ type CheckoutInput =
 export const useCheckout = () => {
   const router = useRouter();
   const authUser = useAppSelector((s) => s?.auth?.user);
+  const authLoading = useAppSelector((s) => s?.auth?.isLoading);
   const cartItems = useAppSelector((s) => s.cart.items);
   
   // Use the tools already built into usePayment
@@ -27,8 +28,14 @@ export const useCheckout = () => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
-
+  console.log("authUser", authUser, "authLoading", authLoading);
   const handleCheckout = async (input?: CheckoutInput) => {
+    // Wait for auth to finish loading before checking user
+    if (authLoading) {
+      showToast("Loading authentication... please wait", "error");
+      return;
+    }
+
     if (!authUser?._id) {
       alert("Please login to checkout");
       router.push("/login");
@@ -93,8 +100,9 @@ export const useCheckout = () => {
 
   return { 
     handleCheckout, 
-    isPending: loading, 
+    isPending: loading || authLoading, 
     toastMessage: toast?.message, 
-    toastType: toast?.type 
+    toastType: toast?.type,
+    authLoading
   };
 };

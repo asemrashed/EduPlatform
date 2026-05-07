@@ -14,6 +14,7 @@ export interface ICourse extends Document {
   salePrice?: number;
   displayOrder?: number;
   createdBy?: mongoose.Types.ObjectId;
+  instructor?: mongoose.Types.ObjectId;
   duration?: number;
   difficulty?: "beginner" | "intermediate" | "advanced";
   lessonCount?: number;
@@ -76,6 +77,10 @@ const CourseSchema = new Schema<ICourse>(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
+    instructor: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
     duration: {
       type: Number,
       min: 0,
@@ -105,6 +110,7 @@ const CourseSchema = new Schema<ICourse>(
 CourseSchema.index({ title: "text", description: "text" });
 CourseSchema.index({ category: 1 });
 CourseSchema.index({ isPaid: 1 });
+CourseSchema.index({ instructor: 1 });
 CourseSchema.index({ createdAt: -1 });
 
 const Course =

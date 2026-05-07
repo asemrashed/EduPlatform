@@ -11,6 +11,10 @@ import type {
 } from "@/types/dashboard";
 import type { StudentDashboardComposite } from "@/types/studentDashboard";
 
+function isMockFallbackEnabled(): boolean {
+  return process.env.NEXT_PUBLIC_USE_MOCK_API === "true";
+}
+
 /** Mock-only dashboard reads — no `fetch` (Phase 4). */
 export async function getStudentDashboard(): Promise<StudentDashboardComposite> {
   await Promise.resolve();
@@ -77,8 +81,13 @@ export async function getInstructorDashboard(): Promise<InstructorDashboardApiPa
           : [],
       },
     };
-  } catch {
-    return getMockInstructorDashboard();
+  } catch (error) {
+    if (isMockFallbackEnabled()) {
+      return getMockInstructorDashboard();
+    }
+    throw error instanceof Error
+      ? error
+      : new Error("Failed to load instructor dashboard");
   }
 }
 
@@ -186,8 +195,13 @@ export async function getAdminDashboard(): Promise<AdminDashboardApiPayload> {
           : [],
       },
     };
-  } catch {
-    return getMockAdminDashboardFull();
+  } catch (error) {
+    if (isMockFallbackEnabled()) {
+      return getMockAdminDashboardFull();
+    }
+    throw error instanceof Error
+      ? error
+      : new Error("Failed to load admin dashboard");
   }
 }
 

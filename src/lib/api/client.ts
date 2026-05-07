@@ -26,6 +26,10 @@ export function readMockEmptyCatalog(): boolean {
   return process.env.NEXT_PUBLIC_MOCK_PUBLIC_COURSES_EMPTY === "true";
 }
 
+function isMockFallbackEnabled(): boolean {
+  return process.env.NEXT_PUBLIC_USE_MOCK_API === "true";
+}
+
 async function fetchJsonOrThrow<T>(url: string): Promise<T> {
   const response = await fetch(url, {
     method: "GET",
@@ -110,12 +114,16 @@ export async function getPublicCourses(
     }
 
     throw new Error("Public courses payload shape mismatch");
-  } catch {
-    // Temporary safety fallback during phased backend rollout.
-    if (readMockEmptyCatalog()) {
-      return getMockPublicCoursesEmpty();
+  } catch (error) {
+    if (isMockFallbackEnabled()) {
+      if (readMockEmptyCatalog()) {
+        return getMockPublicCoursesEmpty();
+      }
+      return getMockPublicCoursesSuccess();
     }
-    return getMockPublicCoursesSuccess();
+    throw error instanceof Error
+      ? error
+      : new Error("Failed to load public courses");
   }
 }
 

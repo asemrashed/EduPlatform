@@ -3,13 +3,16 @@ import { getServerSession } from "next-auth/next";
 import connectDB from "@/lib/mongodb";
 import { authOptions } from "@/lib/auth";
 import Course from "@/models/Course";
+import CourseProgress from "@/models/CourseProgress";
 import Enrollment from "@/models/Enrollment";
+import Payment from "@/models/Payment";
 
 type RecentEnrollmentItem = {
   id: string;
   studentName: string;
+  studentEmail: string;
   courseTitle: string;
-  enrolledAt: Date;
+  enrolledAt: string;
   status: string;
 };
 
@@ -46,7 +49,7 @@ export async function GET() {
       Enrollment.countDocuments({ course: { $in: courseIds } }),
       Enrollment.find({ course: { $in: courseIds } }).select("student").lean(),
       Enrollment.find({ course: { $in: courseIds } })
-        .populate({ path: "student", select: "name firstName lastName" })
+        .populate({ path: "student", select: "name firstName lastName email" })
         .populate({ path: "course", select: "title" })
         .sort({ createdAt: -1 })
         .limit(10)
@@ -63,7 +66,7 @@ export async function GET() {
     const recentEnrollments: RecentEnrollmentItem[] = recentEnrollmentDocs.map(
       (row: Record<string, unknown>) => {
         const student = row.student as
-          | { name?: string; firstName?: string; lastName?: string }
+          | { name?: string; firstName?: string; lastName?: string; email?: string }
           | undefined;
         const studentName =
           student?.name ||
@@ -74,20 +77,90 @@ export async function GET() {
         return {
           id: String(row._id ?? ""),
           studentName,
+          studentEmail: student?.email || "",
           courseTitle: course?.title || "Unknown",
-          enrolledAt: new Date((row.enrolledAt as Date | string | undefined) ?? new Date()),
+          enrolledAt: new Date(
+            (row.enrolledAt as Date | string | undefined) ?? new Date(),
+          ).toISOString(),
           status: String(row.status ?? ""),
         };
       },
     );
 
+    const now = new Date();
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(now.getDate() - 7);
+    const fourteenDaysAgo = new Date(now);
+    fourteenDaysAgo.setDate(now.getDate() - 14);
+
+    const [weeklyCompletions, previousWeeklyCompletions, successfulPayments, revenueRows, enrollmentTrendRows] =
+      await Promise.all([
+        CourseProgress.countDocuments({
+          course: { $in: courseIds },
+          status: "completed",
+          updatedAt: { $gte: sevenDaysAgo },
+        }),
+        CourseProgress.countDocuments({
+          course: { $in: courseIds },
+          status: "completed",
+          updatedAt: { $gte: fourteenDaysAgo, $lt: sevenDaysAgo },
+        }),
+        Payment.countDocuments({
+          course: { $in: courseIds },
+          status: "success",
+        }),
+        Payment.aggregate([
+          { $match: { course: { $in: courseIds }, status: "success" } },
+          { $group: { _id: null, totalRevenue: { $sum: "$amount" } } },
+        ]),
+        Enrollment.aggregate([
+          { $match: { course: { $in: courseIds } } },
+          {
+            $group: {
+              _id: {
+                $dateToString: {
+                  format: "%Y-%m-%d",
+                  date: "$createdAt",
+                },
+              },
+              count: { $sum: 1 },
+            },
+          },
+          { $sort: { _id: 1 } },
+          { $limit: 30 },
+        ]),
+      ]);
+
+    const completionChange =
+      previousWeeklyCompletions > 0
+        ? Math.round(
+            ((weeklyCompletions - previousWeeklyCompletions) /
+              previousWeeklyCompletions) *
+              100,
+          )
+        : weeklyCompletions > 0
+          ? 100
+          : 0;
+
     return NextResponse.json({
       success: true,
       data: {
-        totalCourses,
-        totalStudents: studentIds.size,
-        totalEnrollments,
+        overview: {
+          totalCourses,
+          totalStudents: studentIds.size,
+          totalEnrollments,
+          weeklyCompletions,
+          completionChange,
+          successfulPayments,
+          totalRevenue: Number(revenueRows[0]?.totalRevenue || 0),
+        },
         recentEnrollments,
+        trends: {
+          enrollments: enrollmentTrendRows.map((row) => ({
+            _id: String(row._id || ""),
+            count: Number(row.count || 0),
+          })),
+        },
       },
     });
   } catch (error) {
