@@ -61,7 +61,7 @@ interface Enrollment {
   _id: string;
   course: Course;
   enrolledAt: string;
-  status: 'active' | 'completed' | 'dropped' | 'suspended';
+  status: 'enrolled' | 'in_progress' | 'completed' | 'dropped' | 'suspended';
   progress: number;
   lastAccessedAt: string;
   paymentStatus: 'pending' | 'paid' | 'refunded' | 'failed';
@@ -173,7 +173,7 @@ export function StudentDashboardParity({
         .slice(0, 5);
     };
 
-    const activeEnrollments = enrollments.filter((e) => e.status === 'active');
+    const activeEnrollments = enrollments.filter((e) => e.status === 'enrolled' || e.status === 'in_progress');
     const completedEnrollments = enrollments.filter((e) => e.status === 'completed');
     const totalTime = courseProgress.reduce((sum, cp) => sum + cp.totalTimeSpent, 0);
     const avgProgress =
