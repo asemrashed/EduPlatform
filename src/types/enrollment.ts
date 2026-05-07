@@ -6,7 +6,12 @@ export interface Enrollment {
   student: string;
   course: string;
   enrolledAt: string;
-  status: "active" | "enrolled" | "in_progress" | "completed" | "dropped" | "suspended";
+  status: 
+    | "enrolled"
+    | "in_progress"
+    | "completed"
+    | "suspended"
+    | "dropped";
   progress: number;
   lastAccessedAt?: string;
   completedAt?: string;
@@ -44,7 +49,12 @@ export interface CreateEnrollmentRequest {
 }
 
 export interface UpdateEnrollmentRequest {
-  status?: "active" | "enrolled" | "in_progress" | "completed" | "dropped" | "suspended";
+  status?: 
+  | "enrolled"
+    | "in_progress"
+    | "completed"
+    | "suspended"
+    | "dropped";
   progress?: number;
   paymentStatus?: "pending" | "paid" | "refunded" | "failed";
   paymentAmount?: number;
@@ -59,7 +69,12 @@ export interface UpdateEnrollmentRequest {
 export interface EnrollmentFilters {
   student?: string;
   course?: string;
-  status?: "active" | "enrolled" | "in_progress" | "completed" | "dropped" | "suspended";
+  status?: 
+    | "enrolled"
+    | "in_progress"
+    | "completed"
+    | "suspended"
+    | "dropped";
   paymentStatus?: "pending" | "paid" | "refunded" | "failed";
   enrolledAfter?: string;
   enrolledBefore?: string;
