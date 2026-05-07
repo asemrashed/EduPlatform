@@ -27,7 +27,7 @@ export interface StudentDashboardEnrollment {
   _id: string;
   course: StudentDashboardCourse;
   enrolledAt: string;
-  status: "active" | "enrolled" | "in_progress" | "completed" | "dropped" | "suspended";
+  status: "enrolled" | "in_progress" | "completed" | "dropped" | "suspended";
   progress: number;
   lastAccessedAt: string;
   paymentStatus: "pending" | "paid" | "refunded" | "failed";
