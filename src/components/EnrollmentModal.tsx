@@ -26,7 +26,7 @@ const EnrollmentModal: React.FC<EnrollmentModalProps> = ({
   const [formData, setFormData] = useState({
     student: '',
     course: '',
-    status: 'active' as 'active' | 'completed' | 'dropped' | 'suspended',
+    status: 'enrolled' as 'enrolled' | 'in_progress' | 'completed' | 'suspended' | 'dropped',
     progress: 0,
     paymentStatus: 'pending' as 'pending' | 'paid' | 'refunded' | 'failed',
     paymentAmount: '',
@@ -98,7 +98,7 @@ const EnrollmentModal: React.FC<EnrollmentModalProps> = ({
       setFormData({
         student: '',
         course: '',
-        status: 'active',
+        status: 'enrolled',
         progress: 0,
         paymentStatus: 'pending',
         paymentAmount: '',
