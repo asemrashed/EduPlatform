@@ -15,7 +15,7 @@ type CheckoutInput =
 
 export const useCheckout = () => {
   const router = useRouter();
-  const authUser = useAppSelector((s) => s.auth.user);
+  const authUser = useAppSelector((s) => s?.auth?.user);
   const cartItems = useAppSelector((s) => s.cart.items);
   
   // Use the tools already built into usePayment
@@ -29,7 +29,7 @@ export const useCheckout = () => {
   };
 
   const handleCheckout = async (input?: CheckoutInput) => {
-    if (!authUser) {
+    if (!authUser?._id) {
       alert("Please login to checkout");
       router.push("/login");
       return;

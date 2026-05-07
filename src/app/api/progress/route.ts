@@ -227,47 +227,121 @@ export async function POST(request: NextRequest) {
     });
 
     // Use findOneAndUpdate with upsert to avoid race conditions
-    let doc = await CourseProgress.findOneAndUpdate(
-      {
-        student: userId,
-        course: courseId,
-      },
-      {
-        $setOnInsert: {
-          lessonProgress: [],
-          completedLessons: 0,
-          totalLessons,
-          progressPercentage: 0,
-          status: "in_progress",
+    let doc;
+    try {
+      doc = await CourseProgress.findOneAndUpdate(
+        {
+          student: userId,
+          course: courseId,
         },
-      },
-      {
-        upsert: true,
-        new: true,
-        setDefaultsOnInsert: true,
-      },
-    );
+        {
+          $setOnInsert: {
+            lessonProgress: [],
+            completedLessons: 0,
+            totalLessons,
+            progressPercentage: 0,
+            status: "in_progress",
+          },
+        },
+        {
+          upsert: true,
+          new: true,
+          setDefaultsOnInsert: true,
+        },
+      );
+    } catch (upsertError: unknown) {
+      // Handle E11000 duplicate key error - try to fetch existing document
+      if (
+        upsertError instanceof Error &&
+        upsertError.message.includes("E11000")
+      ) {
+        console.warn(
+          "E11000 error during upsert, attempting to fetch existing document",
+          { userId, courseId }
+        );
+        doc = await CourseProgress.findOne({
+          student: userId,
+          course: courseId,
+        });
+        
+        if (!doc) {
+          // If still not found, it's a genuine error
+          throw upsertError;
+        }
+      } else {
+        throw upsertError;
+      }
+    }
 
     if (!doc) {
       throw new Error("Failed to create or retrieve course progress");
     }
 
     const lessonObjectId = new mongoose.Types.ObjectId(lessonId);
+    
+    // Check if lesson is already in progress
+    const lessonExists = doc.lessonProgress?.some(
+      (lp: ILessonProgressEntry) => String(lp.lesson) === lessonId && lp.completed
+    );
+
+    // If lesson already completed, just return current state
+    if (lessonExists) {
+      const populated = await CourseProgress.findById(doc._id)
+        .populate({ path: "course", select: COURSE_SELECT })
+        .lean();
+
+      if (!populated) {
+        return NextResponse.json(
+          { success: false, error: "Failed to load progress" },
+          { status: 500 },
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: serializeCourseProgress(
+          populated as unknown as Parameters<typeof serializeCourseProgress>[0],
+        ),
+      });
+    }
+
+    // Update or add lesson progress
     const idx = doc.lessonProgress.findIndex(
       (lp: ILessonProgressEntry) => String(lp.lesson) === lessonId,
     );
 
     if (idx >= 0) {
-      if (!doc.lessonProgress[idx].completed) {
-        doc.lessonProgress[idx].completed = true;
-        doc.lessonProgress[idx].completedAt = new Date();
-      }
+      // Lesson exists but not completed - mark it completed
+      await CourseProgress.findOneAndUpdate(
+        { _id: doc._id },
+        {
+          $set: {
+            [`lessonProgress.${idx}.completed`]: true,
+            [`lessonProgress.${idx}.completedAt`]: new Date(),
+          },
+        }
+      );
     } else {
-      doc.lessonProgress.push({
-        lesson: lessonObjectId,
-        completed: true,
-        completedAt: new Date(),
-      });
+      // Add new lesson to progress
+      await CourseProgress.findOneAndUpdate(
+        { _id: doc._id },
+        {
+          $push: {
+            lessonProgress: {
+              lesson: lessonObjectId,
+              completed: true,
+              completedAt: new Date(),
+            },
+          },
+        }
+      );
+    }
+
+    // Re-fetch and recalculate all progress stats
+    doc = await CourseProgress.findById(doc._id);
+    
+    if (!doc) {
+      throw new Error("Failed to retrieve updated progress");
     }
 
     doc.totalLessons = totalLessons;
@@ -277,7 +351,19 @@ export async function POST(request: NextRequest) {
     doc.progressPercentage = progressPercentage;
     doc.status = status;
 
-    await doc.save();
+    // Update all calculated fields atomically
+    doc = await CourseProgress.findOneAndUpdate(
+      { _id: doc._id },
+      {
+        $set: {
+          completedLessons,
+          progressPercentage,
+          status,
+          totalLessons,
+        },
+      },
+      { new: true }
+    );
 
     await Enrollment.findOneAndUpdate(
       { student: userId, course: courseId },
@@ -303,17 +389,6 @@ export async function POST(request: NextRequest) {
       ),
     });
   } catch (error: unknown) {
-    if (
-      error &&
-      typeof error === "object" &&
-      "code" in error &&
-      (error as { code?: number }).code === 11000
-    ) {
-      return NextResponse.json(
-        { success: false, error: "Progress already exists for this course" },
-        { status: 409 },
-      );
-    }
     console.error("POST /api/progress error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to update progress" },
