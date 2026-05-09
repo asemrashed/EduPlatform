@@ -42,6 +42,13 @@ export const useTeachers = () => {
       const response = await fetch('/api/teachers');
       const data = await response.json();
 
+      // Non-admin/instructor contexts may not be allowed to list teachers.
+      // Keep this hook fail-soft so shared UIs can reuse it safely.
+      if (response.status === 401 || response.status === 403) {
+        setTeachers([]);
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to fetch teachers');
       }

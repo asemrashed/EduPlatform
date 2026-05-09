@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { CourseCategory, CourseCategoryListResponse, CourseCategoryStats, CourseCategorySearchParams } from '@/types/course-category';
+import { CourseCategory, CourseCategoryStats, CourseCategorySearchParams } from '@/types/course-category';
 
 interface UseCourseCategoriesReturn {
   categories: CourseCategory[];
@@ -48,13 +48,48 @@ export const useCourseCategories = (initialParams?: CourseCategorySearchParams):
       const response = await fetch(`/api/categories?${searchParams.toString()}`);
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch categories');
+      if (response.ok) {
+        setCategories(data.data.categories);
+        setPagination(data.data.pagination);
+        setStats(data.data.stats);
+        return;
       }
 
-      setCategories(data.data.categories);
-      setPagination(data.data.pagination);
-      setStats(data.data.stats);
+      // Instructors are not allowed on /api/categories. Fallback to public categories.
+      if (response.status === 401 || response.status === 403) {
+        const publicResponse = await fetch('/api/public/categories');
+        const publicData = await publicResponse.json();
+
+        if (!publicResponse.ok) {
+          throw new Error(publicData.error || data.error || 'Failed to fetch categories');
+        }
+
+        const normalized = Array.isArray(publicData.data)
+          ? publicData.data.map((item: any) => ({
+              _id: String(item.id || item._id || item.label || ''),
+              name: String(item.label || item.name || ''),
+              description: '',
+              color: '',
+              icon: '',
+              isActive: true,
+              courseCount: typeof item.count === 'number' ? item.count : 0,
+              createdAt: new Date(0).toISOString(),
+              updatedAt: new Date(0).toISOString(),
+            }))
+          : [];
+
+        setCategories(normalized);
+        setPagination({
+          page: 1,
+          limit: normalized.length || 10,
+          total: normalized.length,
+          pages: normalized.length > 0 ? 1 : 0,
+        });
+        setStats(null);
+        return;
+      }
+
+      throw new Error(data.error || 'Failed to fetch categories');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch categories');
       console.error('Error fetching categories:', err);
