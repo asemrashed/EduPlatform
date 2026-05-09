@@ -403,10 +403,15 @@ function CourseBuilderContent() {
   const fetchLessonsForChapter = useCallback(
     async (chapterId: string) => {
       try {
-        const res = await fetch(`/api/lessons?chapterId=${chapterId}`);
+        const res = await fetch(`/api/lessons?chapter=${chapterId}&limit=1000`);
         const data = await res.json();
-        if (res.ok && Array.isArray(data.data)) {
-          setChapterLessons(data.data);
+        const lessonsForChapter = Array.isArray(data?.data?.lessons)
+          ? data.data.lessons
+          : Array.isArray(data?.data)
+          ? data.data
+          : [];
+        if (res.ok) {
+          setChapterLessons(lessonsForChapter);
         } else {
           // Fallback to hook data
           setChapterLessons(getLessonsByChapter(chapterId));
@@ -563,7 +568,7 @@ function CourseBuilderContent() {
       l.description?.toLowerCase().includes(lessonSearch.toLowerCase())
   );
 
-  if (coursesLoading) {
+  if (coursesLoading && !course) {
     return (
       <InstructorRoleShell>
         <LoadingState message="Loading courses..." />
@@ -780,6 +785,7 @@ function CourseBuilderContent() {
                 />
                 {chapterSearch && (
                   <button
+                    type="button"
                     onClick={() => setChapterSearch('')}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
@@ -869,6 +875,7 @@ function CourseBuilderContent() {
                   />
                   {lessonSearch && (
                     <button
+                      type="button"
                       onClick={() => setLessonSearch('')}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >

@@ -317,7 +317,11 @@ export function useLessons(): UseLessonsReturn {
 
   // Get lessons by chapter
   const getLessonsByChapter = useCallback((chapterId: string): Lesson[] => {
-    return lessons.filter(lesson => lesson.chapter === chapterId);
+    return lessons.filter((lesson) => {
+      const lessonChapterId =
+        typeof lesson.chapter === 'string' ? lesson.chapter : lesson.chapter?._id;
+      return lessonChapterId === chapterId;
+    });
   }, [lessons]);
 
   // Get lessons by course

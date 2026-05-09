@@ -119,11 +119,11 @@ export default function DraggableLessonItem({
             {lesson.isFree ? 'Free' : 'Paid'}
           </Badge>
           <Button
+            type="button"
             variant="outline"
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
-              console.log('Edit button clicked for lesson:', lesson.title);
               onEdit(lesson);
             }}
             className="hover:bg-gray-100 transition-colors flex-shrink-0"
@@ -133,11 +133,11 @@ export default function DraggableLessonItem({
           </Button>
           {onDelete && (
             <Button
+              type="button"
               variant="outline"
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                console.log('Delete button clicked for lesson:', lesson.title);
                 onDelete(lesson);
               }}
               className="hover:bg-red-50 text-red-600 hover:text-red-700 transition-colors flex-shrink-0"
@@ -148,6 +148,7 @@ export default function DraggableLessonItem({
           )}
           {onManageQuiz && (
             <Button
+              type="button"
               variant="outline"
               size="sm"
               onClick={(e) => {

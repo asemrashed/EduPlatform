@@ -117,11 +117,11 @@ export default function DraggableChapterItem({
             {chapter.isPublished ? 'Published' : 'Draft'}
           </Badge>
           <Button
+            type="button"
             variant="outline"
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
-              console.log('Edit button clicked for chapter:', chapter.title);
               onEdit(chapter);
             }}
             className="hover:bg-gray-100 transition-colors flex-shrink-0"
@@ -131,11 +131,11 @@ export default function DraggableChapterItem({
           </Button>
           {onDelete && (
             <Button
+              type="button"
               variant="outline"
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                console.log('Delete button clicked for chapter:', chapter.title);
                 onDelete(chapter);
               }}
               className="hover:bg-red-50 text-red-600 hover:text-red-700 transition-colors flex-shrink-0"
