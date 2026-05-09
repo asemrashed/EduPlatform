@@ -20,6 +20,8 @@ export interface IQuestion extends Document {
   isActive: boolean;
   createdBy: mongoose.Types.ObjectId;
   exam?: mongoose.Types.ObjectId;
+  /** When set, this MCQ belongs to a lesson quiz (mutually exclusive with `exam` in routes). */
+  lesson?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -120,11 +122,17 @@ const QuestionSchema = new Schema<IQuestion>(
       ref: "Exam",
       index: true,
     },
+    lesson: {
+      type: Schema.Types.ObjectId,
+      ref: "Lesson",
+      index: true,
+    },
   },
   { timestamps: true },
 );
 
 QuestionSchema.index({ createdAt: -1 });
+QuestionSchema.index({ lesson: 1, isActive: 1 });
 
 const Question =
   mongoose.models.Question || mongoose.model<IQuestion>("Question", QuestionSchema);
