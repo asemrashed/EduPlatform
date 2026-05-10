@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import Assignment from "@/models/Assignment";
 import AssignmentSubmission from "@/models/AssignmentSubmission";
 import Enrollment from "@/models/Enrollment";
-import { pagination, parseLimit, parsePage, requireSessionUser } from "@/app/api/_lib/phase12";
+import { pagination, parseLimit, parsePage, requireSessionUser, toObjectId } from "@/app/api/_lib/phase12";
 
 function computeStatus(row: any) {
   const now = Date.now();
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     const sortOrder = searchParams.get("sortOrder") === "desc" ? -1 : 1;
 
     const enrolled = await Enrollment.find({
-      student: auth.user.id,
+      student: toObjectId(auth.user.id),
       status: { $in: ["enrolled", "in_progress", "completed"] },
     })
       .select("course")
@@ -69,6 +69,8 @@ export async function GET(request: NextRequest) {
       const latest = byAssignment.get(String(row._id));
       return {
         ...row,
+        attemptsUsed: latest?.attemptNumber || 0,
+        attemptsRemaining: Math.max(Number(row.maxAttempts || 1) - Number(latest?.attemptNumber || 0), 0),
         submissionStatus: latest?.status || "not_submitted",
         latestSubmission: latest || undefined,
       };
@@ -82,6 +84,17 @@ export async function GET(request: NextRequest) {
       pending: mapped.filter((x) => !x.latestSubmission).length,
       submitted: mapped.filter((x) => x.latestSubmission?.status === "submitted").length,
       graded: mapped.filter((x) => x.latestSubmission?.status === "graded").length,
+      totalSubmissions: mapped.filter((x) => Boolean(x.latestSubmission)).length,
+      averageScore: (() => {
+        const gradedRows = mapped.filter((x) => x.latestSubmission && typeof x.latestSubmission.score === "number");
+        if (gradedRows.length === 0) return 0;
+        const sum = gradedRows.reduce((acc, x) => acc + Number(x.latestSubmission.score || 0), 0);
+        return Math.round((sum / gradedRows.length) * 100) / 100;
+      })(),
+      totalAssignments: mapped.length,
+      publishedAssignments: mapped.length,
+      draftAssignments: 0,
+      activeAssignments: mapped.filter((x) => computeStatus(x) === "active").length,
     };
 
     return NextResponse.json({

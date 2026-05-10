@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import Assignment from "@/models/Assignment";
 import AssignmentSubmission from "@/models/AssignmentSubmission";
 import Enrollment from "@/models/Enrollment";
-import { isObjectId, requireSessionUser } from "@/app/api/_lib/phase12";
+import { isObjectId, requireSessionUser, toObjectId } from "@/app/api/_lib/phase12";
 
 interface RouteCtx {
   params: Promise<{ id: string }>;
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest, ctx: RouteCtx) {
       return NextResponse.json({ success: false, error: "Assignment not found" }, { status: 404 });
     }
     const canAccess = await Enrollment.exists({
-      student: auth.user.id,
+      student: toObjectId(auth.user.id),
       course: assignment.course,
       status: { $in: ["enrolled", "in_progress", "completed"] },
     });
@@ -50,11 +50,25 @@ export async function POST(request: NextRequest, ctx: RouteCtx) {
       assignment: new mongoose.Types.ObjectId(id),
       student: new mongoose.Types.ObjectId(auth.user.id),
     });
+    const latestSubmission = await AssignmentSubmission.findOne({
+      assignment: new mongoose.Types.ObjectId(id),
+      student: new mongoose.Types.ObjectId(auth.user.id),
+    })
+      .sort({ attemptNumber: -1 })
+      .lean();
     const attemptNumber = attempts + 1;
     const maxAttempts = Number(assignment.maxAttempts || 1);
     if (attemptNumber > maxAttempts) {
       return NextResponse.json(
-        { success: false, error: "Maximum assignment attempts exceeded" },
+        {
+          success: false,
+          error: "Maximum assignment attempts exceeded",
+          data: {
+            attemptsUsed: attempts,
+            maxAttempts,
+            latestSubmission: latestSubmission || null,
+          },
+        },
         { status: 400 },
       );
     }
@@ -80,7 +94,14 @@ export async function POST(request: NextRequest, ctx: RouteCtx) {
       timeSpent: payload.timeSpent,
     });
 
-    return NextResponse.json({ success: true, data: { submission: submission.toObject() } });
+    return NextResponse.json({
+      success: true,
+      data: {
+        submission: submission.toObject(),
+        attemptNumber,
+        attemptsRemaining: Math.max(maxAttempts - attemptNumber, 0),
+      },
+    });
   } catch (error: any) {
     if (error?.code === 11000) {
       return NextResponse.json({ success: false, error: "Duplicate attempt number" }, { status: 409 });

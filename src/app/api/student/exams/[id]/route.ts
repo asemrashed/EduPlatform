@@ -3,13 +3,14 @@ import mongoose from "mongoose";
 import Exam from "@/models/Exam";
 import Question from "@/models/Question";
 import Enrollment from "@/models/Enrollment";
+import ExamAttempt from "@/models/ExamAttempt";
 import { isObjectId, requireSessionUser } from "@/app/api/_lib/phase12";
 
 interface RouteCtx {
   params: Promise<{ id: string }>;
 }
 
-export async function GET(_request: NextRequest, ctx: RouteCtx) {
+export async function GET(request: NextRequest, ctx: RouteCtx) {
   try {
     const auth = await requireSessionUser(["student"]);
     if (auth.error) return auth.error;
@@ -33,6 +34,21 @@ export async function GET(_request: NextRequest, ctx: RouteCtx) {
       }
     }
 
+    const { searchParams } = new URL(request.url);
+    const wantsCorrectAnswers = searchParams.get("includeCorrectAnswers") === "true";
+    const canShowCorrectAnswers =
+      wantsCorrectAnswers &&
+      exam.allowReview !== false &&
+      exam.showCorrectAnswers !== false &&
+      Boolean(
+        await ExamAttempt.exists({
+          exam: exam._id,
+          student: auth.user.id,
+          status: "completed",
+          isSubmitted: true,
+        }),
+      );
+
     const questionFilter = exam.questions.length
       ? { _id: { $in: exam.questions } }
       : { exam: new mongoose.Types.ObjectId(id) };
@@ -46,9 +62,9 @@ export async function GET(_request: NextRequest, ctx: RouteCtx) {
       timeLimit: q.timeLimit,
       options: Array.isArray(q.options)
         ? q.options.map((o: any, i: number) => ({
-            _id: `${q._id}-${i}`,
+            _id: String(i),
             text: o.text,
-            isCorrect: false,
+            isCorrect: canShowCorrectAnswers ? Boolean(o.isCorrect) : false,
           }))
         : [],
       correctAnswer: undefined,

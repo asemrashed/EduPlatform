@@ -92,7 +92,9 @@ export default function AssignmentModal({ open, assignment, onClose, onSuccess }
     isGroupAssignment: false,
     autoGrade: false,
     showCorrectAnswers: true,
-    allowReview: true
+    allowReview: true,
+    isActive: true,
+    isPublished: false,
   });
   const [rubric, setRubric] = useState<RubricItem[]>([]);
   const [newRubricItem, setNewRubricItem] = useState<RubricItem>({
@@ -264,7 +266,9 @@ export default function AssignmentModal({ open, assignment, onClose, onSuccess }
         autoGrade: assignment.autoGrade,
         timeLimit: assignment.timeLimit,
         showCorrectAnswers: assignment.showCorrectAnswers,
-        allowReview: assignment.allowReview
+        allowReview: assignment.allowReview,
+        isActive: assignment.isActive !== false,
+        isPublished: Boolean(assignment.isPublished),
       });
       setRubric(assignment.rubric || []);
     } else {
@@ -281,7 +285,9 @@ export default function AssignmentModal({ open, assignment, onClose, onSuccess }
         isGroupAssignment: false,
         autoGrade: false,
         showCorrectAnswers: true,
-        allowReview: true
+        allowReview: true,
+        isActive: true,
+        isPublished: false,
       });
       setRubric([]);
     }
@@ -306,11 +312,14 @@ export default function AssignmentModal({ open, assignment, onClose, onSuccess }
         ...formData,
         startDate: toISOStringFromLocalInput(formData.startDate),
         dueDate: toISOStringFromLocalInput(formData.dueDate),
-        rubric: rubric
+        rubric: rubric,
+        isActive: formData.isActive !== false,
+        isPublished: Boolean(formData.isPublished),
       };
 
       const response = await fetch(url, {
         method,
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -777,6 +786,34 @@ export default function AssignmentModal({ open, assignment, onClose, onSuccess }
                     checked={formData.autoGrade}
                     onCheckedChange={(checked) => handleInputChange('autoGrade', checked)}
                     className="data-[state=checked]:bg-purple-600 data-[state=unchecked]:bg-gray-300"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-teal-200 shadow-md hover:shadow-lg transition-all duration-200">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-gray-900">Assignment Active</label>
+                    <p className="text-sm text-gray-600">Inactive assignments are hidden from students</p>
+                  </div>
+                  <Switch
+                    checked={formData.isActive !== false}
+                    onCheckedChange={(checked) => handleInputChange('isActive', checked)}
+                    className="data-[state=checked]:bg-teal-600 data-[state=unchecked]:bg-gray-300"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-emerald-200 shadow-md hover:shadow-lg transition-all duration-200">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-gray-900">Publish Assignment</label>
+                    <p className="text-sm text-gray-600">Students only see published assignments</p>
+                  </div>
+                  <Switch
+                    checked={Boolean(formData.isPublished)}
+                    onCheckedChange={(checked) => handleInputChange('isPublished', checked)}
+                    className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-gray-300"
                   />
                 </div>
               </div>

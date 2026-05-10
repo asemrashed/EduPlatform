@@ -142,6 +142,8 @@ export interface CreateAssignmentRequest {
   timeLimit?: number;
   showCorrectAnswers?: boolean;
   allowReview?: boolean;
+  isActive?: boolean;
+  isPublished?: boolean;
 }
 
 export interface UpdateAssignmentRequest extends Partial<CreateAssignmentRequest> {

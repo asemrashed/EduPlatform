@@ -331,7 +331,7 @@ export default function ExamModal({ open, exam, onClose, onSuccess }: ExamModalP
                   value={formData.type}
                   onValueChange={(value) => handleInputChange('type', value)}
                 >
-                  <SelectTrigger className="h-12 border-2 border-blue-300 hover:border-blue-400 focus:border-blue-500 focus:ring-blue-500/20 focus:shadow-lg focus:shadow-blue-500/10 rounded-lg bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all duration-200 font-medium text-sm">
+                  <SelectTrigger className="h-12 border-2 border-blue-300 hover:border-blue-400 focus:border-blue-500 focus:ring-blue-500/20 focus:shadow-lg focus:shadow-blue-500/10 rounded-lg bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all duration-200 font-medium text-sm">
                     <SelectValue placeholder="Select exam type" />
                   </SelectTrigger>
                   <SelectContent className="bg-white border border-gray-200 rounded-lg shadow-lg">
@@ -376,7 +376,7 @@ export default function ExamModal({ open, exam, onClose, onSuccess }: ExamModalP
                 onValueChange={(value) => handleInputChange('course', value)}
                 disabled={coursesLoading}
               >
-                <SelectTrigger className="h-12 border-2 border-blue-300 hover:border-blue-400 focus:border-blue-500 focus:ring-blue-500/20 focus:shadow-lg focus:shadow-blue-500/10 rounded-lg bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all duration-200 font-medium text-sm">
+                <SelectTrigger className="h-12 border-2 border-blue-300 hover:border-blue-400 focus:border-blue-500 focus:ring-blue-500/20 focus:shadow-lg focus:shadow-blue-500/10 rounded-lg bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all duration-200 font-medium text-sm">
                   <SelectValue placeholder={coursesLoading ? 'Loading courses...' : (courses.length ? 'Select a course' : 'No courses found')} />
                 </SelectTrigger>
                 <SelectContent className="bg-white border border-gray-200 rounded-lg shadow-lg">

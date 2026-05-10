@@ -72,6 +72,7 @@ function ExamResultsPageContent() {
   const [attempt, setAttempt] = useState<ExamAttempt | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
+  console.log('attempt:', attempt);
 
   const fetchResults = async () => {
     try {
@@ -100,7 +101,7 @@ function ExamResultsPageContent() {
       setAttempt(latestAttempt);
       
       // Fetch questions for review
-      const questionsResponse = await fetch(`/api/student/exams/${examId}`, {
+      const questionsResponse = await fetch(`/api/student/exams/${examId}?includeCorrectAnswers=true`, {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -130,6 +131,11 @@ function ExamResultsPageContent() {
 
   const getAnswerForQuestion = (questionId: string) => {
     return attempt?.answers.find(a => a.questionId === questionId);
+  };
+
+  const answerIncludesOption = (answer: string | string[], questionId: string, optionId: string) => {
+    const values = Array.isArray(answer) ? answer : [answer];
+    return values.some((value) => value === optionId || value === `${questionId}-${optionId}`);
   };
 
   const formatTime = (seconds: number) => {
@@ -373,7 +379,11 @@ function ExamResultsPageContent() {
                         <div className="space-y-2">
                           <p className="text-sm font-medium text-gray-700">Options:</p>
                           {question.options.map((option) => {
-                            const isSelected = answer.answer === option._id.toString();
+                            const isSelected = answerIncludesOption(
+                              answer.answer,
+                              answer.questionId,
+                              option._id.toString(),
+                            );
                             const isCorrect = option.isCorrect;
                             
                             return (

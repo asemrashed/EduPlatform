@@ -25,14 +25,22 @@ export default function StudentAssignmentDetailPage() {
   const [content, setContent] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [latestSubmission, setLatestSubmission] = useState<any | null>(null);
+  const [attemptsRemaining, setAttemptsRemaining] = useState(0);
 
   const fetchAssignment = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/assignments/${assignmentId}`);
+      const res = await fetch(`/api/student/assignments/${assignmentId}`, { credentials: 'include' });
       const data = await res.json();
       if (res.ok) {
-        setAssignment(data.data?.assignment || data.assignment);
+        setAssignment(data.data?.assignment || data.assignment || null);
+        const submission = data.data?.latestSubmission || null;
+        setLatestSubmission(submission);
+        setAttemptsRemaining(Number(data.data?.attemptsRemaining || 0));
+        if (submission?.content) {
+          setContent(String(submission.content));
+        }
       }
     } finally {
       setLoading(false);
@@ -90,8 +98,9 @@ export default function StudentAssignmentDetailPage() {
       }
       const data = await res.json();
       if (res.ok) {
-        // Navigate reliably back to the student assignments list
-        router.replace('/student/assignments');
+        await fetchAssignment();
+        setFile(null);
+        setError(null);
       } else {
         setError(data?.error || 'Submission failed. Please try again.');
       }
@@ -185,56 +194,87 @@ export default function StudentAssignmentDetailPage() {
                 </div>
               )}
 
-              {/* Submission form */}
-              <div className="space-y-4">
-                {assignment.type === 'project' || assignment.type === 'presentation' ? (
-                  <AttractiveInput
-                    type="url"
-                    label="Submission URL"
-                    placeholder="Paste your project/presentation link (e.g., GitHub, Google Slides)"
-                    icon="tag"
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                  />
-                ) : (
-                  <AttractiveTextarea
-                    label={assignment.type === 'essay' ? 'Your Essay' : 'Your Answer'}
-                    placeholder={assignment.type === 'essay' ? 'Write your essay here...' : 'Write your response here...'}
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    rows={8}
-                  />
-                )}
-
-                {assignment.type === 'file_upload' && (
-                  <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-purple-200">
-                    <label className="block text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                      <Upload className="w-4 h-4 text-purple-600" />
-                      Attachment (optional)
-                    </label>
-                    <input
-                      type="file"
-                      onChange={(e) => setFile(e.target.files?.[0] || null)}
-                      className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">You can still submit without attaching a file. Max ~10MB.</p>
+              {latestSubmission && (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-emerald-700 font-medium">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Latest submission: {latestSubmission.status || 'submitted'}
                   </div>
-                )}
-
-                {error && (
-                  <div className="flex items-center gap-2 text-sm text-red-600">
-                    <AlertCircle className="w-4 h-4" />
-                    {error}
+                  <div className="text-sm text-gray-700">
+                    Attempt #{latestSubmission.attemptNumber || 1}
+                    {latestSubmission.submittedAt ? ` • Submitted ${new Date(latestSubmission.submittedAt).toLocaleString()}` : ""}
                   </div>
-                )}
-              </div>
+                  {typeof latestSubmission.score === "number" && (
+                    <div className="text-sm text-gray-700">
+                      Score: {latestSubmission.score}/{latestSubmission.maxScore}
+                      {typeof latestSubmission.percentageScore === "number" ? ` (${latestSubmission.percentageScore}%)` : ""}
+                    </div>
+                  )}
+                  {latestSubmission.feedback && (
+                    <div className="text-sm text-gray-700">Feedback: {latestSubmission.feedback}</div>
+                  )}
+                </div>
+              )}
 
-              <div className="flex justify-end">
-                <Button onClick={handleSubmit} disabled={submitting} className="flex items-center gap-2">
-                  <Send className="w-4 h-4" />
-                  Submit
-                </Button>
-              </div>
+              {attemptsRemaining > 0 ? (
+                <>
+                  {/* Submission form */}
+                  <div className="space-y-4">
+                    {assignment.type === 'project' || assignment.type === 'presentation' ? (
+                      <AttractiveInput
+                        type="url"
+                        label="Submission URL"
+                        placeholder="Paste your project/presentation link (e.g., GitHub, Google Slides)"
+                        icon="tag"
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                      />
+                    ) : (
+                      <AttractiveTextarea
+                        label={assignment.type === 'essay' ? 'Your Essay' : 'Your Answer'}
+                        placeholder={assignment.type === 'essay' ? 'Write your essay here...' : 'Write your response here...'}
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        rows={8}
+                      />
+                    )}
+
+                    {assignment.type === 'file_upload' && (
+                      <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-purple-200">
+                        <label className="block text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                          <Upload className="w-4 h-4 text-purple-600" />
+                          Attachment (optional)
+                        </label>
+                        <input
+                          type="file"
+                          onChange={(e) => setFile(e.target.files?.[0] || null)}
+                          className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">You can still submit without attaching a file. Max ~10MB.</p>
+                      </div>
+                    )}
+
+                    {error && (
+                      <div className="flex items-center gap-2 text-sm text-red-600">
+                        <AlertCircle className="w-4 h-4" />
+                        {error}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-gray-600">{attemptsRemaining} attempt(s) remaining</p>
+                    <Button onClick={handleSubmit} disabled={submitting} className="flex items-center gap-2">
+                      <Send className="w-4 h-4" />
+                      Submit
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                  You have reached the maximum number of attempts for this assignment.
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

@@ -212,6 +212,11 @@ function ExamTakingPageContent() {
     }));
   };
 
+  const isOptionSelected = (questionId: string, optionId: string) => {
+    const answer = answers[questionId];
+    return answer === optionId || answer === `${questionId}-${optionId}`;
+  };
+
   const handleSaveProgress = async () => {
     if (!attempt) return;
     
@@ -492,7 +497,7 @@ function ExamTakingPageContent() {
                           type="radio"
                           name={`question-${currentQuestion._id}`}
                           value={option._id}
-                          checked={answers[currentQuestion._id] === option._id}
+                          checked={isOptionSelected(currentQuestion._id, option._id)}
                           onChange={(e) => handleAnswerChange(currentQuestion._id, e.target.value)}
                           className="w-4 h-4 text-blue-600"
                         />

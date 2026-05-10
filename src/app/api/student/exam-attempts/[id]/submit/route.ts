@@ -15,6 +15,13 @@ function normalizeAnswerValue(answer: unknown): string[] {
   return [];
 }
 
+function normalizeOptionIndexes(questionId: string, selected: string[]): string[] {
+  return selected.map((value) => {
+    const legacyPrefix = `${questionId}-`;
+    return value.startsWith(legacyPrefix) ? value.slice(legacyPrefix.length) : value;
+  });
+}
+
 export async function POST(request: NextRequest, ctx: RouteCtx) {
   try {
     const auth = await requireSessionUser(["student"]);
@@ -47,15 +54,29 @@ export async function POST(request: NextRequest, ctx: RouteCtx) {
         const selected = normalizeAnswerValue(a.answer);
         let isCorrect: boolean | undefined;
         let ansMarks = 0;
+        let selectedForStorage = selected;
         if (q) {
-          if (q.type === "mcq" || q.type === "true_false") {
+          if (q.type === "mcq") {
+            selectedForStorage = normalizeOptionIndexes(a.questionId, selected);
+            const correct = Array.isArray(q.options)
+              ? q.options
+                  .map((opt: any, index: number) => (opt.isCorrect ? String(index) : null))
+                  .filter((index: string | null): index is string => index !== null)
+                  .sort()
+              : [];
+            const selectedSorted = [...selectedForStorage].sort();
+            isCorrect =
+              correct.length === selectedSorted.length &&
+              correct.every((v: string, i: number) => selectedSorted[i] === v);
+            ansMarks = isCorrect ? Number(q.marks || 0) : 0;
+          } else if (q.type === "true_false") {
             const correct = Array.isArray(q.options)
               ? q.options
                   .filter((opt: any) => opt.isCorrect)
-                  .map((opt: any) => String(opt.text))
+                  .map((opt: any) => String(opt.text).toLowerCase())
                   .sort()
               : [];
-            const selectedSorted = [...selected].sort();
+            const selectedSorted = selected.map((value) => value.toLowerCase()).sort();
             isCorrect =
               correct.length === selectedSorted.length &&
               correct.every((v: string, i: number) => selectedSorted[i] === v);
@@ -68,8 +89,8 @@ export async function POST(request: NextRequest, ctx: RouteCtx) {
         marksObtained += ansMarks;
         return {
           question: new mongoose.Types.ObjectId(a.questionId),
-          selectedOptions: selected,
-          writtenAnswer: selected.length === 1 ? selected[0] : undefined,
+          selectedOptions: selectedForStorage,
+          writtenAnswer: selectedForStorage.length === 1 ? selectedForStorage[0] : undefined,
           isCorrect,
           marksObtained: ansMarks,
           isAnswered: true,

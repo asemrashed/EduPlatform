@@ -28,9 +28,24 @@ export async function GET(request: NextRequest) {
       ExamAttempt.countDocuments(filter),
     ]);
 
-    const attempts = rows.map((a) => ({
+    const examIds = Array.from(new Set(rows.map((a) => String(a.exam))));
+    const examDocs = await Exam.find({ _id: { $in: examIds } })
+      .select("title type duration totalMarks passingMarks")
+      .lean();
+    const examById = new Map(examDocs.map((exam) => [String(exam._id), exam]));
+
+    const attempts = rows.map((a) => {
+      const exam = examById.get(String(a.exam));
+      return {
       _id: String(a._id),
-      exam: String(a.exam),
+      exam: {
+        _id: String(exam?._id || a.exam),
+        title: exam?.title || "Exam",
+        type: exam?.type || "exam",
+        duration: exam?.duration || 0,
+        totalMarks: Number(exam?.totalMarks ?? a.totalMarks ?? 0),
+        passingMarks: Number(exam?.passingMarks ?? 0),
+      },
       student: String(a.student),
       status: a.status,
       score: a.marksObtained,
@@ -45,7 +60,8 @@ export async function GET(request: NextRequest) {
       })),
       startedAt: a.startTime,
       completedAt: a.submittedAt,
-    }));
+      };
+    });
 
     return NextResponse.json({
       success: true,

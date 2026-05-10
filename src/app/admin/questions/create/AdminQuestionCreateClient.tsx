@@ -182,7 +182,7 @@ export default function CreateQuestionPage() {
                       value={formData.type}
                       onValueChange={(value) => handleInputChange('type', value)}
                     >
-                      <SelectTrigger className="h-12 border-2 rounded-lg bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all duration-200 font-medium text-sm" style={{
+                      <SelectTrigger className="h-12 border-2 rounded-lg bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all duration-200 font-medium text-sm" style={{
                         borderColor: '#7B2CBF',
                       }}
                       onMouseEnter={(e) => e.currentTarget.style.borderColor = '#A855F7'}
@@ -231,7 +231,7 @@ export default function CreateQuestionPage() {
                       value={formData.difficulty}
                       onValueChange={(value) => handleInputChange('difficulty', value)}
                     >
-                      <SelectTrigger className="h-12 border-2 rounded-lg bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all duration-200 font-medium text-sm" style={{
+                      <SelectTrigger className="h-12 border-2 rounded-lg bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all duration-200 font-medium text-sm" style={{
                         borderColor: '#7B2CBF',
                       }}
                       onMouseEnter={(e) => e.currentTarget.style.borderColor = '#A855F7'}

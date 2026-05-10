@@ -10,6 +10,20 @@ interface RouteCtx {
   params: Promise<{ id: string }>;
 }
 
+function computeAssignmentStatus(input: {
+  isPublished?: boolean;
+  isActive?: boolean;
+  startDate?: Date | string;
+  dueDate?: Date | string;
+}) {
+  if (!input.isPublished) return "draft";
+  if (!input.isActive) return "inactive";
+  const now = Date.now();
+  if (input.startDate && new Date(input.startDate).getTime() > now) return "scheduled";
+  if (input.dueDate && new Date(input.dueDate).getTime() < now) return "expired";
+  return "active";
+}
+
 async function loadAssignmentForUser(id: string, userId: string, role: string) {
   const filter: Record<string, unknown> = { _id: id };
   if (role === "instructor") {
@@ -111,6 +125,14 @@ export async function PUT(request: NextRequest, ctx: RouteCtx) {
         { success: false, error: "passingMarks cannot be greater than totalMarks" },
         { status: 400 },
       );
+    }
+    if (!("status" in body)) {
+      assignment.status = computeAssignmentStatus({
+        isActive: assignment.isActive,
+        isPublished: assignment.isPublished,
+        startDate: assignment.startDate,
+        dueDate: assignment.dueDate,
+      }) as any;
     }
     await assignment.save();
     return NextResponse.json({ success: true, data: assignment.toObject() });

@@ -31,8 +31,7 @@ function readEnv(...keys: string[]): string {
 }
 
 function requireEnv(label: string, ...keys: string[]): string {
-  const value = readEnv(...keys);
-  console.log("value", value, label);
+  const value = readEnv(...(keys.length ? keys : [label]));
   if (!value) {
     throw new Error(`${label} is not configured`);
   }

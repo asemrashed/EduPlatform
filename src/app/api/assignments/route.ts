@@ -5,6 +5,20 @@ import AssignmentSubmission from "@/models/AssignmentSubmission";
 import Course from "@/models/Course";
 import { pagination, parseLimit, parsePage, requireSessionUser, toObjectId } from "@/app/api/_lib/phase12";
 
+function computeAssignmentStatus(input: {
+  isPublished?: boolean;
+  isActive?: boolean;
+  startDate?: Date | string;
+  dueDate?: Date | string;
+}) {
+  if (!input.isPublished) return "draft";
+  if (!input.isActive) return "inactive";
+  const now = Date.now();
+  if (input.startDate && new Date(input.startDate).getTime() > now) return "scheduled";
+  if (input.dueDate && new Date(input.dueDate).getTime() < now) return "expired";
+  return "active";
+}
+
 function mapAssignment(row: any) {
   return {
     _id: String(row._id),
@@ -35,7 +49,7 @@ function mapAssignment(row: any) {
     timeLimit: row.timeLimit || undefined,
     showCorrectAnswers: row.showCorrectAnswers !== false,
     allowReview: row.allowReview !== false,
-    status: row.status || "draft",
+    status: row.status || computeAssignmentStatus(row),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -53,16 +67,27 @@ export async function GET(request: NextRequest) {
     const search = (searchParams.get("search") || "").trim();
     const status = (searchParams.get("status") || "").trim();
     const type = (searchParams.get("type") || "").trim();
+    const course = (searchParams.get("course") || "").trim();
     const sortBy = (searchParams.get("sortBy") || "createdAt").trim();
     const sortOrder = searchParams.get("sortOrder") === "asc" ? 1 : -1;
 
     const filter: Record<string, unknown> = {};
     if (auth.user.role === "instructor") {
-      filter.createdBy = toObjectId(auth.user.id);
+      const instructorId = toObjectId(auth.user.id);
+      const taughtCourses = await Course.find({
+        $or: [{ instructor: instructorId }, { createdBy: instructorId }],
+      })
+        .select("_id")
+        .lean();
+      const taughtCourseIds = taughtCourses.map((c) => c._id);
+      filter.$or = [{ createdBy: instructorId }, { course: { $in: taughtCourseIds } }];
     }
     if (search) filter.title = { $regex: search, $options: "i" };
     if (status && status !== "all") filter.status = status;
     if (type && type !== "all") filter.type = type;
+    if (course && course !== "all" && mongoose.Types.ObjectId.isValid(course)) {
+      filter.course = new mongoose.Types.ObjectId(course);
+    }
 
     const sort: Record<string, 1 | -1> = { [sortBy]: sortOrder };
     const [rows, total] = await Promise.all([
@@ -77,26 +102,89 @@ export async function GET(request: NextRequest) {
     ]);
 
     const assignmentIds = rows.map((x) => x._id);
-    const submissionCounts = assignmentIds.length
+    const submissionStats = assignmentIds.length
       ? await AssignmentSubmission.aggregate([
           { $match: { assignment: { $in: assignmentIds } } },
-          { $group: { _id: "$assignment", count: { $sum: 1 } } },
+          {
+            $group: {
+              _id: "$assignment",
+              total: { $sum: 1 },
+              graded: {
+                $sum: {
+                  $cond: [{ $eq: ["$status", "graded"] }, 1, 0],
+                },
+              },
+              late: {
+                $sum: {
+                  $cond: [{ $eq: ["$isLate", true] }, 1, 0],
+                },
+              },
+              passed: {
+                $sum: {
+                  $cond: [{ $eq: ["$passed", true] }, 1, 0],
+                },
+              },
+              scoreTotal: {
+                $sum: {
+                  $cond: [{ $eq: ["$status", "graded"] }, { $ifNull: ["$score", 0] }, 0],
+                },
+              },
+            },
+          },
         ])
       : [];
-    const countMap = new Map<string, number>();
-    submissionCounts.forEach((x) => countMap.set(String(x._id), Number(x.count || 0)));
+    const statMap = new Map<
+      string,
+      { total: number; graded: number; late: number; passed: number; scoreTotal: number }
+    >();
+    submissionStats.forEach((x) =>
+      statMap.set(String(x._id), {
+        total: Number(x.total || 0),
+        graded: Number(x.graded || 0),
+        late: Number(x.late || 0),
+        passed: Number(x.passed || 0),
+        scoreTotal: Number(x.scoreTotal || 0),
+      }),
+    );
 
     const assignments = rows.map((row) => ({
       ...mapAssignment(row),
-      submissionCount: countMap.get(String(row._id)) || 0,
+      submissionCount: statMap.get(String(row._id))?.total || 0,
     }));
+
+    const totalSubmissions = assignments.reduce((acc, row) => acc + Number(row.submissionCount || 0), 0);
+    const gradedSubmissions = [...statMap.values()].reduce((acc, x) => acc + x.graded, 0);
+    const lateSubmissions = [...statMap.values()].reduce((acc, x) => acc + x.late, 0);
+    const passedSubmissions = [...statMap.values()].reduce((acc, x) => acc + x.passed, 0);
+    const scoreTotal = [...statMap.values()].reduce((acc, x) => acc + x.scoreTotal, 0);
+    const averageScore = gradedSubmissions > 0 ? scoreTotal / gradedSubmissions : 0;
+    const passRate = gradedSubmissions > 0 ? (passedSubmissions / gradedSubmissions) * 100 : 0;
+    const publishedAssignments = assignments.filter((x) => Boolean(x.isPublished)).length;
+    const draftAssignments = assignments.filter((x) => !x.isPublished).length;
+    const activeAssignments = assignments.filter((x) => x.status === "active").length;
+    const assignmentsByType = assignments.reduce<Record<string, number>>((acc, row) => {
+      const key = String(row.type || "essay");
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
 
     return NextResponse.json({
       success: true,
       data: {
         assignments,
         pagination: pagination(page, limit, total),
-        stats: { total: total },
+        stats: {
+          totalAssignments: total,
+          publishedAssignments,
+          draftAssignments,
+          activeAssignments,
+          totalSubmissions,
+          gradedSubmissions,
+          averageScore,
+          passRate,
+          lateSubmissions,
+          assignmentsByType,
+        },
       },
     });
   } catch (error) {
@@ -139,6 +227,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const isActive = body.isActive !== false;
+    const isPublished = Boolean(body.isPublished);
+    const startDate = body.startDate ? new Date(String(body.startDate)) : undefined;
+    const dueDate = body.dueDate ? new Date(String(body.dueDate)) : undefined;
+
     const created = await Assignment.create({
       title,
       description: String(body.description || "").trim() || undefined,
@@ -162,10 +255,10 @@ export async function POST(request: NextRequest) {
       createdBy: toObjectId(auth.user.id),
       totalMarks,
       passingMarks,
-      dueDate: body.dueDate ? new Date(String(body.dueDate)) : undefined,
-      startDate: body.startDate ? new Date(String(body.startDate)) : undefined,
-      isActive: body.isActive !== false,
-      isPublished: Boolean(body.isPublished),
+      dueDate,
+      startDate,
+      isActive,
+      isPublished,
       allowLateSubmission: Boolean(body.allowLateSubmission),
       latePenaltyPercentage: Number(body.latePenaltyPercentage || 0) || undefined,
       maxAttempts: Number(body.maxAttempts || 1),
@@ -179,7 +272,10 @@ export async function POST(request: NextRequest) {
       timeLimit: Number(body.timeLimit || 0) || undefined,
       showCorrectAnswers: body.showCorrectAnswers !== false,
       allowReview: body.allowReview !== false,
-      status: body.status || "draft",
+      status:
+        typeof body.status === "string" && body.status.trim()
+          ? body.status
+          : computeAssignmentStatus({ isActive, isPublished, startDate, dueDate }),
     });
 
     const row = await Assignment.findById(created._id)

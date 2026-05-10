@@ -62,17 +62,17 @@ const AttractiveTextarea = React.forwardRef<HTMLTextAreaElement, AttractiveTexta
       default: {
         border: "border-border",
         focus: "focus:border-ring focus:ring-ring/20",
-        bg: "bg-input",
+        bg: "bg-white",
       },
       primary: {
         border: "border-blue-300 hover:border-blue-400",
         focus: "focus:border-blue-500 focus:ring-blue-500/20 focus:shadow-lg focus:shadow-blue-500/10",
-        bg: "bg-white dark:bg-gray-900",
+        bg: "bg-white",
       },
       secondary: {
         border: "border-secondary/30",
         focus: "focus:border-secondary focus:ring-secondary/20",
-        bg: "bg-input",
+        bg: "bg-white",
       },
       success: {
         border: "border-green-300",
@@ -99,7 +99,7 @@ const AttractiveTextarea = React.forwardRef<HTMLTextAreaElement, AttractiveTexta
         sizeStyles[size],
         colorSchemes[colorScheme].border,
         colorSchemes[colorScheme].bg,
-        "text-foreground placeholder:text-muted-foreground",
+        "text-gray-900 placeholder:text-gray-500",
         colorSchemes[colorScheme].focus,
         "focus:outline-none focus:ring-2 transition-all duration-200",
         hasError && "border-destructive focus:border-destructive focus:ring-destructive/20",
@@ -113,8 +113,8 @@ const AttractiveTextarea = React.forwardRef<HTMLTextAreaElement, AttractiveTexta
           : size === "md"
             ? "h-24 px-5 py-4 font-semibold"
             : "h-32 px-6 py-5 text-xl font-bold",
-        "border-primary bg-input",
-        "text-foreground placeholder:text-muted-foreground",
+        "border-primary bg-white",
+        "text-gray-900 placeholder:text-gray-500",
         "focus:border-accent focus:outline-none focus:ring-3 focus:ring-accent/30 focus:shadow-lg",
         "hover:border-accent/70 transition-all duration-300",
         hasError && "border-destructive focus:border-destructive focus:ring-destructive/30",
@@ -126,7 +126,7 @@ const AttractiveTextarea = React.forwardRef<HTMLTextAreaElement, AttractiveTexta
         sizeStyles[size],
         "px-0",
         colorSchemes[colorScheme].border.replace("border-", "border-b-"),
-        "text-foreground placeholder:text-muted-foreground",
+        "text-gray-900 placeholder:text-gray-500",
         colorSchemes[colorScheme].focus.replace("border-", "border-b-").replace("ring-2", "ring-0"),
         "focus:outline-none",
         hasError && "border-b-destructive focus:border-b-destructive",
@@ -136,9 +136,9 @@ const AttractiveTextarea = React.forwardRef<HTMLTextAreaElement, AttractiveTexta
       filled: cn(
         "rounded-lg border-0",
         sizeStyles[size],
-        "bg-muted",
-        "text-foreground placeholder:text-muted-foreground",
-        "focus:bg-input focus:outline-none focus:ring-2 focus:ring-ring",
+        "bg-white",
+        "text-gray-900 placeholder:text-gray-500",
+        "focus:bg-white focus:outline-none focus:ring-2 focus:ring-ring",
         hasError && "bg-destructive/10 focus:ring-destructive",
         hasSuccess && "bg-green-50 focus:ring-green-500 dark:bg-green-950/20",
         isActuallyDisabled && "opacity-50 cursor-not-allowed",

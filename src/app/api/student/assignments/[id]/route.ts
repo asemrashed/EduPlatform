@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import Assignment from "@/models/Assignment";
 import AssignmentSubmission from "@/models/AssignmentSubmission";
 import Enrollment from "@/models/Enrollment";
-import { isObjectId, requireSessionUser } from "@/app/api/_lib/phase12";
+import { isObjectId, requireSessionUser, toObjectId } from "@/app/api/_lib/phase12";
 
 interface RouteCtx {
   params: Promise<{ id: string }>;
@@ -23,7 +23,7 @@ export async function GET(_request: NextRequest, ctx: RouteCtx) {
       return NextResponse.json({ success: false, error: "Assignment not found" }, { status: 404 });
     }
     const allowed = await Enrollment.exists({
-      student: auth.user.id,
+      student: toObjectId(auth.user.id),
       course: assignment.course?._id || assignment.course,
       status: { $in: ["enrolled", "in_progress", "completed"] },
     });
@@ -37,12 +37,17 @@ export async function GET(_request: NextRequest, ctx: RouteCtx) {
     })
       .sort({ createdAt: -1 })
       .lean();
+    const attemptsUsed = Number(latestSubmission?.attemptNumber || 0);
+    const maxAttempts = Number((assignment as any).maxAttempts || 1);
 
     return NextResponse.json({
       success: true,
       data: {
         assignment,
         latestSubmission: latestSubmission || null,
+        attemptsUsed,
+        attemptsRemaining: Math.max(maxAttempts - attemptsUsed, 0),
+        canSubmit: Math.max(maxAttempts - attemptsUsed, 0) > 0,
       },
     });
   } catch (error) {
