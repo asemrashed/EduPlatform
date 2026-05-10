@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Exam, CreateExamData, UpdateExamData } from '@/types/exam';
+import { Exam, CreateExamData } from '@/types/exam';
 import { AttractiveInput } from '@/components/ui/attractive-input';
 import { AttractiveTextarea } from '@/components/ui/attractive-textarea';
 import CustomEditor from '@/components/custom-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import FormModal from '@/components/ui/form-modal';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface ExamModalProps {
   open: boolean;
@@ -59,7 +60,9 @@ export default function ExamModal({ open, exam, onClose, onSuccess }: ExamModalP
     showCorrectAnswers: true,
     showResults: true,
     allowReview: true,
-    timeLimit: true
+    timeLimit: true,
+    isActive: true,
+    isPublished: false,
   });
 
   // Fetch all courses when modal opens so Course (Optional) dropdown is populated
@@ -144,7 +147,9 @@ export default function ExamModal({ open, exam, onClose, onSuccess }: ExamModalP
         showCorrectAnswers: exam.showCorrectAnswers,
         showResults: exam.showResults,
         allowReview: exam.allowReview,
-        timeLimit: exam.timeLimit
+        timeLimit: exam.timeLimit,
+        isActive: exam.isActive !== false,
+        isPublished: Boolean(exam.isPublished),
       });
     } else {
       setFormData({
@@ -165,7 +170,9 @@ export default function ExamModal({ open, exam, onClose, onSuccess }: ExamModalP
         showCorrectAnswers: true,
         showResults: true,
         allowReview: true,
-        timeLimit: true
+        timeLimit: true,
+        isActive: true,
+        isPublished: false,
       });
     }
   }, [exam, open]);
@@ -202,7 +209,9 @@ export default function ExamModal({ open, exam, onClose, onSuccess }: ExamModalP
         ...formData,
         course: formData.course === 'none' ? undefined : formData.course,
         startDate: toISOStringFromLocalInput(formData.startDate),
-        endDate: toISOStringFromLocalInput(formData.endDate)
+        endDate: toISOStringFromLocalInput(formData.endDate),
+        isActive: formData.isActive !== false,
+        isPublished: Boolean(formData.isPublished),
       };
 
       console.log('ExamModal - Sending data:', {
@@ -214,6 +223,7 @@ export default function ExamModal({ open, exam, onClose, onSuccess }: ExamModalP
       
       const response = await fetch(url, {
         method,
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -456,6 +466,39 @@ export default function ExamModal({ open, exam, onClose, onSuccess }: ExamModalP
               icon="users"
               helperText="Number of times a student can attempt this exam"
             />
+
+            <div className="flex flex-col gap-4 rounded-lg border border-border/60 bg-muted/30 p-4">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="exam-is-active"
+                  checked={formData.isActive !== false}
+                  onCheckedChange={(v) => handleInputChange('isActive', v === true)}
+                />
+                <div className="space-y-1">
+                  <label htmlFor="exam-is-active" className="text-sm font-medium leading-none cursor-pointer">
+                    Exam is active
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Inactive exams are hidden from students even if published.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="exam-is-published"
+                  checked={Boolean(formData.isPublished)}
+                  onCheckedChange={(v) => handleInputChange('isPublished', v === true)}
+                />
+                <div className="space-y-1">
+                  <label htmlFor="exam-is-published" className="text-sm font-medium leading-none cursor-pointer">
+                    Publish to enrolled students
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Students only see exams that are published, active, and tied to a course they are enrolled in (within the schedule window).
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Schedule */}

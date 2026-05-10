@@ -32,6 +32,7 @@ function readEnv(...keys: string[]): string {
 
 function requireEnv(label: string, ...keys: string[]): string {
   const value = readEnv(...keys);
+  console.log("value", value, label);
   if (!value) {
     throw new Error(`${label} is not configured`);
   }
@@ -39,13 +40,11 @@ function requireEnv(label: string, ...keys: string[]): string {
 }
 
 function readStoreId(): string {
-  return requireEnv("SSL store ID", "SSL_STORE_ID", "SSLCOMMERZ_STORE_ID");
+  return requireEnv("SSLCOMMERZ_STORE_ID"); 
 }
 
 function readStorePassword(): string {
   return requireEnv(
-    "SSL store password",
-    "SSL_STORE_PASSWORD",
     "SSLCOMMERZ_STORE_PASSWORD",
   );
 }
@@ -76,26 +75,22 @@ function readValidationUrl(): string {
 
 function readSuccessUrl(): string {
   return requireEnv(
-    "SSL success URL",
-    "SSL_SUCCESS_URL",
     "SSLCOMMERZ_SUCCESS_URL",
   );
 }
 
 function readFailUrl(): string {
-  return requireEnv("SSL fail URL", "SSL_FAIL_URL", "SSLCOMMERZ_FAIL_URL");
+  return requireEnv("SSLCOMMERZ_FAIL_URL");
 }
 
 function readCancelUrl(): string {
   return requireEnv(
-    "SSL cancel URL",
-    "SSL_CANCEL_URL",
     "SSLCOMMERZ_CANCEL_URL",
   );
 }
 
 function readIpnUrl(): string {
-  return requireEnv("SSL IPN URL", "SSL_IPN_URL", "SSLCOMMERZ_IPN_URL");
+  return requireEnv("SSLCOMMERZ_IPN_URL");
 }
 
 async function parseJsonOrThrow(response: Response): Promise<unknown> {

@@ -165,6 +165,8 @@ export interface CreateExamData {
   showResults: boolean;
   allowReview: boolean;
   timeLimit: boolean;
+  isActive?: boolean;
+  isPublished?: boolean;
 }
 
 export interface UpdateExamData extends Partial<CreateExamData> {
