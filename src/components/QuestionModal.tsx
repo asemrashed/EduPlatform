@@ -112,14 +112,6 @@ export default function QuestionModal({ open, question, examId, onClose, onSucce
         return '';
 
       case 'correctAnswer':
-        if (formData.type === 'written' || formData.type === 'essay') {
-          if (!value || value.trim().length === 0) {
-            return 'Correct answer is required for written/essay questions';
-          }
-          if (value.trim().length < 5) {
-            return 'Answer must be at least 5 characters long';
-          }
-        }
         return '';
 
       default:

@@ -16,6 +16,12 @@ import { LuBookOpen as BookOpen, LuClock as Clock, LuAward as Award, LuCalendar 
 import { format } from 'date-fns';
 import { htmlToPlainText } from '@/lib/utils';
 
+function attemptExamId(attempt: { examId?: string; exam?: string | { _id?: string } }): string {
+  if (attempt.examId) return attempt.examId;
+  if (typeof attempt.exam === 'string') return attempt.exam;
+  return (attempt.exam as { _id?: string } | undefined)?._id ?? '';
+}
+
 interface Exam {
   _id: string;
   title: string;
@@ -51,7 +57,15 @@ interface Exam {
 
 interface ExamAttempt {
   _id: string;
-  exam: string;
+  examId?: string;
+  exam: string | {
+    _id: string;
+    title?: string;
+    type?: string;
+    duration?: number;
+    totalMarks?: number;
+    passingMarks?: number;
+  };
   student: string;
   status: 'in_progress' | 'completed' | 'abandoned';
   score: number;
@@ -62,6 +76,7 @@ interface ExamAttempt {
   startedAt: string;
   completedAt?: string;
   createdAt: string;
+  updatedAt: string;
   // Added by API for in-progress attempts
   remainingSeconds?: number;
 }
@@ -180,6 +195,40 @@ function StudentExamsPageContent() {
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
+  const getAttemptsForExam = (examId: string) =>
+    attempts.filter((a) => attemptExamId(a) === examId);
+
+  const getDisplayAttempt = (examId: string): ExamAttempt | undefined => {
+    const list = getAttemptsForExam(examId);
+    const inProg = list
+      .filter((a) => a.status === 'in_progress')
+      .sort(
+        (a, b) =>
+          new Date(b.updatedAt || b.startedAt).getTime() -
+          new Date(a.updatedAt || a.startedAt).getTime(),
+      );
+    if (inProg[0]) return inProg[0];
+    const done = list
+      .filter((a) => a.status === 'completed')
+      .sort(
+        (a, b) =>
+          new Date(b.completedAt || b.startedAt).getTime() -
+          new Date(a.completedAt || a.startedAt).getTime(),
+      );
+    return done[0];
+  };
+
+  const getLatestCompletedAttempt = (examId: string): ExamAttempt | undefined => {
+    const done = getAttemptsForExam(examId).filter((a) => a.status === 'completed');
+    return done.sort(
+      (a, b) =>
+        new Date(b.completedAt || b.startedAt).getTime() -
+        new Date(a.completedAt || a.startedAt).getTime(),
+    )[0];
+  };
+
+  const getAttemptsUsed = (examId: string) => getAttemptsForExam(examId).length;
+
   const getExamStatus = (exam: Exam) => {
     const now = new Date();
     const startDate = exam.startDate ? new Date(exam.startDate) : null;
@@ -193,27 +242,19 @@ function StudentExamsPageContent() {
     return 'available';
   };
 
-  const getExamAttempt = (examId: string) => {
-    return attempts.find(attempt => attempt.exam === examId);
+  const getRemainingAttempts = (exam: Exam) => {
+    const max = Math.max(1, Number(exam.attempts) || 1);
+    const used = getAttemptsUsed(exam._id);
+    return Math.max(0, max - used);
   };
 
-  const getRemainingAttempts = (exam: Exam, attempt: ExamAttempt | undefined) => {
-    if (!attempt) return exam.attempts;
-    return Math.max(0, exam.attempts - (attempt.status === 'completed' ? 1 : 0));
-  };
-
-  const canTakeExam = (exam: Exam) => {
+  const canStartOrReattempt = (exam: Exam) => {
     const status = getExamStatus(exam);
-    const attempt = getExamAttempt(exam._id);
-    
-    // If student has completed the exam, they cannot take it again
-    if (attempt?.status === 'completed') {
-      return false;
-    }
-    
-    const remainingAttempts = getRemainingAttempts(exam, attempt);
-    
-    return status === 'available' && remainingAttempts > 0;
+    if (status !== 'available') return false;
+    const list = getAttemptsForExam(exam._id);
+    if (list.some((a) => a.status === 'in_progress')) return false;
+    const max = Math.max(1, Number(exam.attempts) || 1);
+    return list.length < max;
   };
 
   // Filter exams based on current filter state
@@ -234,19 +275,17 @@ function StudentExamsPageContent() {
       case 'available':
         filtered = filtered.filter(exam => {
           const status = getExamStatus(exam);
-          return status === 'available' && canTakeExam(exam);
+          return status === 'available' && canStartOrReattempt(exam);
         });
         break;
       case 'in_progress':
         filtered = filtered.filter(exam => {
-          const attempt = getExamAttempt(exam._id);
-          return attempt?.status === 'in_progress';
+          return getAttemptsForExam(exam._id).some((a) => a.status === 'in_progress');
         });
         break;
       case 'completed':
         filtered = filtered.filter(exam => {
-          const attempt = getExamAttempt(exam._id);
-          return attempt?.status === 'completed';
+          return getAttemptsForExam(exam._id).some((a) => a.status === 'completed');
         });
         break;
       case 'all':
@@ -260,7 +299,7 @@ function StudentExamsPageContent() {
 
   const getStatusBadge = (exam: Exam) => {
     const status = getExamStatus(exam);
-    const attempt = getExamAttempt(exam._id);
+    const attempt = getDisplayAttempt(exam._id);
     
     if (attempt?.status === 'completed') {
       return (
@@ -387,7 +426,7 @@ function StudentExamsPageContent() {
       label: 'Status',
       width: 'w-1/6',
       render: (exam) => {
-        const attempt = getExamAttempt(exam._id);
+        const attempt = getDisplayAttempt(exam._id);
         const status = getExamStatus(exam);
         
         if (attempt?.status === 'completed') {
@@ -452,8 +491,7 @@ function StudentExamsPageContent() {
       label: 'Attempts',
       width: 'w-1/6',
       render: (exam) => {
-        const attempt = getExamAttempt(exam._id);
-        const remainingAttempts = getRemainingAttempts(exam, attempt);
+        const remainingAttempts = getRemainingAttempts(exam);
         
         return (
           <div className="text-center">
@@ -470,7 +508,7 @@ function StudentExamsPageContent() {
       label: 'Score',
       width: 'w-1/6',
       render: (exam) => {
-        const attempt = getExamAttempt(exam._id);
+        const attempt = getLatestCompletedAttempt(exam._id);
         
         if (attempt?.status === 'completed') {
           return (
@@ -497,26 +535,17 @@ function StudentExamsPageContent() {
       label: 'Actions',
       width: 'w-1/6',
       render: (exam) => {
-        const attempt = getExamAttempt(exam._id);
-        const canTake = canTakeExam(exam);
-        
+        const latestDone = getLatestCompletedAttempt(exam._id);
+        const canStart = canStartOrReattempt(exam);
+        const completedCount = getAttemptsForExam(exam._id).filter((a) => a.status === 'completed').length;
+        const hasInProgress = getAttemptsForExam(exam._id).some((a) => a.status === 'in_progress');
+        const maxAttempts = Math.max(1, Number(exam.attempts) || 1);
+        const atLimit =
+          !hasInProgress && getAttemptsUsed(exam._id) >= maxAttempts && completedCount > 0;
+
         return (
           <div className="flex flex-col gap-2">
-            {/* Start Exam Button */}
-            {canTake && (
-              <Button
-                type="button"
-                onClick={() => handleStartExam(exam)}
-                size="sm"
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
-              >
-                <PlayCircle className="w-4 h-4 mr-2" />
-                Start Exam
-              </Button>
-            )}
-            
-            {/* Continue Button */}
-            {attempt?.status === 'in_progress' && (
+            {hasInProgress && (
               <Button
                 type="button"
                 onClick={() => handleContinueExam(exam)}
@@ -528,9 +557,21 @@ function StudentExamsPageContent() {
                 Continue
               </Button>
             )}
-            
-            {/* View Results Button */}
-            {attempt?.status === 'completed' && (
+
+            {canStart && (
+              <Button
+                type="button"
+                onClick={() => handleStartExam(exam)}
+                size="sm"
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                disabled={!canStart}
+              >
+                <PlayCircle className="w-4 h-4 mr-2" />
+                {completedCount > 0 ? 'Reattempt' : 'Start Exam'}
+              </Button>
+            )}
+
+            {latestDone && (
               <Button
                 type="button"
                 onClick={() => handleViewResults(exam)}
@@ -542,12 +583,13 @@ function StudentExamsPageContent() {
                 View Results
               </Button>
             )}
-            
-            {/* Not Available Message */}
-            {!canTake && !attempt && (
-              <div className="text-center text-gray-500 text-sm">
-                Not Available
-              </div>
+
+            {atLimit && (
+              <div className="text-center text-gray-500 text-xs">Maximum attempts reached</div>
+            )}
+
+            {!canStart && !hasInProgress && !latestDone && (
+              <div className="text-center text-gray-500 text-sm">Not Available</div>
             )}
           </div>
         );
@@ -557,7 +599,7 @@ function StudentExamsPageContent() {
 
 
   const handleStartExam = (exam: Exam) => {
-    if (canTakeExam(exam)) {
+    if (canStartOrReattempt(exam)) {
       router.push(`/student/exams/${exam._id}/take`);
     } else {
       console.warn('Cannot start exam:', exam.title);
@@ -565,7 +607,7 @@ function StudentExamsPageContent() {
   };
 
   const handleViewResults = (exam: Exam) => {
-    const attempt = getExamAttempt(exam._id);
+    const attempt = getLatestCompletedAttempt(exam._id);
     if (attempt?.status === 'completed') {
       router.push(`/student/exams/${exam._id}/results`);
     } else {
@@ -574,7 +616,7 @@ function StudentExamsPageContent() {
   };
 
   const handleContinueExam = (exam: Exam) => {
-    const attempt = getExamAttempt(exam._id);
+    const attempt = getDisplayAttempt(exam._id);
     if (attempt?.status === 'in_progress') {
       router.push(`/student/exams/${exam._id}/take`);
     } else {
@@ -690,7 +732,7 @@ function StudentExamsPageContent() {
                   onClick={() => handleFilterChange('available')}
                   className={`text-sm border-2 border-blue-300 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:shadow-lg focus:shadow-blue-500/10 ${filter === 'available' ? 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600' : ''}`}
                 >
-                  Available ({exams.filter(exam => getExamStatus(exam) === 'available' && canTakeExam(exam)).length})
+                  Available ({exams.filter(exam => getExamStatus(exam) === 'available' && canStartOrReattempt(exam)).length})
                 </Button>
                 <Button
                   type="button"

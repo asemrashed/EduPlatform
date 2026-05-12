@@ -45,8 +45,6 @@ export default function ExamStats({ exams, loading, stats }: ExamStatsProps) {
     mixed: 0
   };
 
-  const recentExams = stats?.recentExams || exams.slice(0, 5);
-
   return (
     <div className="space-y-6">
       {/* Main Stats Cards */}
@@ -180,7 +178,6 @@ export default function ExamStats({ exams, loading, stats }: ExamStatsProps) {
         </CardContent>
       </Card>
 
-      
     </div>
   );
 }

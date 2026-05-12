@@ -204,6 +204,10 @@ function ExamsPageContent() {
     router.push(`/admin/exams/${exam._id}/questions`);
   };
 
+  const handleViewAttempts = (exam: Exam) => {
+    router.push(`/admin/exams/${exam._id}/attempts`);
+  };
+
   const confirmDeleteExam = async () => {
     if (!examToDelete) return;
 
@@ -393,6 +397,7 @@ function ExamsPageContent() {
               onEdit={handleEditExam}
               onDelete={handleDeleteExam}
               onManageQuestions={handleManageQuestions}
+              onViewAttempts={handleViewAttempts}
               pagination={pagination}
               onPageChange={handlePageChange}
               variant="table"

@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import ExamAttempt from "@/models/ExamAttempt";
 import Question from "@/models/Question";
 import Exam from "@/models/Exam";
-import { isObjectId, requireSessionUser } from "@/app/api/_lib/phase12";
+import { isObjectId, requireSessionUser, toObjectId } from "@/app/api/_lib/phase12";
 
 interface RouteCtx {
   params: Promise<{ id: string }>;
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest, ctx: RouteCtx) {
     if (!isObjectId(id)) return NextResponse.json({ success: false, error: "Invalid id" }, { status: 400 });
     const body = (await request.json()) as { answers?: Array<{ questionId: string; answer: unknown }>; timeSpent?: number };
 
-    const attempt = await ExamAttempt.findOne({ _id: id, student: auth.user.id });
+    const attempt = await ExamAttempt.findOne({ _id: id, student: toObjectId(auth.user.id) });
     if (!attempt) return NextResponse.json({ success: false, error: "Attempt not found" }, { status: 404 });
     if (attempt.status !== "in_progress") {
       return NextResponse.json({ success: false, error: "Attempt already submitted" }, { status: 400 });
@@ -55,12 +55,34 @@ export async function POST(request: NextRequest, ctx: RouteCtx) {
         let isCorrect: boolean | undefined;
         let ansMarks = 0;
         let selectedForStorage = selected;
+        let gradingStatus: "pending" | "graded" = "graded";
+        let writtenAnswer: string | undefined;
+
+        if (q && (q.type === "written" || q.type === "essay")) {
+          const text =
+            typeof a.answer === "string"
+              ? a.answer
+              : Array.isArray(a.answer)
+                ? a.answer.map((x) => String(x)).join("\n")
+                : "";
+          gradingStatus = "pending";
+          return {
+            question: new mongoose.Types.ObjectId(a.questionId),
+            selectedOptions: [] as string[],
+            writtenAnswer: text,
+            isCorrect: undefined,
+            marksObtained: 0,
+            gradingStatus,
+            isAnswered: true,
+          };
+        }
+
         if (q) {
           if (q.type === "mcq") {
             selectedForStorage = normalizeOptionIndexes(a.questionId, selected);
             const correct = Array.isArray(q.options)
               ? q.options
-                  .map((opt: any, index: number) => (opt.isCorrect ? String(index) : null))
+                  .map((opt: { isCorrect?: boolean }, index: number) => (opt.isCorrect ? String(index) : null))
                   .filter((index: string | null): index is string => index !== null)
                   .sort()
               : [];
@@ -72,8 +94,8 @@ export async function POST(request: NextRequest, ctx: RouteCtx) {
           } else if (q.type === "true_false") {
             const correct = Array.isArray(q.options)
               ? q.options
-                  .filter((opt: any) => opt.isCorrect)
-                  .map((opt: any) => String(opt.text).toLowerCase())
+                  .filter((opt: { isCorrect?: boolean }) => opt.isCorrect)
+                  .map((opt: { text?: string }) => String(opt.text).toLowerCase())
                   .sort()
               : [];
             const selectedSorted = selected.map((value) => value.toLowerCase()).sort();
@@ -87,26 +109,30 @@ export async function POST(request: NextRequest, ctx: RouteCtx) {
           }
         }
         marksObtained += ansMarks;
+        writtenAnswer = selectedForStorage.length === 1 ? selectedForStorage[0] : undefined;
         return {
           question: new mongoose.Types.ObjectId(a.questionId),
           selectedOptions: selectedForStorage,
-          writtenAnswer: selectedForStorage.length === 1 ? selectedForStorage[0] : undefined,
+          writtenAnswer,
           isCorrect,
           marksObtained: ansMarks,
+          gradingStatus,
           isAnswered: true,
         };
       });
 
+    const hasPendingManual = mappedAnswers.some((row) => row.gradingStatus === "pending");
+
     const exam = await Exam.findById(attempt.exam).select("passingMarks totalMarks").lean();
     const totalMarks = Number(exam?.totalMarks || attempt.totalMarks || 0);
     const percentage = totalMarks > 0 ? Number(((marksObtained / totalMarks) * 100).toFixed(2)) : 0;
-    const isPassed = percentage >= Number(exam?.passingMarks || 0);
+    const isPassed = !hasPendingManual && percentage >= Number(exam?.passingMarks || 0);
 
     attempt.answers = mappedAnswers as any;
     attempt.marksObtained = marksObtained;
     attempt.percentage = percentage;
     attempt.isPassed = isPassed;
-    attempt.status = "completed";
+    attempt.status = hasPendingManual ? "pending_review" : "completed";
     attempt.endTime = new Date();
     attempt.isSubmitted = true;
     attempt.submittedAt = new Date();
@@ -123,15 +149,17 @@ export async function POST(request: NextRequest, ctx: RouteCtx) {
           exam: String(attempt.exam),
           student: String(attempt.student),
           status: attempt.status,
-          score: attempt.marksObtained,
-          percentage: attempt.percentage,
-          passed: attempt.isPassed,
+          scoresReleased: !hasPendingManual,
+          score: hasPendingManual ? null : attempt.marksObtained,
+          percentage: hasPendingManual ? null : attempt.percentage,
+          passed: hasPendingManual ? null : attempt.isPassed,
           timeSpent: attempt.timeSpent,
           answers: mappedAnswers.map((a) => ({
             questionId: String(a.question),
             answer: a.selectedOptions?.length ? a.selectedOptions : a.writtenAnswer || "",
             isCorrect: a.isCorrect,
             marks: a.marksObtained,
+            gradingStatus: a.gradingStatus,
           })),
           startedAt: attempt.startTime,
           completedAt: attempt.submittedAt,

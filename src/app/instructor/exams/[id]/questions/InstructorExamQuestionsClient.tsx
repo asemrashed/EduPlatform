@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { AttractiveInput } from '@/components/ui/attractive-input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import ConfirmModal from '@/components/ui/confirm-modal';
-import { LuPlus as Plus, LuSearch as Search, LuX as X, LuBookOpen as BookOpen, LuFilter as Filter, LuTag as Tag, LuClock as Clock, LuCalendar as Calendar, LuArrowUpDown as ArrowUpDown, LuSettings as Settings, LuUser as User, LuTarget as Target, LuPencil as Edit, LuTrash2 as Trash2, LuEye as Eye, LuUpload as Upload } from 'react-icons/lu';;
+import { LuPlus as Plus, LuSearch as Search, LuX as X, LuBookOpen as BookOpen, LuFilter as Filter, LuTag as Tag, LuClock as Clock, LuCalendar as Calendar, LuArrowUpDown as ArrowUpDown, LuSettings as Settings, LuTarget as Target, LuPencil as Edit, LuTrash2 as Trash2, LuEye as Eye, LuUpload as Upload } from 'react-icons/lu';;
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import DataTable, { Column, Action } from '@/components/ui/data-table';
@@ -71,7 +71,6 @@ function InstructorQuestionsPageContent({ params }: QuestionsPageProps) {
     total: 0,
     pages: 0
   });
-
   const fetchExam = async () => {
     if (!examId) return;
     

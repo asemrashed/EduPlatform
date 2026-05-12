@@ -13,6 +13,7 @@ interface ExamDataTableProps {
   onEdit: (exam: Exam) => void;
   onDelete: (exam: Exam) => void;
   onView?: (exam: Exam) => void;
+  onViewAttempts?: (exam: Exam) => void;
   onManageQuestions?: (exam: Exam) => void;
   pagination: {
     page: number;
@@ -30,6 +31,7 @@ export default function ExamDataTable({
   onEdit,
   onDelete,
   onView,
+  onViewAttempts,
   onManageQuestions,
   pagination,
   onPageChange,
@@ -253,13 +255,28 @@ export default function ExamDataTable({
   ];
 
   const actions: Action<Exam>[] = [
-    ...(onView ? [{
-      key: 'view',
-      label: 'View Details',
-      icon: <Eye className="w-4 h-4" />,
-      onClick: onView,
-      variant: 'secondary' as const
-    }] : []),
+    ...(onViewAttempts
+      ? [
+          {
+            key: 'attempts',
+            label: 'View Attempts',
+            icon: <Eye className="w-4 h-4" />,
+            onClick: onViewAttempts,
+            variant: 'default' as const,
+          },
+        ]
+      : []),
+    ...(onView
+      ? [
+          {
+            key: 'view',
+            label: 'View Details',
+            icon: <Eye className="w-4 h-4" />,
+            onClick: onView,
+            variant: 'secondary' as const,
+          },
+        ]
+      : []),
     ...(onManageQuestions ? [{
       key: 'questions',
       label: 'Manage Questions',

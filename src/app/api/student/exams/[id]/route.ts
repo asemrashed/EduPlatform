@@ -4,7 +4,7 @@ import Exam from "@/models/Exam";
 import Question from "@/models/Question";
 import Enrollment from "@/models/Enrollment";
 import ExamAttempt from "@/models/ExamAttempt";
-import { isObjectId, requireSessionUser } from "@/app/api/_lib/phase12";
+import { isObjectId, requireSessionUser, toObjectId } from "@/app/api/_lib/phase12";
 
 interface RouteCtx {
   params: Promise<{ id: string }>;
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest, ctx: RouteCtx) {
     }
     if (exam.course) {
       const canAccess = await Enrollment.exists({
-        student: auth.user.id,
+        student: toObjectId(auth.user.id),
         course: exam.course,
         status: { $in: ["enrolled", "in_progress", "completed"] },
       });
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest, ctx: RouteCtx) {
       Boolean(
         await ExamAttempt.exists({
           exam: exam._id,
-          student: auth.user.id,
+          student: toObjectId(auth.user.id),
           status: "completed",
           isSubmitted: true,
         }),

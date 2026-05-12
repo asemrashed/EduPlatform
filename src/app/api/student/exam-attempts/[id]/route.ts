@@ -1,25 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import ExamAttempt from "@/models/ExamAttempt";
-import { isObjectId, requireSessionUser } from "@/app/api/_lib/phase12";
+import Question from "@/models/Question";
+import { isObjectId, requireSessionUser, toObjectId } from "@/app/api/_lib/phase12";
 
 interface RouteCtx {
   params: Promise<{ id: string }>;
 }
 
-function mapIncomingAnswers(answers: any[]) {
-  return answers
-    .filter((a) => a && typeof a.questionId === "string")
-    .map((a) => ({
+async function mapIncomingAnswers(answers: Array<{ questionId?: string; answer?: unknown }>) {
+  const filtered = answers.filter((a) => a && typeof a.questionId === "string" && mongoose.Types.ObjectId.isValid(a.questionId));
+  if (!filtered.length) return [];
+  const qids = filtered.map((a) => new mongoose.Types.ObjectId(a.questionId));
+  const qdocs = await Question.find({ _id: { $in: qids } })
+    .select("_id type")
+    .lean();
+  const typeById = new Map(qdocs.map((q) => [String(q._id), String(q.type)]));
+
+  return filtered.map((a) => {
+    const qType = typeById.get(a.questionId!) || "";
+    if (qType === "written" || qType === "essay") {
+      const text =
+        typeof a.answer === "string"
+          ? a.answer
+          : Array.isArray(a.answer)
+            ? a.answer.map((x) => String(x)).join("\n")
+            : "";
+      return {
+        question: new mongoose.Types.ObjectId(a.questionId),
+        selectedOptions: [] as string[],
+        writtenAnswer: text,
+        gradingStatus: "pending" as const,
+        isAnswered: true,
+      };
+    }
+    const selectedOptions = Array.isArray(a.answer)
+      ? a.answer.map((x: unknown) => String(x))
+      : typeof a.answer === "string"
+        ? [a.answer]
+        : [];
+    return {
       question: new mongoose.Types.ObjectId(a.questionId),
-      selectedOptions: Array.isArray(a.answer)
-        ? a.answer.map((x: unknown) => String(x))
-        : typeof a.answer === "string"
-          ? [a.answer]
-          : [],
+      selectedOptions,
       writtenAnswer: typeof a.answer === "string" ? a.answer : undefined,
+      gradingStatus: "graded" as const,
       isAnswered: true,
-    }));
+    };
+  });
 }
 
 export async function GET(_request: NextRequest, ctx: RouteCtx) {
@@ -29,7 +56,7 @@ export async function GET(_request: NextRequest, ctx: RouteCtx) {
     const { id } = await ctx.params;
     if (!isObjectId(id)) return NextResponse.json({ success: false, error: "Invalid id" }, { status: 400 });
 
-    const attempt = await ExamAttempt.findOne({ _id: id, student: auth.user.id }).lean();
+    const attempt = await ExamAttempt.findOne({ _id: id, student: toObjectId(auth.user.id) }).lean();
     if (!attempt) return NextResponse.json({ success: false, error: "Attempt not found" }, { status: 404 });
     return NextResponse.json({ success: true, data: { attempt } });
   } catch (error) {
@@ -46,14 +73,14 @@ export async function PUT(request: NextRequest, ctx: RouteCtx) {
     if (!isObjectId(id)) return NextResponse.json({ success: false, error: "Invalid id" }, { status: 400 });
     const body = (await request.json()) as { answers?: any[]; timeSpent?: number };
 
-    const attempt = await ExamAttempt.findOne({ _id: id, student: auth.user.id });
+    const attempt = await ExamAttempt.findOne({ _id: id, student: toObjectId(auth.user.id) });
     if (!attempt) return NextResponse.json({ success: false, error: "Attempt not found" }, { status: 404 });
     if (attempt.status !== "in_progress") {
       return NextResponse.json({ success: false, error: "Attempt is not editable" }, { status: 400 });
     }
 
     if (Array.isArray(body.answers)) {
-      attempt.answers = mapIncomingAnswers(body.answers) as any;
+      attempt.answers = (await mapIncomingAnswers(body.answers)) as typeof attempt.answers;
     }
     if (typeof body.timeSpent === "number" && Number.isFinite(body.timeSpent) && body.timeSpent >= 0) {
       attempt.timeSpent = Math.floor(body.timeSpent);

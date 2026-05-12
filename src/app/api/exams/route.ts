@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import Exam from "@/models/Exam";
+import ExamAttempt from "@/models/ExamAttempt";
 import Question from "@/models/Question";
 import Course from "@/models/Course";
 import {
+  instructorExamAccessMatch,
   isObjectId,
   pagination,
   parseLimit,
@@ -68,9 +70,21 @@ export async function GET(request: NextRequest) {
 
     const filter: Record<string, unknown> = {};
     if (auth.user.role === "instructor") {
-      filter.createdBy = toObjectId(auth.user.id);
-    }
-    if (search) {
+      const scope = await instructorExamAccessMatch(auth.user.id);
+      if (search) {
+        filter.$and = [
+          scope,
+          {
+            $or: [
+              { title: { $regex: search, $options: "i" } },
+              { description: { $regex: search, $options: "i" } },
+            ],
+          },
+        ];
+      } else {
+        Object.assign(filter, scope);
+      }
+    } else if (search) {
       filter.$or = [
         { title: { $regex: search, $options: "i" } },
         { description: { $regex: search, $options: "i" } },
@@ -96,10 +110,45 @@ export async function GET(request: NextRequest) {
     }
     const sort: Record<string, 1 | -1> = { [sortBy]: sortOrder };
 
-    const [rows, total] = await Promise.all([
+    const [rows, total, examIdList, typeBreakdown] = await Promise.all([
       Exam.find(filter).populate("course", "title").sort(sort).skip(skip).limit(limit).lean(),
       Exam.countDocuments(filter),
+      Exam.distinct("_id", filter),
+      Exam.aggregate([{ $match: filter }, { $group: { _id: "$type", count: { $sum: 1 } } }]),
     ]);
+
+    const [attemptScoreRows, totalAttempts] = await Promise.all([
+      examIdList.length
+        ? ExamAttempt.aggregate([
+            { $match: { exam: { $in: examIdList }, status: "completed" } },
+            {
+              $group: {
+                _id: null,
+                avgPct: { $avg: "$percentage" },
+                passed: { $sum: { $cond: ["$isPassed", 1, 0] } },
+                total: { $sum: 1 },
+              },
+            },
+          ])
+        : Promise.resolve([]),
+      examIdList.length
+        ? ExamAttempt.countDocuments({ exam: { $in: examIdList } })
+        : Promise.resolve(0),
+    ]);
+
+    const examsByType = { mcq: 0, written: 0, mixed: 0 };
+    for (const row of typeBreakdown as Array<{ _id: string; count: number }>) {
+      const k = row._id;
+      if (k === "mcq" || k === "written" || k === "mixed") {
+        examsByType[k] = Number(row.count || 0);
+      }
+    }
+
+    const scoreAgg = (attemptScoreRows as Array<{ avgPct?: number; passed?: number; total?: number }>)[0];
+    const completedForRate = Number(scoreAgg?.total || 0);
+    const averageScore = completedForRate > 0 ? Number(scoreAgg?.avgPct || 0) : 0;
+    const passRate =
+      completedForRate > 0 ? (Number(scoreAgg?.passed || 0) / completedForRate) * 100 : 0;
 
     const exams = rows.map(mapExam);
     const ids = rows.map((r) => r._id);
@@ -118,6 +167,10 @@ export async function GET(request: NextRequest) {
           draftExams: exams.filter((e) => e.status === "draft").length,
           publishedExams: exams.filter((e) => e.status !== "draft").length,
           totalQuestions: questionCount,
+          totalAttempts,
+          averageScore,
+          passRate,
+          examsByType,
         },
       },
     });

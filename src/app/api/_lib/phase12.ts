@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import { authOptions } from "@/lib/auth";
+import Course from "@/models/Course";
 
 export type AppRole = "admin" | "instructor" | "student";
 
@@ -78,4 +79,16 @@ export function normalizeStudentName(student: {
   const direct = String(student.name || "").trim();
   if (direct) return direct;
   return `${student.firstName || ""} ${student.lastName || ""}`.trim();
+}
+
+/** Exams the instructor may manage: created by them or attached to a course they teach. */
+export async function instructorExamAccessMatch(userId: string): Promise<Record<string, unknown>> {
+  const oid = toObjectId(userId);
+  const teachingCourseIds = await Course.find({ instructor: oid }).distinct("_id");
+  return {
+    $or: [
+      { createdBy: oid },
+      ...(teachingCourseIds.length ? [{ course: { $in: teachingCourseIds } }] : []),
+    ],
+  };
 }

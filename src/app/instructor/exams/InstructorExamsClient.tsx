@@ -182,6 +182,10 @@ function InstructorExamsPageContent() {
     router.push(`/instructor/exams/${exam._id}/questions`);
   };
 
+  const handleViewAttempts = (exam: Exam) => {
+    router.push(`/instructor/exams/${exam._id}/attempts`);
+  };
+
   const confirmDeleteExam = async () => {
     if (!examToDelete) return;
 
@@ -343,6 +347,7 @@ function InstructorExamsPageContent() {
               onEdit={handleEditExam}
               onDelete={handleDeleteExam}
               onManageQuestions={handleManageQuestions}
+              onViewAttempts={handleViewAttempts}
               pagination={pagination}
               onPageChange={handlePageChange}
               variant="table"

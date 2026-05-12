@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import Exam from "@/models/Exam";
 import Question from "@/models/Question";
-import { isObjectId, requireSessionUser, toObjectId } from "@/app/api/_lib/phase12";
+import { isObjectId, instructorExamAccessMatch, requireSessionUser, toObjectId } from "@/app/api/_lib/phase12";
 
 interface RouteCtx {
   params: Promise<{ id: string }>;
@@ -18,10 +18,14 @@ export async function GET(_request: NextRequest, ctx: RouteCtx) {
       return NextResponse.json({ success: false, error: "Invalid exam id" }, { status: 400 });
     }
 
-    const examFilter: Record<string, unknown> = { _id: id };
-    if (auth.user.role === "instructor") examFilter.createdBy = toObjectId(auth.user.id);
-
-    const exam = await Exam.findOne(examFilter).lean();
+    const examOid = toObjectId(id);
+    let exam: unknown = null;
+    if (auth.user.role === "instructor") {
+      const scope = await instructorExamAccessMatch(auth.user.id);
+      exam = await Exam.findOne({ $and: [{ _id: examOid }, scope] }).lean();
+    } else {
+      exam = await Exam.findOne({ _id: examOid }).lean();
+    }
     if (!exam) {
       return NextResponse.json({ success: false, error: "Exam not found" }, { status: 404 });
     }
@@ -49,9 +53,14 @@ export async function POST(request: NextRequest, ctx: RouteCtx) {
       return NextResponse.json({ success: false, error: "Invalid exam id" }, { status: 400 });
     }
 
-    const examFilter: Record<string, unknown> = { _id: id };
-    if (auth.user.role === "instructor") examFilter.createdBy = toObjectId(auth.user.id);
-    const exam = await Exam.findOne(examFilter).lean();
+    const examOid = toObjectId(id);
+    let exam: unknown = null;
+    if (auth.user.role === "instructor") {
+      const scope = await instructorExamAccessMatch(auth.user.id);
+      exam = await Exam.findOne({ $and: [{ _id: examOid }, scope] }).lean();
+    } else {
+      exam = await Exam.findOne({ _id: examOid }).lean();
+    }
     if (!exam) {
       return NextResponse.json({ success: false, error: "Exam not found" }, { status: 404 });
     }

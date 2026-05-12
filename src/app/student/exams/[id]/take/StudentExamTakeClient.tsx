@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import { StudentRoleShell } from '@/components/role-area/StudentRoleShell';
@@ -212,6 +212,26 @@ function ExamTakingPageContent() {
     }));
   };
 
+  const isQuestionAnswered = useCallback(
+    (questionId: string) => {
+      const v = answers[questionId];
+      if (v === undefined || v === null) return false;
+      if (typeof v === 'string') return v.trim().length > 0;
+      if (Array.isArray(v)) return v.length > 0;
+      return true;
+    },
+    [answers],
+  );
+
+  const answeredCount = useMemo(
+    () => questions.filter((q) => isQuestionAnswered(q._id)).length,
+    [questions, isQuestionAnswered],
+  );
+
+  const isLastQuestion = questions.length > 0 && currentQuestionIndex === questions.length - 1;
+  const canSubmitFromProgress =
+    questions.length > 0 && (answeredCount === questions.length || isLastQuestion);
+
   const isOptionSelected = (questionId: string, optionId: string) => {
     const answer = answers[questionId];
     return answer === optionId || answer === `${questionId}-${optionId}`;
@@ -415,7 +435,7 @@ function ExamTakingPageContent() {
               <div className="grid grid-cols-5 md:grid-cols-10 gap-2">
                 {questions.map((question, index) => {
                   const isCurrent = index === currentQuestionIndex;
-                  const isAnswered = !!answers[question._id];
+                  const isAnswered = isQuestionAnswered(question._id);
                   const isLuFlagged = flaggedQuestions.has(question._id);
                   return (
                     <Button
@@ -595,6 +615,7 @@ function ExamTakingPageContent() {
               <Button
                 onClick={() => setShowConfirmSubmit(true)}
                 className="bg-green-600 hover:bg-green-700"
+                disabled={!canSubmitFromProgress || submitting}
               >
                 Submit Exam
               </Button>
@@ -622,7 +643,7 @@ function ExamTakingPageContent() {
                     </Button>
                     <Button
                       onClick={handleSubmitExam}
-                      disabled={submitting}
+                      disabled={submitting || !canSubmitFromProgress}
                       className="flex-1 bg-green-600 hover:bg-green-700"
                     >
                       {submitting ? 'Submitting...' : 'Submit'}

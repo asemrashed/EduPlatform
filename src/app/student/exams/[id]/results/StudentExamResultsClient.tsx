@@ -48,16 +48,18 @@ interface ExamAttempt {
     passingMarks: number;
   };
   student: string;
-  status: 'in_progress' | 'completed' | 'abandoned';
-  score: number;
-  percentage: number;
-  passed: boolean;
+  status: 'in_progress' | 'completed' | 'pending_review' | 'abandoned';
+  score: number | null;
+  percentage: number | null;
+  passed: boolean | null;
+  scoresReleased?: boolean;
   timeSpent: number;
   answers: Array<{
     questionId: string;
     answer: string | string[];
     isCorrect?: boolean;
     marks?: number;
+    gradingStatus?: string;
   }>;
   startedAt: string;
   completedAt?: string;
@@ -72,14 +74,13 @@ function ExamResultsPageContent() {
   const [attempt, setAttempt] = useState<ExamAttempt | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
-  console.log('attempt:', attempt);
 
   const fetchResults = async () => {
     try {
       setLoading(true);
       
       // Get the latest completed attempt for this exam
-      const response = await fetch(`/api/student/exam-attempts?examId=${examId}&status=completed`, {
+      const response = await fetch(`/api/student/exam-attempts?examId=${examId}&submitted=1`, {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -181,7 +182,9 @@ function ExamResultsPageContent() {
     );
   }
 
-  const correctAnswers = attempt.answers.filter(a => a.isCorrect).length;
+  const scoresReleased = attempt.status === "completed";
+
+  const correctAnswers = attempt.answers.filter((a) => a.isCorrect === true).length;
   const totalQuestions = attempt.answers.length;
 
   return (
@@ -205,22 +208,41 @@ function ExamResultsPageContent() {
               </Button>
             </div>
 
+            {!scoresReleased && (
+              <Card className="mb-6 border-amber-200 bg-amber-50">
+                <CardContent className="p-4 text-sm text-amber-900">
+                  Your written responses are awaiting instructor review. Final scores and pass/fail will appear here
+                  after grading is complete. You can review your answers below.
+                </CardContent>
+              </Card>
+            )}
+
             {/* Result Summary */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <Card className={`${attempt.passed ? 'bg-gradient-to-br from-green-50 to-green-100' : 'bg-gradient-to-br from-red-50 to-red-100'} border-0 shadow-md`}>
+              <Card
+                className={`${
+                  !scoresReleased
+                    ? "bg-gray-50 border-gray-200"
+                    : attempt.passed
+                      ? "bg-gradient-to-br from-green-50 to-green-100"
+                      : "bg-gradient-to-br from-red-50 to-red-100"
+                } border-0 shadow-md`}
+              >
                 <CardContent className="p-6 text-center">
                   <div className="flex items-center justify-center mb-2">
-                    {attempt.passed ? (
+                    {!scoresReleased ? (
+                      <Clock className="w-8 h-8 text-gray-500" />
+                    ) : attempt.passed ? (
                       <CheckCircle className="w-8 h-8 text-green-600" />
                     ) : (
                       <XCircle className="w-8 h-8 text-red-600" />
                     )}
                   </div>
                   <h3 className="text-lg font-semibold mb-1">
-                    {attempt.passed ? 'Passed' : 'Failed'}
+                    {!scoresReleased ? "Awaiting review" : attempt.passed ? "Passed" : "Failed"}
                   </h3>
                   <p className="text-2xl font-bold">
-                    {attempt.percentage.toFixed(1)}%
+                    {scoresReleased && attempt.percentage != null ? `${attempt.percentage.toFixed(1)}%` : "—"}
                   </p>
                 </CardContent>
               </Card>
@@ -232,7 +254,9 @@ function ExamResultsPageContent() {
                   </div>
                   <h3 className="text-lg font-semibold mb-1">Score</h3>
                   <p className="text-2xl font-bold">
-                    {attempt.score} / {attempt.exam.totalMarks}
+                    {scoresReleased && attempt.score != null
+                      ? `${attempt.score} / ${attempt.exam.totalMarks}`
+                      : "—"}
                   </p>
                 </CardContent>
               </Card>
@@ -264,23 +288,24 @@ function ExamResultsPageContent() {
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span>Correct Answers</span>
-                        <span>{correctAnswers} / {totalQuestions}</span>
+                        <span>
+                          {correctAnswers} / {totalQuestions}
+                        </span>
                       </div>
-                      <Progress 
-                        value={(correctAnswers / totalQuestions) * 100} 
+                      <Progress
+                        value={totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0}
                         className="h-2"
                       />
                     </div>
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Score Progress</span>
-                        <span>{attempt.percentage.toFixed(1)}%</span>
+                    {scoresReleased && attempt.percentage != null && (
+                      <div>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span>Score Progress</span>
+                          <span>{attempt.percentage.toFixed(1)}%</span>
+                        </div>
+                        <Progress value={attempt.percentage} className="h-2" />
                       </div>
-                      <Progress 
-                        value={attempt.percentage} 
-                        className="h-2"
-                      />
-                    </div>
+                    )}
                     <div className="flex justify-between text-sm">
                       <span>Passing Marks Required:</span>
                       <span className="font-semibold">{attempt.exam.passingMarks}%</span>
@@ -318,9 +343,13 @@ function ExamResultsPageContent() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Status:</span>
-                      <Badge variant={attempt.passed ? 'default' : 'destructive'}>
-                        {attempt.passed ? 'Passed' : 'Failed'}
-                      </Badge>
+                      {!scoresReleased ? (
+                        <Badge variant="outline">Pending review</Badge>
+                      ) : (
+                        <Badge variant={attempt.passed ? 'default' : 'destructive'}>
+                          {attempt.passed ? 'Passed' : 'Failed'}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -342,6 +371,9 @@ function ExamResultsPageContent() {
                   const question = getQuestionById(answer.questionId);
                   if (!question) return null;
 
+                  const writtenLike = question.type === 'written' || question.type === 'essay';
+                  const awaitingGrade = writtenLike && answer.gradingStatus === 'pending';
+
                   return (
                     <div key={answer.questionId} className="border-0 shadow-md rounded-lg p-4">
                       <div className="flex items-start justify-between mb-3">
@@ -349,27 +381,34 @@ function ExamResultsPageContent() {
                           <h4 className="font-medium text-gray-900 mb-2">
                             Question {index + 1}: {question.question}
                           </h4>
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <Badge variant="outline">{question.marks} marks</Badge>
                             <Badge variant="outline">{question.difficulty}</Badge>
                             <Badge variant="outline">{question.type}</Badge>
-                            {answer.isCorrect ? (
+                            {awaitingGrade ? (
+                              <Badge className="bg-amber-100 text-amber-900">
+                                <Clock className="w-3 h-3 mr-1" />
+                                Pending instructor review
+                              </Badge>
+                            ) : answer.isCorrect === true ? (
                               <Badge className="bg-green-100 text-green-800">
                                 <CheckCircle className="w-3 h-3 mr-1" />
                                 Correct
                               </Badge>
-                            ) : (
+                            ) : answer.isCorrect === false ? (
                               <Badge className="bg-red-100 text-red-800">
                                 <XCircle className="w-3 h-3 mr-1" />
                                 Incorrect
                               </Badge>
-                            )}
+                            ) : writtenLike && scoresReleased ? (
+                              <Badge variant="outline">Graded</Badge>
+                            ) : null}
                           </div>
                         </div>
                         <div className="text-right">
                           <div className="text-sm text-gray-600">Your Score</div>
                           <div className="font-semibold">
-                            {answer.marks || 0} / {question.marks}
+                            {awaitingGrade ? '—' : `${answer.marks ?? 0} / ${question.marks}`}
                           </div>
                         </div>
                       </div>
@@ -419,7 +458,11 @@ function ExamResultsPageContent() {
                             <span className="font-medium">{answer.answer}</span>
                           </div>
                           <p className="text-sm text-gray-600">
-                            Correct Answer: <span className="font-medium">{question.correctAnswer}</span>
+                            {question.correctAnswer?.trim() ? (
+                              <>
+                                Correct Answer: <span className="font-medium">{question.correctAnswer}</span>
+                              </>
+                            ) : null}
                           </p>
                         </div>
                       )}

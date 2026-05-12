@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import Exam from "@/models/Exam";
 import ExamAttempt from "@/models/ExamAttempt";
 import Enrollment from "@/models/Enrollment";
-import { parseLimit, parsePage, pagination, requireSessionUser } from "@/app/api/_lib/phase12";
+import { parseLimit, parsePage, pagination, requireSessionUser, toObjectId } from "@/app/api/_lib/phase12";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,15 +13,20 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const examId = (searchParams.get("examId") || "").trim();
     const status = (searchParams.get("status") || "").trim();
+    const submittedResults = (searchParams.get("submitted") || "").trim() === "1";
     const page = parsePage(searchParams);
     const limit = parseLimit(searchParams, 20, 200);
     const skip = (page - 1) * limit;
 
-    const filter: Record<string, unknown> = { student: new mongoose.Types.ObjectId(auth.user.id) };
+    const filter: Record<string, unknown> = { student: toObjectId(auth.user.id) };
     if (examId && mongoose.Types.ObjectId.isValid(examId)) {
       filter.exam = new mongoose.Types.ObjectId(examId);
     }
-    if (status && status !== "all") filter.status = status;
+    if (submittedResults) {
+      filter.status = { $in: ["completed", "pending_review"] };
+    } else if (status && status !== "all") {
+      filter.status = status;
+    }
 
     const [rows, total] = await Promise.all([
       ExamAttempt.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
@@ -29,37 +34,54 @@ export async function GET(request: NextRequest) {
     ]);
 
     const examIds = Array.from(new Set(rows.map((a) => String(a.exam))));
-    const examDocs = await Exam.find({ _id: { $in: examIds } })
-      .select("title type duration totalMarks passingMarks")
-      .lean();
+    const examOidList = examIds
+      .filter((eid) => mongoose.Types.ObjectId.isValid(eid))
+      .map((eid) => new mongoose.Types.ObjectId(eid));
+    const examDocs = examOidList.length
+      ? await Exam.find({ _id: { $in: examOidList } })
+          .select("title type duration totalMarks passingMarks")
+          .lean()
+      : [];
     const examById = new Map(examDocs.map((exam) => [String(exam._id), exam]));
 
     const attempts = rows.map((a) => {
-      const exam = examById.get(String(a.exam));
+      const ex = examById.get(String(a.exam));
+      const totalSeconds = (ex?.duration || 60) * 60;
+      const spent = Number(a.timeSpent || 0);
+      const remainingSeconds = a.status === "in_progress" ? Math.max(0, totalSeconds - spent) : undefined;
+      const scoresReleased = a.status === "completed";
       return {
-      _id: String(a._id),
-      exam: {
-        _id: String(exam?._id || a.exam),
-        title: exam?.title || "Exam",
-        type: exam?.type || "exam",
-        duration: exam?.duration || 0,
-        totalMarks: Number(exam?.totalMarks ?? a.totalMarks ?? 0),
-        passingMarks: Number(exam?.passingMarks ?? 0),
-      },
-      student: String(a.student),
-      status: a.status,
-      score: a.marksObtained,
-      percentage: a.percentage,
-      passed: a.isPassed,
-      timeSpent: a.timeSpent,
-      answers: (a.answers || []).map((ans: any) => ({
-        questionId: String(ans.question),
-        answer: ans.selectedOptions?.length ? ans.selectedOptions : ans.writtenAnswer || "",
-        isCorrect: ans.isCorrect,
-        marks: ans.marksObtained,
-      })),
-      startedAt: a.startTime,
-      completedAt: a.submittedAt,
+        _id: String(a._id),
+        examId: String(a.exam),
+        exam: {
+          _id: String(ex?._id || a.exam),
+          title: ex?.title || "Exam",
+          type: ex?.type || "exam",
+          duration: ex?.duration || 0,
+          totalMarks: Number(ex?.totalMarks ?? a.totalMarks ?? 0),
+          passingMarks: Number(ex?.passingMarks ?? 0),
+        },
+        student: String(a.student),
+        status: a.status,
+        scoresReleased,
+        score: scoresReleased ? a.marksObtained : null,
+        percentage: scoresReleased ? a.percentage : null,
+        passed: scoresReleased ? a.isPassed : null,
+        timeSpent: a.timeSpent,
+        answers: (a.answers || []).map((ans: Record<string, unknown>) => ({
+          questionId: String(ans.question),
+          answer: Array.isArray(ans.selectedOptions) && (ans.selectedOptions as unknown[]).length
+            ? ans.selectedOptions
+            : ans.writtenAnswer || "",
+          isCorrect: ans.isCorrect,
+          marks: ans.marksObtained,
+          gradingStatus: ans.gradingStatus,
+        })),
+        startedAt: a.startTime,
+        completedAt: a.submittedAt,
+        createdAt: a.createdAt,
+        updatedAt: a.updatedAt,
+        ...(remainingSeconds !== undefined ? { remainingSeconds } : {}),
       };
     });
 
@@ -92,7 +114,7 @@ export async function POST(request: NextRequest) {
     }
     if (exam.course) {
       const allowed = await Enrollment.exists({
-        student: auth.user.id,
+        student: toObjectId(auth.user.id),
         course: exam.course,
         status: { $in: ["enrolled", "in_progress", "completed"] },
       });
@@ -103,7 +125,7 @@ export async function POST(request: NextRequest) {
 
     const latest = await ExamAttempt.findOne({
       exam: exam._id,
-      student: auth.user.id,
+      student: toObjectId(auth.user.id),
       status: "in_progress",
     })
       .sort({ createdAt: -1 })
@@ -134,13 +156,24 @@ export async function POST(request: NextRequest) {
 
     const previousAttempts = await ExamAttempt.countDocuments({
       exam: exam._id,
-      student: auth.user.id,
+      student: toObjectId(auth.user.id),
     });
+    const maxAttempts = Math.max(1, Number(exam.attempts) || 1);
+    if (previousAttempts >= maxAttempts) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Maximum exam attempts (${maxAttempts}) reached. You cannot start another attempt.`,
+        },
+        { status: 403 },
+      );
+    }
+
     const attemptNumber = previousAttempts + 1;
 
     const created = await ExamAttempt.create({
       exam: exam._id,
-      student: auth.user.id,
+      student: toObjectId(auth.user.id),
       answers: [],
       totalMarks: exam.totalMarks,
       marksObtained: 0,
@@ -155,7 +188,6 @@ export async function POST(request: NextRequest) {
       userAgent: request.headers.get("user-agent") || "",
     });
 
-    await Exam.findByIdAndUpdate(exam._id, { $inc: { attempts: 1 } });
     return NextResponse.json({
       success: true,
       data: {

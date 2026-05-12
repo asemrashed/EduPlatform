@@ -58,7 +58,7 @@ export interface QuestionFilters {
 export interface ExamAttemptFilters {
   exam?: string;
   student?: string;
-  status?: 'in_progress' | 'completed' | 'abandoned' | 'timeout' | 'all';
+  status?: 'in_progress' | 'completed' | 'pending_review' | 'abandoned' | 'timeout' | 'all';
   isPassed?: boolean;
   isSubmitted?: boolean;
   startDate?: string;
@@ -205,6 +205,7 @@ export interface ExamAnswer {
   marksObtained?: number;
   timeSpent?: number;
   isAnswered: boolean;
+  gradingStatus?: 'pending' | 'graded';
 }
 
 export interface SubmitExamData {

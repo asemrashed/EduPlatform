@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Exam from "@/models/Exam";
 import Question from "@/models/Question";
-import { isObjectId, requireSessionUser, toObjectId } from "@/app/api/_lib/phase12";
+import { isObjectId, instructorExamAccessMatch, requireSessionUser, toObjectId } from "@/app/api/_lib/phase12";
 
 interface RouteCtx {
   params: Promise<{ id: string }>;
@@ -62,10 +62,14 @@ export async function GET(_request: NextRequest, ctx: RouteCtx) {
       return NextResponse.json({ success: false, error: "Invalid exam id" }, { status: 400 });
     }
 
-    const filter: Record<string, unknown> = { _id: id };
-    if (auth.user.role === "instructor") filter.createdBy = toObjectId(auth.user.id);
-
-    const exam = await Exam.findOne(filter).populate("course", "title").lean();
+    const examOid = toObjectId(id);
+    let exam: unknown = null;
+    if (auth.user.role === "instructor") {
+      const scope = await instructorExamAccessMatch(auth.user.id);
+      exam = await Exam.findOne({ $and: [{ _id: examOid }, scope] }).populate("course", "title").lean();
+    } else {
+      exam = await Exam.findOne({ _id: examOid }).populate("course", "title").lean();
+    }
     if (!exam) {
       return NextResponse.json({ success: false, error: "Exam not found" }, { status: 404 });
     }
@@ -87,9 +91,14 @@ export async function PUT(request: NextRequest, ctx: RouteCtx) {
       return NextResponse.json({ success: false, error: "Invalid exam id" }, { status: 400 });
     }
 
-    const filter: Record<string, unknown> = { _id: id };
-    if (auth.user.role === "instructor") filter.createdBy = toObjectId(auth.user.id);
-    const existing = await Exam.findOne(filter).lean();
+    const examOid = toObjectId(id);
+    let existing: unknown = null;
+    if (auth.user.role === "instructor") {
+      const scope = await instructorExamAccessMatch(auth.user.id);
+      existing = await Exam.findOne({ $and: [{ _id: examOid }, scope] }).lean();
+    } else {
+      existing = await Exam.findOne({ _id: examOid }).lean();
+    }
     if (!existing) {
       return NextResponse.json({ success: false, error: "Exam not found" }, { status: 404 });
     }
@@ -134,7 +143,7 @@ export async function PUT(request: NextRequest, ctx: RouteCtx) {
       );
     }
 
-    const updated = await Exam.findByIdAndUpdate(id, update, {
+    const updated = await Exam.findByIdAndUpdate(examOid, update, {
       new: true,
       runValidators: true,
     })
@@ -157,8 +166,14 @@ export async function DELETE(_request: NextRequest, ctx: RouteCtx) {
       return NextResponse.json({ success: false, error: "Invalid exam id" }, { status: 400 });
     }
 
-    const filter: Record<string, unknown> = { _id: id };
-    if (auth.user.role === "instructor") filter.createdBy = toObjectId(auth.user.id);
+    const examOid = toObjectId(id);
+    let filter: Record<string, unknown>;
+    if (auth.user.role === "instructor") {
+      const scope = await instructorExamAccessMatch(auth.user.id);
+      filter = { $and: [{ _id: examOid }, scope] };
+    } else {
+      filter = { _id: examOid };
+    }
 
     const removed = await Exam.findOneAndDelete(filter).lean();
     if (!removed) {

@@ -12,12 +12,13 @@ export interface IExamAttempt extends Document {
     marksObtained?: number;
     timeSpent?: number;
     isAnswered: boolean;
+    gradingStatus?: "pending" | "graded";
   }[];
   totalMarks: number;
   marksObtained: number;
   percentage: number;
   isPassed: boolean;
-  status: "in_progress" | "completed" | "abandoned" | "timeout";
+  status: "in_progress" | "completed" | "pending_review" | "abandoned" | "timeout";
   startTime: Date;
   endTime?: Date;
   timeSpent: number;
@@ -51,6 +52,10 @@ const ExamAnswerSchema = new Schema(
     marksObtained: {
       type: Number,
       min: 0,
+    },
+    gradingStatus: {
+      type: String,
+      enum: ["pending", "graded"],
     },
     timeSpent: {
       type: Number,
@@ -106,7 +111,7 @@ const ExamAttemptSchema = new Schema<IExamAttempt>(
     },
     status: {
       type: String,
-      enum: ["in_progress", "completed", "abandoned", "timeout"],
+      enum: ["in_progress", "completed", "pending_review", "abandoned", "timeout"],
       default: "in_progress",
       required: true,
       index: true,
