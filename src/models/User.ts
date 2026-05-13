@@ -10,6 +10,8 @@ export interface IUser extends Document {
   password: string;
   role: "admin" | "instructor" | "student";
   isActive: boolean;
+  /** When true, student cannot create new course reviews */
+  isBlockedFromReviews?: boolean;
   avatar?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -60,6 +62,10 @@ const UserSchema = new Schema<IUser>(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    isBlockedFromReviews: {
+      type: Boolean,
+      default: false,
     },
     avatar: {
       type: String,
