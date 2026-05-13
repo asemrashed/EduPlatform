@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import VideoWatermark from '@/components/VideoWatermark';
 import { LuSearch as Search, LuX as X, LuStar as Star, LuFilter as Filter, LuEye as Eye, LuEyeOff as EyeOff, LuCheck as Check, LuX as XCircle, LuTrash2 as Trash2, LuThumbsUp as ThumbsUp, LuFlag as Flag, LuUser as User, LuBookOpen as BookOpen, LuCalendar as Calendar, LuArrowUpDown as ArrowUpDown, LuSettings as Settings, LuPlus as Plus, LuPencil as Edit, LuPencil as Pencil, LuVideo as Video, LuFileText as FileText, LuUpload as Upload, LuLoader as Loader2, LuPlay as Play } from 'react-icons/lu';
 import { CourseReview, ReviewFilters as ReviewFiltersType } from '@/types/course-review';
+import { ReviewCard } from '@/components/review/ReviewCard';
 
 function StudentReviewsPageContent() {
   const { data: session, status } = useSession();
@@ -749,98 +750,37 @@ function StudentReviewsPageContent() {
             ) : (
               <div className="space-y-4">
                 {reviews.map((review) => (
-                  <div key={review._id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="flex items-center">
-                            {renderStars(review.rating)}
-                          </div>
-                          <span className="text-sm text-gray-500">({review.rating}/5)</span>
-                          <div className="flex items-center gap-2">
-                            {review.isApproved ? (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <Check className="w-3 h-3 mr-1" />
-                                Approved
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                <Eye className="w-3 h-3 mr-1" />
-                                Pending
-                              </span>
-                            )}
-                            {review.isPublic ? (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                <Eye className="w-3 h-3 mr-1" />
-                                Public
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                <EyeOff className="w-3 h-3 mr-1" />
-                                Private
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {review.title && (
-                          <h4 className="font-semibold text-gray-900 mb-2">{review.title}</h4>
-                        )}
-                        
-                        {review.comment && (
-                          <p className="text-gray-700 mb-3">{review.comment}</p>
-                        )}
-                        
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
-                          <div className="flex items-center gap-1">
-                            <BookOpen className="w-4 h-4" />
-                            <span>{typeof review.course === 'string' ? 'Course' : review.course.title}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            <span>{new Date(review.createdAt).toLocaleDateString()}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <ThumbsUp className="w-4 h-4" />
-                            <span>{review.helpfulVotes} helpful</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 ml-4">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedReview(review);
-                            setShowReviewModal(true);
-                          }}
-                          className="border-purple-500 text-purple-600 hover:bg-purple-50"
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          View
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEditReview(review)}
-                          className="border-blue-500 text-blue-600 hover:bg-blue-50"
-                        >
-                          <Edit className="w-4 h-4 mr-1" />
-                          Edit
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDeleteReview(review)}
-                          className="border-red-500 text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Delete
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                  <ReviewCard
+                    key={review._id}
+                    variant="student"
+                    review={review}
+                    actions={[
+                      {
+                        id: "view",
+                        label: "View",
+                        icon: <Eye className="w-4 h-4" />,
+                        onClick: () => {
+                          setSelectedReview(review);
+                          setShowReviewModal(true);
+                        },
+                        className: "border-purple-500 text-purple-600 hover:bg-purple-50",
+                      },
+                      {
+                        id: "edit",
+                        label: "Edit",
+                        icon: <Edit className="w-4 h-4" />,
+                        onClick: () => handleEditReview(review),
+                        className: "border-blue-500 text-blue-600 hover:bg-blue-50",
+                      },
+                      {
+                        id: "delete",
+                        label: "Delete",
+                        icon: <Trash2 className="w-4 h-4" />,
+                        onClick: () => handleDeleteReview(review),
+                        className: "border-red-500 text-red-600 hover:bg-red-50",
+                      },
+                    ]}
+                  />
                 ))}
                 
                 {reviews.length === 0 && !loading && (

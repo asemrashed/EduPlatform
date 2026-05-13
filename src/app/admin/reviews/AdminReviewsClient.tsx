@@ -18,6 +18,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import VideoWatermark from '@/components/VideoWatermark';
 import { LuSearch as Search, LuX as X, LuStar as Star, LuFilter as Filter, LuEye as Eye, LuEyeOff as EyeOff, LuCheck as Check, LuX as XCircle, LuTrash2 as Trash2, LuThumbsUp as ThumbsUp, LuFlag as Flag, LuUser as User, LuBookOpen as BookOpen, LuCalendar as Calendar, LuArrowUpDown as ArrowUpDown, LuSettings as Settings, LuBan as Ban, LuLockOpen as Unlock, LuPlay as Play, LuDatabase as Database } from 'react-icons/lu';
 import { CourseReview, ReviewFilters as ReviewFiltersType } from '@/types/course-review';
+import { ReviewCard, type ReviewCardAction } from '@/components/review/ReviewCard';
 
 function ReviewsPageContent() {
   const { user } = useAppSelector((state) => state.auth);
@@ -388,17 +389,6 @@ function ReviewsPageContent() {
     }
   };
 
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={`w-4 h-4 ${
-          i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
-        }`}
-      />
-    ));
-  };
-
   return (
     <AdminRoleShell>
       <main className="relative z-10 p-2 sm:p-4">
@@ -580,214 +570,109 @@ function ReviewsPageContent() {
               </div>
             ) : (
               <div className="space-y-4">
-                {reviews.map((review) => (
-                  <div key={review._id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="flex items-center">
-                            {renderStars(review.rating)}
-                          </div>
-                          <span className="text-sm text-gray-500">({review.rating}/5)</span>
-                          <div className="flex items-center gap-2">
-                            {review.isApproved ? (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <Check className="w-3 h-3 mr-1" />
-                                Approved
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                <Eye className="w-3 h-3 mr-1" />
-                                Pending
-                              </span>
-                            )}
-                            {review.isPublic ? (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white" style={{
-                                backgroundColor: '#7B2CBF',
-                              }}>
-                                <Eye className="w-3 h-3 mr-1" />
-                                Public
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                <EyeOff className="w-3 h-3 mr-1" />
-                                Private
-                              </span>
-                            )}
-                            {review.reportedCount > 0 && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                <Flag className="w-3 h-3 mr-1" />
-                                Reported ({review.reportedCount})
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {review.title && (
-                          <h4 className="font-semibold text-gray-900 mb-2">{review.title}</h4>
-                        )}
-                        
-                        {review.comment && (
-                          <p className="text-gray-700 mb-3">{review.comment}</p>
-                        )}
-                        
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
-                          <div className="flex items-center gap-1">
-                            <User className="w-4 h-4" />
-                            <span>{getReviewStudentName(review)}</span>
-                            {typeof review.student === 'object' && review.student && review.student.isBlockedFromReviews === true && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 ml-2">
-                                <Ban className="w-3 h-3 mr-1" />
-                                Blocked
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <BookOpen className="w-4 h-4" />
-                            <span>{typeof review.course === 'string' ? 'Course' : review.course.title}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            <span>{new Date(review.createdAt).toLocaleDateString()}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <ThumbsUp className="w-4 h-4" />
-                            <span>{review.helpfulVotes} helpful</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 ml-4">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedReview(review);
-                            setShowReviewModal(true);
-                          }}
-                          className="border-blue-500 text-blue-600 hover:bg-blue-50"
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          View
-                        </Button>
-                        {!review.isApproved && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleModerateReview(review._id, 'approve')}
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                          >
-                            <Check className="w-4 h-4 mr-1" />
-                            Approve
-                          </Button>
-                        )}
-                        {review.isApproved && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleModerateReview(review._id, 'disapprove')}
-                            className="border-yellow-500 text-yellow-600 hover:bg-yellow-50"
-                          >
-                            <XCircle className="w-4 h-4 mr-1" />
-                            Disapprove
-                          </Button>
-                        )}
-                        {review.isPublic ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleModerateReview(review._id, 'make_private')}
-                            className="border-gray-500 text-gray-600 hover:bg-gray-50"
-                          >
-                            <EyeOff className="w-4 h-4 mr-1" />
-                            Hide
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleModerateReview(review._id, 'make_public')}
-                            className="transition-all duration-200"
-                            style={{
-                              borderColor: '#7B2CBF',
-                              color: '#7B2CBF',
-                              backgroundColor: 'transparent',
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = 'rgba(123, 44, 191, 0.1)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = 'transparent';
-                            }}
-                          >
-                            <Eye className="w-4 h-4 mr-1" />
-                            Show
-                          </Button>
-                        )}
-                        {review.reportedCount > 0 && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleModerateReview(review._id, 'reset_reports')}
-                            className="border-purple-500 text-purple-600 hover:bg-purple-50"
-                          >
-                            <Flag className="w-4 h-4 mr-1" />
-                            Reset Reports
-                          </Button>
-                        )}
-                        {typeof review.student === 'object' && review.student && review.student._id && (
-                          <>
-                            {review.student.isBlockedFromReviews === true ? (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  const studentId = typeof review.student === 'object' && review.student ? review.student._id : null;
-                                  if (studentId) {
-                                    handleBlockStudent(studentId, false);
-                                  } else {
-                                    alert('Student ID not found');
-                                  }
-                                }}
-                                className="border-green-500 text-green-600 hover:bg-green-50"
-                                title="Unblock this student to allow reviews"
-                              >
-                                <Unlock className="w-4 h-4 mr-1" />
-                                Unblock
-                              </Button>
-                            ) : (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  const studentId = typeof review.student === 'object' && review.student ? review.student._id : null;
-                                  if (studentId) {
-                                    handleBlockStudent(studentId, true);
-                                  } else {
-                                    alert('Student ID not found');
-                                  }
-                                }}
-                                className="border-orange-500 text-orange-600 hover:bg-orange-50"
-                                title="Block this student from creating reviews"
-                              >
-                                <Ban className="w-4 h-4 mr-1" />
-                                Block Student
-                              </Button>
-                            )}
-                          </>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDeleteReview(review)}
-                          className="border-red-500 text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Delete
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                {reviews.map((review) => {
+                  const studentObj =
+                    typeof review.student === "object" && review.student ? review.student : null;
+                  const studentId = studentObj?._id ?? null;
+
+                  const actions: ReviewCardAction[] = [
+                    {
+                      id: "view",
+                      label: "View",
+                      icon: <Eye className="w-4 h-4" />,
+                      onClick: () => {
+                        setSelectedReview(review);
+                        setShowReviewModal(true);
+                      },
+                      className: "border-blue-500 text-blue-600 hover:bg-blue-50",
+                    },
+                  ];
+
+                  if (!review.isApproved) {
+                    actions.push({
+                      id: "approve",
+                      label: "Approve",
+                      icon: <Check className="w-4 h-4" />,
+                      onClick: () => handleModerateReview(review._id, "approve"),
+                      prominent: true,
+                    });
+                  } else {
+                    actions.push({
+                      id: "disapprove",
+                      label: "Disapprove",
+                      icon: <XCircle className="w-4 h-4" />,
+                      onClick: () => handleModerateReview(review._id, "disapprove"),
+                      className: "border-yellow-500 text-yellow-600 hover:bg-yellow-50",
+                    });
+                  }
+
+                  if (review.isPublic) {
+                    actions.push({
+                      id: "private",
+                      label: "Hide",
+                      icon: <EyeOff className="w-4 h-4" />,
+                      onClick: () => handleModerateReview(review._id, "make_private"),
+                      className: "border-gray-500 text-gray-600 hover:bg-gray-50",
+                    });
+                  } else {
+                    actions.push({
+                      id: "public",
+                      label: "Show",
+                      icon: <Eye className="w-4 h-4" />,
+                      onClick: () => handleModerateReview(review._id, "make_public"),
+                      className:
+                        "border-[#7B2CBF] text-[#7B2CBF] bg-transparent hover:bg-violet-50",
+                    });
+                  }
+
+                  if (review.reportedCount > 0) {
+                    actions.push({
+                      id: "reset",
+                      label: "Reset Reports",
+                      icon: <Flag className="w-4 h-4" />,
+                      onClick: () => handleModerateReview(review._id, "reset_reports"),
+                      className: "border-purple-500 text-purple-600 hover:bg-purple-50",
+                    });
+                  }
+
+                  if (studentId) {
+                    if (studentObj?.isBlockedFromReviews) {
+                      actions.push({
+                        id: "unblock",
+                        label: "Unblock",
+                        icon: <Unlock className="w-4 h-4" />,
+                        onClick: () => handleBlockStudent(studentId, false),
+                        className: "border-green-500 text-green-600 hover:bg-green-50",
+                      });
+                    } else {
+                      actions.push({
+                        id: "block",
+                        label: "Block Student",
+                        icon: <Ban className="w-4 h-4" />,
+                        onClick: () => handleBlockStudent(studentId, true),
+                        className: "border-orange-500 text-orange-600 hover:bg-orange-50",
+                      });
+                    }
+                  }
+
+                  actions.push({
+                    id: "delete",
+                    label: "Delete",
+                    icon: <Trash2 className="w-4 h-4" />,
+                    onClick: () => handleDeleteReview(review),
+                    className: "border-red-500 text-red-600 hover:bg-red-50",
+                  });
+
+                  return (
+                    <ReviewCard
+                      key={review._id}
+                      variant="admin"
+                      review={review}
+                      studentDisplayLabel={getReviewStudentName(review)}
+                      actions={actions}
+                    />
+                  );
+                })}
                 
                 {reviews.length === 0 && !loading && (
                   <div className="text-center py-8">
