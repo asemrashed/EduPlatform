@@ -22,6 +22,16 @@ export interface AttractiveInputProps extends Omit<React.InputHTMLAttributes<HTM
   isDisabled?: boolean
 }
 
+function defaultNameFromLabel(labelText: string | undefined): string | undefined {
+  if (!labelText?.trim()) return undefined
+  const slug = labelText
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+  return slug || undefined
+}
+
 const AttractiveInput = React.forwardRef<HTMLInputElement, AttractiveInputProps>(
   (
     {
@@ -43,13 +53,27 @@ const AttractiveInput = React.forwardRef<HTMLInputElement, AttractiveInputProps>
       focusRingColor,
       isDisabled,
       disabled,
+      id: idProp,
+      name: nameProp,
+      onChange: onChangeProp,
+      value,
       ...props
     },
     ref,
   ) => {
+    const reactId = React.useId().replace(/:/g, "")
+    const resolvedName = nameProp ?? defaultNameFromLabel(label)
+    const resolvedId =
+      idProp ??
+      (resolvedName ? `attractive-input-${resolvedName}-${reactId}` : `attractive-input-field-${reactId}`)
+
     const [showPassword, setShowPassword] = React.useState(false)
     const [isFocused, setIsFocused] = React.useState(false)
     const [hasValue, setHasValue] = React.useState(false)
+
+    React.useEffect(() => {
+      if (value !== undefined) setHasValue(String(value ?? "").length > 0)
+    }, [value])
 
     const isPassword = type === "password"
     const inputType = isPassword && showPassword ? "text" : type
@@ -61,7 +85,7 @@ const AttractiveInput = React.forwardRef<HTMLInputElement, AttractiveInputProps>
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setHasValue(e.target.value.length > 0)
-      props.onChange?.(e)
+      onChangeProp?.(e)
     }
 
     const getIcon = () => {
@@ -206,6 +230,7 @@ const AttractiveInput = React.forwardRef<HTMLInputElement, AttractiveInputProps>
         {/* Floating Label */}
         {variant === "floating" && label && (
           <label
+            htmlFor={resolvedId}
             className={cn(
               "absolute left-4 transition-all duration-200 pointer-events-none",
               "text-muted-foreground",
@@ -220,7 +245,10 @@ const AttractiveInput = React.forwardRef<HTMLInputElement, AttractiveInputProps>
 
         {/* Regular Label */}
         {variant !== "floating" && label && (
-          <label className={cn("block text-sm font-semibold text-foreground mb-2", isActuallyDisabled && "opacity-50")}>
+          <label
+            htmlFor={resolvedId}
+            className={cn("block text-sm font-semibold text-foreground mb-2", isActuallyDisabled && "opacity-50")}
+          >
             {label}
           </label>
         )}
@@ -244,7 +272,10 @@ const AttractiveInput = React.forwardRef<HTMLInputElement, AttractiveInputProps>
           )}
 
           <input
+            id={resolvedId}
+            name={resolvedName}
             type={inputType}
+            {...(value !== undefined ? { value } : {})}
             className={cn(
               baseStyles,
               variantStyles[variant],

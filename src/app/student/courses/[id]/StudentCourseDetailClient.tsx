@@ -13,6 +13,7 @@ import { Collapsible, CollapsibleContent, CollapsibleHeader } from '@/components
 import confetti from 'canvas-confetti';
 import { htmlToPlainText } from '@/lib/utils';
 import { studentLearningService } from '@/services/studentLearningService';
+import { fetchAccountProfile } from '@/lib/accountClient';
 
 const DEFAULT_LESSON_BANNER_TITLE = 'আজকের লেসনে স্বাগতম';
 const QUIZ_KEEP_PRACTICING_THRESHOLD = 60;
@@ -163,13 +164,12 @@ export default function StudentCourseLearningPage() {
 
   useEffect(() => {
     const fetchStudentPhone = async () => {
-      const userId = session?.user?.id;
-      if (!userId) return;
+      if (!session?.user?.id) return;
       try {
-        const response = await fetch(`/api/users/${userId}`, { cache: 'no-store' });
+        const response = await fetchAccountProfile();
         if (!response.ok) return;
         const data = await response.json();
-        const phone = data?.user?.phone || '';
+        const phone = data?.data?.phone || '';
         setStudentPhone(typeof phone === 'string' ? phone : '');
       } catch (error) {
         console.error('Failed to fetch student phone:', error);

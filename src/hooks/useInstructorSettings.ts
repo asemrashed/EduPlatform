@@ -1,4 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
+import {
+  INSTRUCTOR_SETTINGS_ALLOWED_KEYS,
+  pickInstructorSettingsForStorage,
+} from "@/lib/settingsScope";
 
 interface InstructorSettings {
   displayName: string;
@@ -24,217 +28,221 @@ interface UseInstructorSettingsReturn {
   settings: AllSettings;
   isLoading: boolean;
   error: string | null;
-  saveStatus: 'idle' | 'saving' | 'saved' | 'error';
-  updateSettings: (category: string, newSettings: any) => Promise<void>;
+  saveStatus: "idle" | "saving" | "saved" | "error";
+  updateSettings: (category: string, newSettings: Record<string, unknown>) => Promise<void>;
   saveAllSettings: (allSettings: AllSettings) => Promise<void>;
   resetSettings: (category?: string) => Promise<void>;
+  refetch: () => Promise<void>;
 }
 
 const defaultInstructorSettings: InstructorSettings = {
-  displayName: '',
-  email: '',
+  displayName: "",
+  email: "",
   profileVisibility: true,
-  bio: '',
-  expertise: '',
+  bio: "",
+  expertise: "",
   teachingExperience: 0,
   allowStudentMessages: true,
   showContactInfo: true,
-  preferredEmail: '',
-  emailSignature: '',
+  preferredEmail: "",
+  emailSignature: "",
   courseNotifications: true,
   studentNotifications: true,
   emailNotifications: true,
 };
 
+function pickInstructorForApi(inst: InstructorSettings | undefined): Record<string, unknown> {
+  if (!inst) return {};
+  return pickInstructorSettingsForStorage({ ...inst } as Record<string, unknown>);
+}
+
 export default function useInstructorSettings(): UseInstructorSettingsReturn {
   const [settings, setSettings] = useState<AllSettings>({
-    instructor: defaultInstructorSettings
+    instructor: defaultInstructorSettings,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const loadSettings = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
-      console.log('Loading instructor settings...');
-      const response = await fetch('/api/instructor/settings', {
-        method: 'GET',
+      const response = await fetch("/api/instructor/settings", {
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
-      
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('API Error:', errorText);
-        throw new Error(`Failed to load settings: ${response.status}`);
+        throw new Error(`Failed to load settings: ${response.status} ${errorText}`);
       }
-      
+
       const data = await response.json();
-      console.log('Settings data:', data);
-      
+
       if (data.success) {
-        // If no settings exist, use defaults
-        const settingsData = data.data;
+        const settingsData = data.data as AllSettings | undefined;
         if (!settingsData || Object.keys(settingsData).length === 0) {
-          console.log('No settings found, using defaults');
           setSettings({
-            instructor: defaultInstructorSettings
+            instructor: defaultInstructorSettings,
           });
         } else {
-          setSettings(settingsData);
+          const inst = settingsData.instructor;
+          setSettings({
+            instructor: {
+              ...defaultInstructorSettings,
+              ...(inst ?? {}),
+            },
+          });
         }
       } else {
-        throw new Error(data.error || 'Failed to load settings');
+        throw new Error(data.error || "Failed to load settings");
       }
     } catch (err) {
-      console.error('Error loading instructor settings:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load settings');
-      // Set default settings on error
+      setError(err instanceof Error ? err.message : "Failed to load settings");
       setSettings({
-        instructor: defaultInstructorSettings
+        instructor: defaultInstructorSettings,
       });
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const updateSettings = useCallback(async (category: string, newSettings: any) => {
-    setSaveStatus('saving');
+  const updateSettings = useCallback(async (category: string, newSettings: Record<string, unknown>) => {
+    if (category !== "instructor") return;
+
+    const filtered: Record<string, unknown> = {};
+    for (const key of Object.keys(newSettings)) {
+      if (INSTRUCTOR_SETTINGS_ALLOWED_KEYS.has(key)) {
+        filtered[key] = newSettings[key];
+      }
+    }
+    if (Object.keys(filtered).length === 0) return;
+
+    setSaveStatus("saving");
     setError(null);
-    
+
     try {
-      const response = await fetch('/api/instructor/settings', {
-        method: 'POST',
+      const response = await fetch("/api/instructor/settings", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           category,
-          settings: newSettings
+          settings: filtered,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update settings');
+        throw new Error("Failed to update settings");
       }
 
       const data = await response.json();
-      
+
       if (data.success) {
-        setSettings(prev => ({
+        const inst = data.data?.instructor as InstructorSettings | undefined;
+        setSettings((prev) => ({
           ...prev,
-          [category]: newSettings
+          instructor: {
+            ...defaultInstructorSettings,
+            ...prev.instructor,
+            ...(inst ?? filtered),
+          },
         }));
-        setSaveStatus('saved');
+        setSaveStatus("saved");
       } else {
-        throw new Error(data.error || 'Failed to update settings');
+        throw new Error(data.error || "Failed to update settings");
       }
     } catch (err) {
-      console.error('Error updating instructor settings:', err);
-      setError(err instanceof Error ? err.message : 'Failed to update settings');
-      setSaveStatus('error');
+      setError(err instanceof Error ? err.message : "Failed to update settings");
+      setSaveStatus("error");
     }
   }, []);
 
   const saveAllSettings = useCallback(async (allSettings: AllSettings) => {
-    setSaveStatus('saving');
+    setSaveStatus("saving");
     setError(null);
-    
+
     try {
-      console.log('Saving instructor settings:', allSettings);
-      
-      const response = await fetch('/api/instructor/settings', {
-        method: 'PUT',
+      const filtered = pickInstructorForApi(allSettings.instructor);
+
+      const response = await fetch("/api/instructor/settings", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          settings: allSettings
+          settings: { instructor: filtered },
         }),
       });
 
-      console.log('Save response status:', response.status);
-      
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Save API Error:', errorText);
         throw new Error(`Failed to save settings: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
-      console.log('Save response data:', data);
-      
+
       if (data.success) {
-        setSettings(allSettings);
-        setSaveStatus('saved');
+        const inst = data.data?.instructor as Partial<InstructorSettings> | undefined;
+        setSettings({
+          instructor: {
+            ...defaultInstructorSettings,
+            ...allSettings.instructor,
+            ...inst,
+          },
+        });
+        setSaveStatus("saved");
       } else {
-        throw new Error(data.error || 'Failed to save settings');
+        throw new Error(data.error || "Failed to save settings");
       }
     } catch (err) {
-      console.error('Error saving instructor settings:', err);
-      setError(err instanceof Error ? err.message : 'Failed to save settings');
-      setSaveStatus('error');
+      setError(err instanceof Error ? err.message : "Failed to save settings");
+      setSaveStatus("error");
     }
   }, []);
 
-  const resetSettings = useCallback(async (category?: string) => {
-    setSaveStatus('saving');
-    setError(null);
-    
-    try {
-      const url = category 
-        ? `/api/instructor/settings?category=${category}`
-        : '/api/instructor/settings';
-        
-      const response = await fetch(url, {
-        method: 'DELETE',
-      });
+  const resetSettings = useCallback(
+    async (category?: string) => {
+      setSaveStatus("saving");
+      setError(null);
 
-      if (!response.ok) {
-        throw new Error('Failed to reset settings');
-      }
+      try {
+        const url = category
+          ? `/api/instructor/settings?category=${encodeURIComponent(category)}`
+          : "/api/instructor/settings";
 
-      const data = await response.json();
-      
-      if (data.success) {
-        // Reload settings after reset
-        await loadSettings();
-        setSaveStatus('saved');
-      } else {
-        throw new Error(data.error || 'Failed to reset settings');
-      }
-    } catch (err) {
-      console.error('Error resetting instructor settings:', err);
-      setError(err instanceof Error ? err.message : 'Failed to reset settings');
-      setSaveStatus('error');
-    }
-  }, [loadSettings]);
-
-  useEffect(() => {
-    loadSettings();
-  }, [loadSettings]);
-
-  // Fallback: if loading takes too long, show default settings
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (isLoading) {
-        console.log('Loading timeout, showing default settings');
-        setSettings({
-          instructor: defaultInstructorSettings
+        const response = await fetch(url, {
+          method: "DELETE",
         });
-        setIsLoading(false);
-      }
-    }, 5000); // 5 second timeout
 
-    return () => clearTimeout(timeout);
-  }, [isLoading]);
+        if (!response.ok) {
+          throw new Error("Failed to reset settings");
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+          await loadSettings();
+          setSaveStatus("saved");
+        } else {
+          throw new Error(data.error || "Failed to reset settings");
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to reset settings");
+        setSaveStatus("error");
+      }
+    },
+    [loadSettings],
+  );
+
+  useEffect(() => {
+    void loadSettings();
+  }, [loadSettings]);
 
   return {
     settings,
@@ -244,5 +252,6 @@ export default function useInstructorSettings(): UseInstructorSettingsReturn {
     updateSettings,
     saveAllSettings,
     resetSettings,
+    refetch: loadSettings,
   };
 }

@@ -1,29 +1,44 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { InstructorRoleShell } from '@/components/role-area/InstructorRoleShell';
 import PageSection from '@/components/PageSection';
 import WelcomeSection from '@/components/WelcomeSection';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { LuGraduationCap as GraduationCap, LuMail as Mail, LuCalendar as Calendar, LuBookOpen as BookOpen, LuAward as Award, LuClock as Clock, LuTarget as Target, LuPencil as Edit, LuSave as Save, LuX as X, LuUsers as Users, LuStar as Star, LuMessageSquare as MessageSquare, LuCircle as HelpCircle } from 'react-icons/lu';;
+import {
+  LuBookOpen as BookOpen,
+  LuAward as Award,
+  LuClock as Clock,
+  LuPencil as Edit,
+  LuSave as Save,
+  LuX as X,
+  LuUsers as Users,
+  LuCircle as HelpCircle,
+  LuUser as User,
+  LuUpload as Upload,
+} from 'react-icons/lu';
+import { useAvatarUpload } from '@/hooks/useAvatarUpload';
+import { fetchAccountProfile, putAccountProfile } from '@/lib/accountClient';
 
 interface TeacherProfile {
   _id: string;
   firstName: string;
   lastName: string;
-  email: string;
+  email?: string;
   role: string;
   isActive: boolean;
   avatar?: string;
   specialization?: string;
   bio?: string;
-  experience?: number;
+  experience?: string;
   education?: string;
+  address?: string;
+  socialLinks?: { linkedin?: string; twitter?: string; website?: string };
   createdAt: string;
   lastLogin?: string;
 }
@@ -34,14 +49,18 @@ export default function TeacherProfile() {
   const [profile, setProfile] = useState<TeacherProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const { uploadAvatar, isUploading, uploadProgress } = useAvatarUpload();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    email: '',
     specialization: '',
     bio: '',
-    experience: 0,
-    education: ''
+    experience: '',
+    education: '',
+    address: '',
+    linkedin: '',
+    twitter: '',
+    website: '',
   });
 
   useEffect(() => {
@@ -63,21 +82,28 @@ export default function TeacherProfile() {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      
-      const response = await fetch(`/api/users/${session?.user?.id}`);
-      
+
+      const response = await fetchAccountProfile();
+
       if (response.ok) {
-        const data = await response.json();
-        setProfile(data.user);
-        setFormData({
-          firstName: data.user.firstName || '',
-          lastName: data.user.lastName || '',
-          email: data.user.email || '',
-          specialization: data.user.specialization || '',
-          bio: data.user.bio || '',
-          experience: data.user.experience || 0,
-          education: data.user.education || ''
-        });
+        const json = (await response.json()) as { success?: boolean; data?: TeacherProfile };
+        if (json.success && json.data) {
+          const u = json.data;
+          setProfile(u);
+          const sl = u.socialLinks || {};
+          setFormData({
+            firstName: u.firstName || '',
+            lastName: u.lastName || '',
+            specialization: u.specialization || '',
+            bio: u.bio || '',
+            experience: u.experience != null ? String(u.experience) : '',
+            education: u.education || '',
+            address: u.address || '',
+            linkedin: sl.linkedin || '',
+            twitter: sl.twitter || '',
+            website: sl.website || '',
+          });
+        }
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -92,29 +118,44 @@ export default function TeacherProfile() {
 
   const handleCancel = () => {
     setEditing(false);
+    const sl = profile?.socialLinks || {};
     setFormData({
       firstName: profile?.firstName || '',
       lastName: profile?.lastName || '',
-      email: profile?.email || '',
       specialization: profile?.specialization || '',
       bio: profile?.bio || '',
-      experience: profile?.experience || 0,
-      education: profile?.education || ''
+      experience: profile?.experience != null ? String(profile.experience) : '',
+      education: profile?.education || '',
+      address: profile?.address || '',
+      linkedin: sl.linkedin || '',
+      twitter: sl.twitter || '',
+      website: sl.website || '',
     });
   };
 
   const handleSave = async () => {
     try {
-      const response = await fetch(`/api/users/${session?.user?.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+      const response = await putAccountProfile({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        specialization: formData.specialization,
+        bio: formData.bio,
+        experience: formData.experience,
+        education: formData.education,
+        address: formData.address,
+        socialLinks: {
+          linkedin: formData.linkedin,
+          twitter: formData.twitter,
+          website: formData.website,
+        },
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setProfile(data.user);
-        setEditing(false);
+        const json = (await response.json()) as { success?: boolean; data?: TeacherProfile };
+        if (json.success && json.data) {
+          setProfile(json.data);
+          setEditing(false);
+        }
       }
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -126,6 +167,29 @@ export default function TeacherProfile() {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleAvatarUpload = async (file: File) => {
+    const userId = session?.user?.id;
+    if (!file || !userId) return;
+
+    const result = await uploadAvatar(file);
+    if (!result || !result.success || !result.imageUrl) {
+      return;
+    }
+
+    try {
+      const response = await putAccountProfile({ avatar: result.imageUrl });
+
+      if (response.ok) {
+        const json = (await response.json()) as { success?: boolean; data?: TeacherProfile };
+        if (json.success && json.data) {
+          setProfile(json.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving avatar to profile:', error);
+    }
   };
 
   const formatDate = (dateString?: string) => {
@@ -166,9 +230,61 @@ export default function TeacherProfile() {
           description="Manage your teaching profile and account settings"
         />
 
-        {/* Profile LuInformation */}
+        <PageSection
+          title="Profile Photo"
+          description="Upload or change your profile picture"
+          className="mb-2 sm:mb-4"
+        >
+          <div className="flex items-center gap-4">
+            <div className="relative h-24 w-24 overflow-hidden rounded-full border-2 border-gray-200 bg-gray-100">
+              {profile.avatar ? (
+                <Image
+                  src={profile.avatar}
+                  alt="Profile avatar"
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center">
+                  <User className="h-8 w-8 text-gray-400" />
+                </div>
+              )}
+              {isUploading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-xs text-white">
+                  <div className="mb-1">Uploading...</div>
+                  <div>{uploadProgress}%</div>
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm text-gray-700">
+                Recommended size up to 5MB (JPEG, PNG, GIF, WebP)
+              </label>
+              <div className="flex items-center gap-2">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium hover:bg-gray-50">
+                  <Upload className="h-4 w-4" />
+                  <span>{isUploading ? 'Uploading...' : 'Upload Photo'}</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                    className="hidden"
+                    disabled={isUploading}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        void handleAvatarUpload(file);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+        </PageSection>
+
+        {/* Profile information */}
         <PageSection 
-          title="Personal LuInformation"
+          title="Personal information"
           description="Update your personal details and teaching information"
           className="mb-2 sm:mb-4"
           actions={
@@ -224,16 +340,8 @@ export default function TeacherProfile() {
               <label className="text-sm font-medium text-gray-700 mb-2 block">
                 Email Address
               </label>
-              {editing ? (
-                <Input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder="Enter email address"
-                />
-              ) : (
-                <p className="text-gray-900 p-3 bg-gray-50 rounded-lg">{profile.email}</p>
-              )}
+              <p className="text-gray-900 p-3 bg-gray-50 rounded-lg">{profile.email || 'Not provided'}</p>
+              <p className="text-xs text-amber-700 mt-1">Email and phone are not editable here.</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">
@@ -251,17 +359,16 @@ export default function TeacherProfile() {
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">
-                Years of Experience
+                Teaching experience
               </label>
               {editing ? (
                 <Input
-                  type="number"
                   value={formData.experience}
-                  onChange={(e) => handleInputChange('experience', parseInt(e.target.value) || 0)}
-                  placeholder="Years of teaching experience"
+                  onChange={(e) => handleInputChange('experience', e.target.value)}
+                  placeholder="e.g. 5 years or summary"
                 />
               ) : (
-                <p className="text-gray-900 p-3 bg-gray-50 rounded-lg">{profile.experience || 0} years</p>
+                <p className="text-gray-900 p-3 bg-gray-50 rounded-lg">{profile.experience || 'Not specified'}</p>
               )}
             </div>
             <div>
@@ -296,10 +403,60 @@ export default function TeacherProfile() {
                 </p>
               )}
             </div>
+            <div className="md:col-span-2">
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Address</label>
+              {editing ? (
+                <textarea
+                  value={formData.address}
+                  onChange={(e) => handleInputChange('address', e.target.value)}
+                  placeholder="Address"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  rows={2}
+                />
+              ) : (
+                <p className="text-gray-900 p-3 bg-gray-50 rounded-lg">{profile.address || 'Not specified'}</p>
+              )}
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">LinkedIn</label>
+              {editing ? (
+                <Input
+                  value={formData.linkedin}
+                  onChange={(e) => handleInputChange('linkedin', e.target.value)}
+                  placeholder="https://linkedin.com/in/..."
+                />
+              ) : (
+                <p className="text-gray-900 p-3 bg-gray-50 rounded-lg">{profile.socialLinks?.linkedin || 'Not specified'}</p>
+              )}
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Website</label>
+              {editing ? (
+                <Input
+                  value={formData.website}
+                  onChange={(e) => handleInputChange('website', e.target.value)}
+                  placeholder="https://..."
+                />
+              ) : (
+                <p className="text-gray-900 p-3 bg-gray-50 rounded-lg">{profile.socialLinks?.website || 'Not specified'}</p>
+              )}
+            </div>
+            <div className="md:col-span-2">
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Twitter / X</label>
+              {editing ? (
+                <Input
+                  value={formData.twitter}
+                  onChange={(e) => handleInputChange('twitter', e.target.value)}
+                  placeholder="Profile URL or handle"
+                />
+              ) : (
+                <p className="text-gray-900 p-3 bg-gray-50 rounded-lg">{profile.socialLinks?.twitter || 'Not specified'}</p>
+              )}
+            </div>
           </div>
         </PageSection>
 
-        {/* Account LuInformation & Stats */}
+        {/* Account information & stats */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Account Status */}
           <PageSection 

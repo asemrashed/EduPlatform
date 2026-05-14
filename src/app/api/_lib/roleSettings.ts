@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Settings from "@/models/Settings";
 
 /** Single global document for admin UI (system, security, payment, …). */
@@ -20,10 +21,18 @@ export async function getSettingsRecord(category: string): Promise<Record<string
   return {};
 }
 
-export async function setSettingsRecord(category: string, settings: Record<string, unknown>) {
+export async function setSettingsRecord(
+  category: string,
+  settings: Record<string, unknown>,
+  updatedBy?: string | null,
+) {
+  const $set: Record<string, unknown> = { settings };
+  if (updatedBy && mongoose.Types.ObjectId.isValid(updatedBy)) {
+    $set.updatedBy = new mongoose.Types.ObjectId(updatedBy);
+  }
   await Settings.findOneAndUpdate(
     { category },
-    { $set: { settings } },
+    { $set },
     { new: true, upsert: true, setDefaultsOnInsert: true },
   );
 }

@@ -1,96 +1,150 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useCallback, useEffect, useState } from 'react';
 import { useAppSelector } from '@/lib/hooks';
 import useStudentSettings from '@/hooks/useStudentSettings';
 import PageSection from '@/components/PageSection';
 import WelcomeSection from '@/components/WelcomeSection';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { AttractiveInput } from '@/components/ui/attractive-input';
-import { LuSettings as Settings, LuLock as Lock, LuSave as Save, LuRefreshCw as RefreshCw, LuTriangleAlert as AlertTriangle, LuCheck as CheckCircle, LuRotateCcw, LuKey, LuUser as User, LuBell, LuMail as Mail, LuBookOpen as BookOpen, LuCalendar as Calendar, LuStar as Star } from 'react-icons/lu';;
+import { LuSave as Save, LuRefreshCw as RefreshCw, LuTriangleAlert as AlertTriangle, LuCheck as CheckCircle, LuRotateCcw, LuKey, LuUser as User, LuBell, LuMail as Mail } from 'react-icons/lu';
+import AccountChangePasswordPanel from '@/components/AccountChangePasswordPanel';
 import { StudentRoleShell } from '@/components/role-area/StudentRoleShell';
+import { fetchAccountProfile, putAccountProfile } from '@/lib/accountClient';
 
-interface StudentSettings {
-  displayName: string;
+type AccountDraft = {
   email: string;
-  profileVisibility: boolean;
+  phone: string;
   bio: string;
-  interests: string;
-  learningGoals: string;
-  allowInstructorMessages: boolean;
-  showProgress: boolean;
-  preferredEmail: string;
-  emailSignature: string;
-  courseNotifications: boolean;
-  assignmentNotifications: boolean;
-  emailNotifications: boolean;
-  reminderNotifications: boolean;
-}
+  parentPhone: string;
+  education: string;
+  address: string;
+  linkedin: string;
+  twitter: string;
+  website: string;
+};
+
+const emptyAccountDraft: AccountDraft = {
+  email: '',
+  phone: '',
+  bio: '',
+  parentPhone: '',
+  education: '',
+  address: '',
+  linkedin: '',
+  twitter: '',
+  website: '',
+};
 
 function StudentSettingsPageContent() {
   const { user } = useAppSelector((state) => state.auth);
   const [activeTab, setActiveTab] = useState('profile');
   const [hasChanges, setHasChanges] = useState(false);
-  
-  // Password change state
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
-  const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-  
+  const [accountDraft, setAccountDraft] = useState<AccountDraft>(emptyAccountDraft);
+  const [accountDirty, setAccountDirty] = useState(false);
+
   // Local state to track changes without API calls
   const [localSettings, setLocalSettings] = useState<Record<string, Record<string, any>>>({});
-  
+
   const {
     settings,
     isLoading,
     error,
     saveStatus,
-    updateSettings,
     saveAllSettings,
-    resetSettings
+    resetSettings,
+    refetch,
   } = useStudentSettings();
+
+  const loadAccount = useCallback(async () => {
+    try {
+      const res = await fetchAccountProfile();
+      if (!res.ok) return;
+      const json = (await res.json()) as { success?: boolean; data?: Record<string, unknown> };
+      const d = json.data;
+      if (!d || json.success === false) return;
+      const sl = (d.socialLinks as Record<string, string> | undefined) || {};
+      setAccountDraft({
+        email: String(d.email || ''),
+        phone: String(d.phone || ''),
+        bio: String(d.bio || ''),
+        parentPhone: String(d.parentPhone || ''),
+        education: String(d.education || ''),
+        address: String(d.address || ''),
+        linkedin: String(sl.linkedin || ''),
+        twitter: String(sl.twitter || ''),
+        website: String(sl.website || ''),
+      });
+      setAccountDirty(false);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadAccount();
+  }, [loadAccount]);
+
+  const anyDirty = hasChanges || accountDirty;
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
-    // { id: 'notifications', label: 'Notifications', icon: LuBell },
+    { id: 'notifications', label: 'Notifications', icon: LuBell },
+    { id: 'email', label: 'Email', icon: Mail },
     { id: 'password', label: 'Password', icon: LuKey },
-    // { id: 'email', label: 'Email', icon: Mail },
   ];
 
   const handleSave = async () => {
-    if (!hasChanges) return;
-    
+    if (!hasChanges && !accountDirty) return;
+
     try {
-      // Merge local changes with original settings
-      const mergedSettings = { ...settings } as any;
-      Object.keys(localSettings).forEach(category => {
-        mergedSettings[category] = {
-          ...mergedSettings[category],
-          ...localSettings[category]
-        };
-      });
-      
-      await saveAllSettings(mergedSettings);
-      setHasChanges(false);
-      setLocalSettings({}); // Clear local changes after successful save
+      if (accountDirty) {
+        const res = await putAccountProfile({
+          bio: accountDraft.bio,
+          parentPhone: accountDraft.parentPhone,
+          education: accountDraft.education,
+          address: accountDraft.address,
+          socialLinks: {
+            linkedin: accountDraft.linkedin,
+            twitter: accountDraft.twitter,
+            website: accountDraft.website,
+          },
+        });
+        if (!res.ok) {
+          console.error('Account profile save failed');
+        } else {
+          await loadAccount();
+        }
+      }
+
+      if (hasChanges) {
+        const mergedSettings = { ...settings } as any;
+        Object.keys(localSettings).forEach((category) => {
+          mergedSettings[category] = {
+            ...mergedSettings[category],
+            ...localSettings[category],
+          };
+        });
+
+        await saveAllSettings(mergedSettings);
+        setHasChanges(false);
+        setLocalSettings({});
+      }
+
+      await refetch();
     } catch (error) {
       console.error('Error saving settings:', error);
     }
   };
 
-  const handleReset = async (category?: string) => {
+  const handleReset = async () => {
     try {
-      await resetSettings(category);
+      await resetSettings();
       setHasChanges(false);
-      setLocalSettings({}); // Clear local changes when resetting
+      setLocalSettings({});
+      await loadAccount();
+      await refetch();
     } catch (error) {
       console.error('Error resetting settings:', error);
     }
@@ -103,126 +157,50 @@ function StudentSettingsPageContent() {
     return localValue !== undefined ? localValue : originalValue;
   };
 
+  const patchAccountDraft = (partial: Partial<AccountDraft>) => {
+    setAccountDraft((prev) => ({ ...prev, ...partial }));
+    setAccountDirty(true);
+  };
+
   const handleSettingChange = (category: string, key: string, value: any) => {
     // Update local state instead of calling API immediately
     setLocalSettings((prev: Record<string, Record<string, any>>) => ({
       ...prev,
       [category]: {
         ...prev[category],
-        [key]: value
-      }
+        [key]: value,
+      },
     }));
     setHasChanges(true);
   };
 
-  const handlePasswordChange = (field: string, value: string) => {
-    setPasswordData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (passwordErrors[field]) {
-      setPasswordErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  };
-
-  const validatePassword = () => {
-    const errors: Record<string, string> = {};
-    
-    if (!passwordData.currentPassword) {
-      errors.currentPassword = 'Current password is required';
-    }
-    
-    if (!passwordData.newPassword) {
-      errors.newPassword = 'New password is required';
-    } else if (passwordData.newPassword.length < 8) {
-      errors.newPassword = 'Password must be at least 8 characters long';
-    }
-    
-    if (!passwordData.confirmPassword) {
-      errors.confirmPassword = 'Please confirm your new password';
-    } else if (passwordData.newPassword !== passwordData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
-    }
-    
-    setPasswordErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleChangePassword = async () => {
-    if (!validatePassword()) return;
-    
-    setIsChangingPassword(true);
-    try {
-      const response = await fetch('/api/student/change-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword,
-        }),
-      });
-
-      if (response.ok) {
-        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        setPasswordErrors({});
-        alert('Password changed successfully!');
-      } else {
-        const errorBody = await response.json().catch(() => ({}));
-        const message = errorBody.error || errorBody.message || 'Failed to change password';
-        setPasswordErrors({ currentPassword: message });
-      }
-    } catch (error) {
-      console.error('Error changing password:', error);
-      setPasswordErrors({ currentPassword: 'An error occurred while changing password' });
-    } finally {
-      setIsChangingPassword(false);
-    }
-  };
-
-  const renderGeneralSettings = () => {
-    const studentSettings = settings.student;
-    if (!studentSettings) {
-      return (
-        <div className="flex items-center justify-center p-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading settings...</p>
-          </div>
-        </div>
-      );
-    }
-
+  const renderProfileSettings = () => {
     return (
       <div className="space-y-6">
         <PageSection
-          title="General Settings"
-          description="Configure your student account settings"
-          className="bg-gradient-to-br from-blue-50 via-white to-purple-50 border-2 border-blue-200 shadow-lg hover:shadow-xl transition-all duration-200 my-6"
+          title="Profile Information"
+          description="Manage your student profile details"
+          className="bg-gradient-to-br from-purple-50 via-white to-pink-50 border-2 border-purple-200 shadow-lg hover:shadow-xl transition-all duration-200 my-6"
         >
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <AttractiveInput
-                label="Display Name"
-                value={getCurrentSetting('student', 'displayName') || user?.name || ''}
-                onChange={() => {}}
-                placeholder="Enter your display name"
-                icon="user"
-                variant="default"
-                colorScheme="primary"
-                size="md"
-                disabled
-                helperText="Display name is managed by admin and cannot be changed from student account."
-              />
-              <AttractiveInput
-                label="Email"
-                value={getCurrentSetting('student', 'email') || user?.email || ''}
-                onChange={(e) => handleSettingChange('student', 'email', e.target.value)}
-                placeholder="your-email@example.com"
-                icon="mail"
-                variant="default"
-                colorScheme="primary"
-                size="md"
-              />
+            <div className="rounded-lg border border-purple-100 bg-white/80 p-4 text-sm text-slate-700 shadow-sm">
+              <p>
+                <span className="font-semibold text-foreground">Name:</span> {user?.name || '—'}
+              </p>
+              <p className="mt-1">
+                <span className="font-semibold text-foreground">Email:</span>{' '}
+                {accountDraft.email || user?.email || '—'}
+              </p>
+              <p className="mt-1">
+                <span className="font-semibold text-foreground">Phone:</span> {accountDraft.phone || '—'}
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Login email and phone are account identifiers and cannot be changed here. Full profile editor:{' '}
+                <Link href="/student/profile" className="font-medium text-primary underline">
+                  My Profile
+                </Link>
+                .
+              </p>
             </div>
             <div className="space-y-4">
               <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-blue-200 shadow-md hover:shadow-lg transition-all duration-200">
@@ -242,32 +220,81 @@ function StudentSettingsPageContent() {
                 </div>
               </div>
             </div>
-          </div>
-        </PageSection>
-      </div>
-    );
-  };
-
-  const renderProfileSettings = () => {
-    return (
-      <div className="space-y-6">
-        <PageSection
-          title="Profile LuInformation"
-          description="Manage your student profile details"
-          className="bg-gradient-to-br from-purple-50 via-white to-pink-50 border-2 border-purple-200 shadow-lg hover:shadow-xl transition-all duration-200 my-6"
-        >
-          <div className="space-y-6">
             <AttractiveInput
               label="Bio"
-              value={getCurrentSetting('student', 'bio') || ''}
-              onChange={(e) => handleSettingChange('student', 'bio', e.target.value)}
+              value={accountDraft.bio}
+              onChange={(e) => patchAccountDraft({ bio: e.target.value })}
               placeholder="Tell others about yourself and your learning journey..."
               icon="user"
               variant="default"
               colorScheme="primary"
               size="md"
-              helperText="Write a brief description about yourself and your learning goals"
+              helperText="Saved to your account (not notification settings)."
             />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <AttractiveInput
+                label="Parent/Guardian phone"
+                value={accountDraft.parentPhone}
+                onChange={(e) => patchAccountDraft({ parentPhone: e.target.value })}
+                placeholder="Parent or guardian contact"
+                icon="user"
+                variant="default"
+                colorScheme="primary"
+                size="md"
+              />
+              <AttractiveInput
+                label="Education"
+                value={accountDraft.education}
+                onChange={(e) => patchAccountDraft({ education: e.target.value })}
+                placeholder="School / program"
+                icon="book"
+                variant="default"
+                colorScheme="primary"
+                size="md"
+              />
+            </div>
+            <AttractiveInput
+              label="Address"
+              value={accountDraft.address}
+              onChange={(e) => patchAccountDraft({ address: e.target.value })}
+              placeholder="Mailing address"
+              icon="edit"
+              variant="default"
+              colorScheme="primary"
+              size="md"
+            />
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+              <AttractiveInput
+                label="LinkedIn"
+                value={accountDraft.linkedin}
+                onChange={(e) => patchAccountDraft({ linkedin: e.target.value })}
+                placeholder="https://linkedin.com/in/..."
+                icon="user"
+                variant="default"
+                colorScheme="primary"
+                size="md"
+              />
+              <AttractiveInput
+                label="Website"
+                value={accountDraft.website}
+                onChange={(e) => patchAccountDraft({ website: e.target.value })}
+                placeholder="https://..."
+                icon="mail"
+                variant="default"
+                colorScheme="primary"
+                size="md"
+              />
+              <AttractiveInput
+                label="Twitter / X"
+                value={accountDraft.twitter}
+                onChange={(e) => patchAccountDraft({ twitter: e.target.value })}
+                placeholder="Profile URL"
+                icon="mail"
+                variant="default"
+                colorScheme="primary"
+                size="md"
+              />
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <AttractiveInput
                 label="Interests"
@@ -372,78 +399,7 @@ function StudentSettingsPageContent() {
     );
   };
 
-  const renderPasswordSettings = () => {
-    return (
-      <div className="space-y-6">
-        <PageSection
-          title="Change Password"
-          description="Update your account password"
-          className="bg-gradient-to-br from-red-50 via-white to-pink-50 border-2 border-red-200 shadow-lg hover:shadow-xl transition-all duration-200 my-6"
-        >
-          <div className="space-y-6">
-            <AttractiveInput
-              label="Current Password"
-              type="password"
-              value={passwordData.currentPassword}
-              onChange={(e) => handlePasswordChange('currentPassword', e.target.value)}
-              placeholder="Enter current password"
-              icon="lock"
-              variant="default"
-              colorScheme="primary"
-              size="md"
-              error={passwordErrors.currentPassword}
-            />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <AttractiveInput
-                label="New Password"
-                type="password"
-                value={passwordData.newPassword}
-                onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
-                placeholder="Enter new password"
-                icon="lock"
-                variant="default"
-                colorScheme="primary"
-                size="md"
-                error={passwordErrors.newPassword}
-                helperText="Minimum 8 characters"
-              />
-              <AttractiveInput
-                label="Confirm New Password"
-                type="password"
-                value={passwordData.confirmPassword}
-                onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
-                placeholder="Confirm new password"
-                icon="lock"
-                variant="default"
-                colorScheme="primary"
-                size="md"
-                error={passwordErrors.confirmPassword}
-              />
-            </div>
-            <div className="flex justify-end">
-              <Button
-                onClick={handleChangePassword}
-                disabled={isChangingPassword}
-                className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white border-2 border-red-400 shadow-lg transition-all duration-200 font-semibold"
-              >
-                {isChangingPassword ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Changing...
-                  </>
-                ) : (
-                  <>
-                    <LuKey className="h-4 w-4 mr-2" />
-                    Change Password
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </PageSection>
-      </div>
-    );
-  };
+  const renderPasswordSettings = () => <AccountChangePasswordPanel />;
 
   const renderEmailSettings = () => (
     <div className="space-y-6">
@@ -585,25 +541,25 @@ function StudentSettingsPageContent() {
             {/* Save Button */}
             <PageSection
               title="Save Changes"
-              description={hasChanges ? 'You have unsaved changes' : 'All changes saved'}
+              description={anyDirty ? 'You have unsaved changes' : 'All changes saved'}
               className="bg-gradient-to-br from-emerald-50 via-white to-teal-50 border-2 border-emerald-200 shadow-lg hover:shadow-xl transition-all duration-200 my-6"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {hasChanges ? (
+                  {anyDirty ? (
                     <AlertTriangle className="h-4 w-4 text-amber-600" />
                   ) : (
                     <CheckCircle className="h-4 w-4 text-emerald-600" />
                   )}
-                  <span className={`text-sm font-medium ${hasChanges ? 'text-amber-700' : 'text-emerald-700'}`}>
-                    {hasChanges ? 'You have unsaved changes' : 'All changes saved'}
+                  <span className={`text-sm font-medium ${anyDirty ? 'text-amber-700' : 'text-emerald-700'}`}>
+                    {anyDirty ? 'You have unsaved changes' : 'All changes saved'}
                   </span>
                 </div>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
                     onClick={() => handleReset()}
-                    disabled={!hasChanges}
+                    disabled={!anyDirty}
                     className="border-2 border-emerald-300 hover:border-emerald-400 transition-all duration-200 font-semibold"
                   >
                     <LuRotateCcw className="h-4 w-4 mr-2" />
@@ -611,7 +567,7 @@ function StudentSettingsPageContent() {
                   </Button>
                   <Button
                     onClick={handleSave}
-                    disabled={!hasChanges || saveStatus === 'saving'}
+                    disabled={!anyDirty || saveStatus === 'saving'}
                     className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white border-2 border-emerald-400 shadow-lg transition-all duration-200 font-semibold"
                   >
                     {saveStatus === 'saving' ? (

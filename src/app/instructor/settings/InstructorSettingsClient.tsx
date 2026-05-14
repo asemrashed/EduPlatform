@@ -1,340 +1,465 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useCallback, useEffect, useState } from 'react';
 import { useAppSelector } from '@/lib/hooks';
 import useInstructorSettings from '@/hooks/useInstructorSettings';
-import { AdminRoleShell } from '@/components/role-area/AdminRoleShell';
 import PageSection from '@/components/PageSection';
 import WelcomeSection from '@/components/WelcomeSection';
 import InstructorPageWrapper from '@/components/InstructorPageWrapper';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { AttractiveInput } from '@/components/ui/attractive-input';
-import { LuSettings as Settings, LuLock as Lock, LuSave as Save, LuRefreshCw as RefreshCw, LuTriangleAlert as AlertTriangle, LuCheck as CheckCircle, LuRotateCcw, LuKey } from 'react-icons/lu';;
+import {
+  LuSettings as Settings,
+  LuSave as Save,
+  LuRefreshCw as RefreshCw,
+  LuTriangleAlert as AlertTriangle,
+  LuCheck as CheckCircle,
+  LuRotateCcw,
+  LuKey,
+  LuBell,
+  LuMail as Mail,
+} from 'react-icons/lu';
+import AccountChangePasswordPanel from '@/components/AccountChangePasswordPanel';
 import { InstructorRoleShell } from '@/components/role-area/InstructorRoleShell';
+import { fetchAccountProfile, putAccountProfile } from '@/lib/accountClient';
 
-interface SystemSettings {
-  siteName: string;
-  siteDescription: string;
-  siteUrl: string;
-  adminEmail: string;
-  supportEmail: string;
-  timezone: string;
-  language: string;
-  maintenanceMode: boolean;
-  registrationEnabled: boolean;
-  emailVerificationRequired: boolean;
-}
-
-interface InstructorSettings {
-  profileVisibility: boolean;
-  courseNotifications: boolean;
-  studentNotifications: boolean;
-  emailNotifications: boolean;
-  autoApproveEnrollments: boolean;
-  allowStudentMessages: boolean;
-  showContactLuInfo: boolean;
+type AccountDraft = {
   bio: string;
-  expertise: string[];
-  teachingExperience: number;
-  preferredLanguage: string;
-}
+  education: string;
+  address: string;
+  specialization: string;
+  experience: string;
+  linkedin: string;
+  twitter: string;
+  website: string;
+};
 
-interface EmailSettings {
-  smtpHost: string;
-  smtpPort: number;
-  smtpUsername: string;
-  smtpPassword: string;
-  useSSL: boolean;
-  fromEmail: string;
-  fromName: string;
-}
+const emptyAccountDraft: AccountDraft = {
+  bio: '',
+  education: '',
+  address: '',
+  specialization: '',
+  experience: '',
+  linkedin: '',
+  twitter: '',
+  website: '',
+};
 
 function InstructorSettingsPageContent() {
   const { user } = useAppSelector((state) => state.auth);
   const [activeTab, setActiveTab] = useState('general');
   const [hasChanges, setHasChanges] = useState(false);
-  
-  // Password change state
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
-  const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-  
-  // Local state to track changes without API calls
-  const [localSettings, setLocalSettings] = useState<Record<string, Record<string, any>>>({});
-  
-  const {
-    settings,
-    isLoading,
-    error,
-    saveStatus,
-    updateSettings,
-    saveAllSettings,
-    resetSettings
-  } = useInstructorSettings();
+  const [accountDraft, setAccountDraft] = useState<AccountDraft>(emptyAccountDraft);
+  const [accountDirty, setAccountDirty] = useState(false);
+
+  const [localSettings, setLocalSettings] = useState<Record<string, Record<string, unknown>>>({});
+
+  const { settings, isLoading, error, saveStatus, saveAllSettings, resetSettings, refetch } =
+    useInstructorSettings();
+
+  const loadAccount = useCallback(async () => {
+    try {
+      const res = await fetchAccountProfile();
+      if (!res.ok) return;
+      const json = (await res.json()) as { success?: boolean; data?: Record<string, unknown> };
+      const d = json.data;
+      if (!d || json.success === false) return;
+      const sl = (d.socialLinks as Record<string, string> | undefined) || {};
+      setAccountDraft({
+        bio: String(d.bio || ''),
+        education: String(d.education || ''),
+        address: String(d.address || ''),
+        specialization: String(d.specialization || ''),
+        experience: d.experience != null ? String(d.experience) : '',
+        linkedin: String(sl.linkedin || ''),
+        twitter: String(sl.twitter || ''),
+        website: String(sl.website || ''),
+      });
+      setAccountDirty(false);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadAccount();
+  }, [loadAccount]);
+
+  const anyDirty = hasChanges || accountDirty;
 
   const tabs = [
     { id: 'general', label: 'General', icon: Settings },
+    { id: 'notifications', label: 'Notifications', icon: LuBell },
+    { id: 'email', label: 'Email', icon: Mail },
     { id: 'password', label: 'Password', icon: LuKey },
   ];
 
   const handleSave = async () => {
-    if (!hasChanges) return;
-    
+    if (!hasChanges && !accountDirty) return;
+
     try {
-      // Merge local changes with original settings
-      const mergedSettings = { ...settings } as any;
-      Object.keys(localSettings).forEach(category => {
-        mergedSettings[category] = {
-          ...mergedSettings[category],
-          ...localSettings[category]
-        };
-      });
-      
-      await saveAllSettings(mergedSettings);
-      setHasChanges(false);
-      setLocalSettings({}); // Clear local changes after successful save
+      if (accountDirty) {
+        const res = await putAccountProfile({
+          bio: accountDraft.bio,
+          education: accountDraft.education,
+          address: accountDraft.address,
+          specialization: accountDraft.specialization,
+          experience: accountDraft.experience,
+          socialLinks: {
+            linkedin: accountDraft.linkedin,
+            twitter: accountDraft.twitter,
+            website: accountDraft.website,
+          },
+        });
+        if (!res.ok) {
+          console.error('Account profile save failed');
+        } else {
+          await loadAccount();
+        }
+      }
+
+      if (hasChanges) {
+        const mergedSettings = { ...settings } as Record<string, Record<string, unknown>>;
+        Object.keys(localSettings).forEach((category) => {
+          mergedSettings[category] = {
+            ...mergedSettings[category],
+            ...localSettings[category],
+          };
+        });
+
+        await saveAllSettings(mergedSettings as Parameters<typeof saveAllSettings>[0]);
+        setHasChanges(false);
+        setLocalSettings({});
+      }
+
+      await refetch();
     } catch (error) {
       console.error('Error saving settings:', error);
     }
   };
 
-  const handleReset = async (category?: string) => {
+  const handleReset = async () => {
     try {
-      await resetSettings(category);
+      await resetSettings();
       setHasChanges(false);
-      setLocalSettings({}); // Clear local changes when resetting
+      setLocalSettings({});
+      await loadAccount();
+      await refetch();
     } catch (error) {
       console.error('Error resetting settings:', error);
     }
   };
 
-  // Helper function to get current setting value (original + local changes)
   const getCurrentSetting = (category: string, key: string) => {
-    const originalValue = (settings as any)[category]?.[key];
+    const originalValue = (settings as Record<string, Record<string, unknown>>)[category]?.[key];
     const localValue = localSettings[category]?.[key];
     return localValue !== undefined ? localValue : originalValue;
   };
 
-  const handleSettingChange = (category: string, key: string, value: any) => {
-    // Update local state instead of calling API immediately
-    setLocalSettings((prev: Record<string, Record<string, any>>) => ({
+  const patchAccountDraft = (partial: Partial<AccountDraft>) => {
+    setAccountDraft((prev) => ({ ...prev, ...partial }));
+    setAccountDirty(true);
+  };
+
+  const handleSettingChange = (category: string, key: string, value: unknown) => {
+    setLocalSettings((prev) => ({
       ...prev,
       [category]: {
         ...prev[category],
-        [key]: value
-      }
+        [key]: value,
+      },
     }));
     setHasChanges(true);
   };
 
-  const handlePasswordChange = (field: string, value: string) => {
-    setPasswordData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (passwordErrors[field]) {
-      setPasswordErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  };
-
-  const validatePassword = () => {
-    const errors: Record<string, string> = {};
-    
-    if (!passwordData.currentPassword) {
-      errors.currentPassword = 'Current password is required';
-    }
-    
-    if (!passwordData.newPassword) {
-      errors.newPassword = 'New password is required';
-    } else if (passwordData.newPassword.length < 8) {
-      errors.newPassword = 'Password must be at least 8 characters long';
-    }
-    
-    if (!passwordData.confirmPassword) {
-      errors.confirmPassword = 'Please confirm your new password';
-    } else if (passwordData.newPassword !== passwordData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
-    }
-    
-    setPasswordErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleChangePassword = async () => {
-    if (!validatePassword()) return;
-    
-    setIsChangingPassword(true);
-    try {
-      const response = await fetch('/api/instructor/change-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword,
-        }),
-      });
-
-      if (response.ok) {
-        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        setPasswordErrors({});
-        alert('Password changed successfully!');
-      } else {
-        const error = await response.json();
-        setPasswordErrors({ currentPassword: error.message || 'Failed to change password' });
-      }
-    } catch (error) {
-      console.error('Error changing password:', error);
-      setPasswordErrors({ currentPassword: 'An error occurred while changing password' });
-    } finally {
-      setIsChangingPassword(false);
-    }
-  };
-
-  const renderGeneralSettings = () => {
-    const instructorSettings = settings.instructor || {};
-
-    return (
-      <div className="space-y-6">
-        <PageSection
-          title="General Settings"
-          description="Configure your instructor account settings"
-          className="bg-gradient-to-br from-blue-50 via-white to-purple-50 border-2 border-blue-200 shadow-lg hover:shadow-xl transition-all duration-200 my-6"
-        >
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <AttractiveInput
-                label="Display Name"
-                value={getCurrentSetting('instructor', 'displayName') || user?.name || ''}
-                onChange={(e) => handleSettingChange('instructor', 'displayName', e.target.value)}
-                placeholder="Enter your display name"
-                icon="user"
-                variant="floating"
-                colorScheme="primary"
-                size="md"
-              />
-              <AttractiveInput
-                label="Email"
-                value={getCurrentSetting('instructor', 'email') || user?.email || ''}
-                onChange={(e) => handleSettingChange('instructor', 'email', e.target.value)}
-                placeholder="your-email@example.com"
-                icon="mail"
-                variant="floating"
-                colorScheme="primary"
-                size="md"
-              />
-            </div>
-            <div className="space-y-4">
-              <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-blue-200 shadow-md hover:shadow-lg transition-all duration-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-semibold text-foreground">Profile Visibility</label>
-                    <p className="text-sm text-muted-foreground">Make your profile visible to students</p>
-                  </div>
-                  <Button
-                    variant={getCurrentSetting('instructor', 'profileVisibility') ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleSettingChange('instructor', 'profileVisibility', !getCurrentSetting('instructor', 'profileVisibility'))}
-                    className="border-2 border-blue-300 hover:border-blue-400 transition-all duration-200 font-semibold"
-                  >
-                    {getCurrentSetting('instructor', 'profileVisibility') ? "Visible" : "Hidden"}
-                  </Button>
+  const renderGeneralSettings = () => (
+    <div className="space-y-6">
+      <PageSection
+        title="General Settings"
+        description="Configure your instructor account settings"
+        className="bg-gradient-to-br from-blue-50 via-white to-purple-50 border-2 border-blue-200 shadow-lg hover:shadow-xl transition-all duration-200 my-6"
+      >
+        <div className="space-y-6">
+          <div className="rounded-lg border border-blue-100 bg-white/80 p-4 text-sm text-slate-700 shadow-sm">
+            <p>
+              <span className="font-semibold text-foreground">Name:</span> {user?.name || '—'}
+            </p>
+            <p className="mt-1">
+              <span className="font-semibold text-foreground">Email:</span> {user?.email || '—'}
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Name and login email are edited on{' '}
+              <Link href="/instructor/profile" className="font-medium text-primary underline">
+                My Profile
+              </Link>
+              .
+            </p>
+          </div>
+          <div className="space-y-4">
+            <div className="rounded-lg border border-blue-200 bg-white/80 p-4 shadow-md backdrop-blur-sm transition-all duration-200 hover:shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-semibold text-foreground">Profile Visibility</label>
+                  <p className="text-sm text-muted-foreground">Make your profile visible to students</p>
                 </div>
+                <Button
+                  variant={getCurrentSetting('instructor', 'profileVisibility') ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() =>
+                    handleSettingChange(
+                      'instructor',
+                      'profileVisibility',
+                      !getCurrentSetting('instructor', 'profileVisibility'),
+                    )
+                  }
+                  className="border-2 border-blue-300 font-semibold transition-all duration-200 hover:border-blue-400"
+                >
+                  {getCurrentSetting('instructor', 'profileVisibility') ? 'Visible' : 'Hidden'}
+                </Button>
+              </div>
+            </div>
+            <div className="rounded-lg border border-purple-200 bg-white/80 p-4 shadow-md backdrop-blur-sm transition-all duration-200 hover:shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-semibold text-foreground">Allow Student Messages</label>
+                  <p className="text-sm text-muted-foreground">Let students contact you directly</p>
+                </div>
+                <Button
+                  variant={getCurrentSetting('instructor', 'allowStudentMessages') ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() =>
+                    handleSettingChange(
+                      'instructor',
+                      'allowStudentMessages',
+                      !getCurrentSetting('instructor', 'allowStudentMessages'),
+                    )
+                  }
+                  className="border-2 border-purple-300 font-semibold transition-all duration-200 hover:border-purple-400"
+                >
+                  {getCurrentSetting('instructor', 'allowStudentMessages') ? 'Allowed' : 'Disabled'}
+                </Button>
+              </div>
+            </div>
+            <div className="rounded-lg border border-green-200 bg-white/80 p-4 shadow-md backdrop-blur-sm transition-all duration-200 hover:shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-semibold text-foreground">Show Contact Info</label>
+                  <p className="text-sm text-muted-foreground">Display your contact details where appropriate</p>
+                </div>
+                <Button
+                  variant={getCurrentSetting('instructor', 'showContactInfo') ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() =>
+                    handleSettingChange(
+                      'instructor',
+                      'showContactInfo',
+                      !getCurrentSetting('instructor', 'showContactInfo'),
+                    )
+                  }
+                  className="border-2 border-green-300 font-semibold transition-all duration-200 hover:border-green-400"
+                >
+                  {getCurrentSetting('instructor', 'showContactInfo') ? 'Shown' : 'Hidden'}
+                </Button>
               </div>
             </div>
           </div>
-        </PageSection>
-      </div>
-    );
-  };
 
-
-
-  const renderPasswordSettings = () => {
-    return (
-      <div className="space-y-6">
-        <PageSection
-          title="Change Password"
-          description="Update your account password"
-          className="bg-gradient-to-br from-red-50 via-white to-pink-50 border-2 border-red-200 shadow-lg hover:shadow-xl transition-all duration-200 my-6"
-        >
-          <div className="space-y-6">
+          <AttractiveInput
+            label="Bio"
+            value={accountDraft.bio}
+            onChange={(e) => patchAccountDraft({ bio: e.target.value })}
+            placeholder="Tell students about your teaching..."
+            icon="user"
+            variant="default"
+            colorScheme="primary"
+            size="md"
+            helperText="Saved to your account (not notification settings)."
+          />
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <AttractiveInput
-              label="Current Password"
-              type="password"
-              value={passwordData.currentPassword}
-              onChange={(e) => handlePasswordChange('currentPassword', e.target.value)}
-              placeholder="Enter current password"
-              icon="lock"
+              label="Specialization"
+              value={accountDraft.specialization}
+              onChange={(e) => patchAccountDraft({ specialization: e.target.value })}
+              placeholder="e.g., Mathematics, Science"
+              icon="book"
               variant="default"
               colorScheme="primary"
               size="md"
-              error={passwordErrors.currentPassword}
             />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <AttractiveInput
-                label="New Password"
-                type="password"
-                value={passwordData.newPassword}
-                onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
-                placeholder="Enter new password"
-                icon="lock"
-                variant="default"
-                colorScheme="primary"
-                size="md"
-                error={passwordErrors.newPassword}
-                helperText="Minimum 8 characters"
-              />
-              <AttractiveInput
-                label="Confirm New Password"
-                type="password"
-                value={passwordData.confirmPassword}
-                onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
-                placeholder="Confirm new password"
-                icon="lock"
-                variant="default"
-                colorScheme="primary"
-                size="md"
-                error={passwordErrors.confirmPassword}
-              />
-            </div>
-            <div className="flex justify-end">
+            <AttractiveInput
+              label="Teaching experience"
+              value={accountDraft.experience}
+              onChange={(e) => patchAccountDraft({ experience: e.target.value })}
+              placeholder="e.g., 5 years"
+              icon="edit"
+              variant="default"
+              colorScheme="primary"
+              size="md"
+            />
+          </div>
+          <AttractiveInput
+            label="Education"
+            value={accountDraft.education}
+            onChange={(e) => patchAccountDraft({ education: e.target.value })}
+            placeholder="Degrees and certifications"
+            icon="book"
+            variant="default"
+            colorScheme="primary"
+            size="md"
+          />
+          <AttractiveInput
+            label="Address"
+            value={accountDraft.address}
+            onChange={(e) => patchAccountDraft({ address: e.target.value })}
+            placeholder="Mailing address"
+            icon="edit"
+            variant="default"
+            colorScheme="primary"
+            size="md"
+          />
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <AttractiveInput
+              label="LinkedIn"
+              value={accountDraft.linkedin}
+              onChange={(e) => patchAccountDraft({ linkedin: e.target.value })}
+              placeholder="https://linkedin.com/in/..."
+              icon="user"
+              variant="default"
+              colorScheme="primary"
+              size="md"
+            />
+            <AttractiveInput
+              label="Website"
+              value={accountDraft.website}
+              onChange={(e) => patchAccountDraft({ website: e.target.value })}
+              placeholder="https://..."
+              icon="mail"
+              variant="default"
+              colorScheme="primary"
+              size="md"
+            />
+            <AttractiveInput
+              label="Twitter / X"
+              value={accountDraft.twitter}
+              onChange={(e) => patchAccountDraft({ twitter: e.target.value })}
+              placeholder="Profile URL"
+              icon="mail"
+              variant="default"
+              colorScheme="primary"
+              size="md"
+            />
+          </div>
+        </div>
+      </PageSection>
+    </div>
+  );
+
+  const renderNotificationSettings = () => (
+    <div className="space-y-6">
+      <PageSection
+        title="Notification Preferences"
+        description="Configure your notification settings"
+        className="my-6 border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-teal-50 shadow-lg transition-all duration-200 hover:shadow-xl"
+      >
+        <div className="space-y-4">
+          {[
+            {
+              key: 'courseNotifications',
+              label: 'Course Notifications',
+              description: 'Get notified about course updates and activity',
+            },
+            {
+              key: 'studentNotifications',
+              label: 'Student Notifications',
+              description: 'Get notified about student messages and enrollments',
+            },
+            {
+              key: 'emailNotifications',
+              label: 'Email Notifications',
+              description: 'Receive notifications via email',
+            },
+          ].map((setting) => (
+            <div
+              key={setting.key}
+              className="flex items-center justify-between rounded-lg border border-emerald-100 bg-white/50 p-4 transition-all duration-200 hover:bg-white/70"
+            >
+              <div className="flex-1">
+                <label className="text-sm font-semibold text-slate-700">{setting.label}</label>
+                <p className="mt-1 text-sm text-slate-600">{setting.description}</p>
+              </div>
               <Button
-                onClick={handleChangePassword}
-                disabled={isChangingPassword}
-                className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white border-2 border-red-400 shadow-lg transition-all duration-200 font-semibold"
+                variant={getCurrentSetting('instructor', setting.key) ? 'default' : 'outline'}
+                size="sm"
+                onClick={() =>
+                  handleSettingChange(
+                    'instructor',
+                    setting.key,
+                    !getCurrentSetting('instructor', setting.key),
+                  )
+                }
+                className={`font-semibold transition-all duration-200 ${
+                  getCurrentSetting('instructor', setting.key)
+                    ? 'border-2 border-emerald-400 bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg hover:from-emerald-700 hover:to-teal-700'
+                    : 'border-2 border-emerald-300 text-emerald-700 hover:border-emerald-400 hover:bg-emerald-50'
+                }`}
               >
-                {isChangingPassword ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Changing...
-                  </>
-                ) : (
-                  <>
-                    <LuKey className="h-4 w-4 mr-2" />
-                    Change Password
-                  </>
-                )}
+                {getCurrentSetting('instructor', setting.key) ? 'Enabled' : 'Disabled'}
               </Button>
             </div>
-          </div>
-        </PageSection>
-      </div>
-    );
-  };
+          ))}
+        </div>
+      </PageSection>
+    </div>
+  );
 
+  const renderEmailSettings = () => (
+    <div className="space-y-6">
+      <PageSection
+        title="Email Configuration"
+        description="Configure your email preferences"
+        className="my-6 border-2 border-blue-200 bg-gradient-to-br from-blue-50 via-white to-cyan-50 shadow-lg transition-all duration-200 hover:shadow-xl"
+      >
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <AttractiveInput
+              label="Preferred Email"
+              value={String(getCurrentSetting('instructor', 'preferredEmail') || user?.email || '')}
+              onChange={(e) => handleSettingChange('instructor', 'preferredEmail', e.target.value)}
+              placeholder="your-email@example.com"
+              icon="mail"
+              variant="floating"
+              colorScheme="primary"
+              size="md"
+              helperText="Email address for notifications"
+            />
+            <AttractiveInput
+              label="Email Signature"
+              value={String(getCurrentSetting('instructor', 'emailSignature') || '')}
+              onChange={(e) => handleSettingChange('instructor', 'emailSignature', e.target.value)}
+              placeholder="Best regards, [Your Name]"
+              icon="edit"
+              variant="floating"
+              colorScheme="primary"
+              size="md"
+              helperText="Signature for outgoing emails"
+            />
+          </div>
+        </div>
+      </PageSection>
+    </div>
+  );
+
+  const renderPasswordSettings = () => <AccountChangePasswordPanel />;
 
   const renderTabContent = () => {
     switch (activeTab) {
       case 'general':
         return renderGeneralSettings();
+      case 'notifications':
+        return renderNotificationSettings();
+      case 'email':
+        return renderEmailSettings();
       case 'password':
         return renderPasswordSettings();
       default:
@@ -345,18 +470,17 @@ function InstructorSettingsPageContent() {
   return (
     <InstructorRoleShell>
       <main className="relative z-10 p-2 sm:p-4">
-        <WelcomeSection 
-          title="Instructor Settings" 
+        <WelcomeSection
+          title="Instructor Settings"
           description="Manage your instructor account settings and preferences"
           className="mb-6"
         />
-        
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Settings Navigation */}
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
           <PageSection
             title="Settings"
             description="Choose a category to configure"
-            className="bg-gradient-to-br from-slate-50 via-white to-gray-50 border-2 border-slate-200 shadow-lg hover:shadow-xl transition-all duration-200 my-6"
+            className="my-6 border-2 border-slate-200 bg-gradient-to-br from-slate-50 via-white to-gray-50 shadow-lg transition-all duration-200 hover:shadow-xl"
           >
             <nav className="space-y-2">
               {tabs.map((tab) => {
@@ -365,11 +489,12 @@ function InstructorSettingsPageContent() {
                 return (
                   <button
                     key={tab.id}
+                    type="button"
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all duration-200 rounded-lg border-2 ${
+                    className={`flex w-full items-center gap-3 rounded-lg border-2 px-4 py-3 text-left transition-all duration-200 ${
                       isActive
-                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-400 shadow-lg'
-                        : 'hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:border-blue-200 hover:shadow-md border-transparent'
+                        ? 'border-blue-400 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
+                        : 'border-transparent hover:border-blue-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:shadow-md'
                     }`}
                   >
                     <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-slate-600'}`} />
@@ -382,7 +507,6 @@ function InstructorSettingsPageContent() {
             </nav>
           </PageSection>
 
-          {/* Settings Content */}
           <div className="lg:col-span-3">
             {isLoading ? (
               <div className="mb-4 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">
@@ -391,61 +515,61 @@ function InstructorSettingsPageContent() {
               </div>
             ) : null}
             {renderTabContent()}
-            
-            {/* Error Display */}
-            {error && (
+
+            {error ? (
               <PageSection
                 title="Error"
                 description={error}
-                className="bg-gradient-to-br from-red-50 via-white to-pink-50 border-2 border-red-200 shadow-lg hover:shadow-xl transition-all duration-200 my-6"
+                className="my-6 border-2 border-red-200 bg-gradient-to-br from-red-50 via-white to-pink-50 shadow-lg transition-all duration-200 hover:shadow-xl"
               >
                 <div className="flex items-center gap-2 text-red-700">
                   <AlertTriangle className="h-4 w-4" />
                   <span className="text-sm font-medium">Please check the error details above</span>
                 </div>
               </PageSection>
-            )}
+            ) : null}
 
-            {/* Save Button */}
             <PageSection
               title="Save Changes"
-              description={hasChanges ? 'You have unsaved changes' : 'All changes saved'}
-              className="bg-gradient-to-br from-emerald-50 via-white to-teal-50 border-2 border-emerald-200 shadow-lg hover:shadow-xl transition-all duration-200 my-6"
+              description={anyDirty ? 'You have unsaved changes' : 'All changes saved'}
+              className="my-6 border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-teal-50 shadow-lg transition-all duration-200 hover:shadow-xl"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {hasChanges ? (
+                  {anyDirty ? (
                     <AlertTriangle className="h-4 w-4 text-amber-600" />
                   ) : (
                     <CheckCircle className="h-4 w-4 text-emerald-600" />
                   )}
-                  <span className={`text-sm font-medium ${hasChanges ? 'text-amber-700' : 'text-emerald-700'}`}>
-                    {hasChanges ? 'You have unsaved changes' : 'All changes saved'}
+                  <span className={`text-sm font-medium ${anyDirty ? 'text-amber-700' : 'text-emerald-700'}`}>
+                    {anyDirty ? 'You have unsaved changes' : 'All changes saved'}
                   </span>
                 </div>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    onClick={() => handleReset()}
-                    disabled={!hasChanges}
-                    className="border-2 border-emerald-300 hover:border-emerald-400 transition-all duration-200 font-semibold"
+                    type="button"
+                    onClick={() => void handleReset()}
+                    disabled={!anyDirty}
+                    className="border-2 border-emerald-300 font-semibold transition-all duration-200 hover:border-emerald-400"
                   >
-                    <LuRotateCcw className="h-4 w-4 mr-2" />
+                    <LuRotateCcw className="mr-2 h-4 w-4" />
                     Reset
                   </Button>
                   <Button
-                    onClick={handleSave}
-                    disabled={!hasChanges || saveStatus === 'saving'}
-                    className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white border-2 border-emerald-400 shadow-lg transition-all duration-200 font-semibold"
+                    type="button"
+                    onClick={() => void handleSave()}
+                    disabled={!anyDirty || saveStatus === 'saving'}
+                    className="border-2 border-emerald-400 bg-gradient-to-r from-emerald-600 to-teal-600 font-semibold text-white shadow-lg transition-all duration-200 hover:from-emerald-700 hover:to-teal-700"
                   >
                     {saveStatus === 'saving' ? (
                       <>
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                         Saving...
                       </>
                     ) : (
                       <>
-                        <Save className="h-4 w-4 mr-2" />
+                        <Save className="mr-2 h-4 w-4" />
                         Save Changes
                       </>
                     )}
@@ -467,4 +591,3 @@ export default function InstructorSettingsPage() {
     </InstructorPageWrapper>
   );
 }
-

@@ -1,4 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from "react";
+import {
+  pickStudentSettingsForStorage,
+  STUDENT_SETTINGS_ALLOWED_KEYS,
+} from "@/lib/settingsScope";
 
 interface StudentSettings {
   displayName: string;
@@ -21,116 +25,118 @@ interface Settings {
   student: StudentSettings;
 }
 
-type SaveStatus = 'idle' | 'saving' | 'success' | 'error';
+type SaveStatus = "idle" | "saving" | "success" | "error";
 
 const defaultStudentSettings: StudentSettings = {
-  displayName: '',
-  email: '',
+  displayName: "",
+  email: "",
   profileVisibility: true,
-  bio: '',
-  interests: '',
-  learningGoals: '',
+  bio: "",
+  interests: "",
+  learningGoals: "",
   allowInstructorMessages: true,
   showProgress: true,
-  preferredEmail: '',
-  emailSignature: '',
+  preferredEmail: "",
+  emailSignature: "",
   courseNotifications: true,
   assignmentNotifications: true,
   emailNotifications: true,
   reminderNotifications: true,
 };
 
+function pickStudentPayloadForApi(student: StudentSettings): Record<string, unknown> {
+  const raw: Record<string, unknown> = { ...student };
+  return pickStudentSettingsForStorage(raw);
+}
+
 export default function useStudentSettings() {
   const [settings, setSettings] = useState<Settings>({
-    student: defaultStudentSettings
+    student: defaultStudentSettings,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
 
-  // Fetch settings
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     try {
-      console.log('useStudentSettings: Fetching settings...');
       setIsLoading(true);
       setError(null);
-      
-      const response = await fetch('/api/student/settings');
-      console.log('useStudentSettings: API response status:', response.status);
-      
+
+      const response = await fetch("/api/student/settings");
+
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('useStudentSettings: API error response:', errorText);
         throw new Error(`Failed to load settings: ${response.status} ${errorText}`);
       }
-      
+
       const data = await response.json();
-      console.log('useStudentSettings: API response data:', data);
-      
+
       if (data.student) {
-        setSettings(data);
-        console.log('useStudentSettings: Settings loaded successfully');
+        setSettings({
+          student: { ...defaultStudentSettings, ...data.student },
+        });
       } else {
-        console.log('useStudentSettings: No settings data, using defaults');
         setSettings({ student: defaultStudentSettings });
       }
-      
     } catch (err) {
-      console.error('useStudentSettings: Error fetching settings:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load settings');
-      // Use default settings on error
+      setError(err instanceof Error ? err.message : "Failed to load settings");
       setSettings({ student: defaultStudentSettings });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  // Update a specific setting
-  const updateSettings = async (category: string, key: string, value: any) => {
+  const updateSettings = async (category: string, key: string, value: unknown) => {
+    if (category !== "student" || !STUDENT_SETTINGS_ALLOWED_KEYS.has(key)) {
+      return;
+    }
     try {
-      const response = await fetch('/api/student/settings', {
-        method: 'PUT',
+      const response = await fetch("/api/student/settings", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           settings: {
-            [key]: value
-          }
+            [key]: value,
+          },
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update setting');
+        throw new Error("Failed to update setting");
       }
 
       const data = await response.json();
-      setSettings(prev => ({
+      const nextStudent = data.student
+        ? { ...defaultStudentSettings, ...data.student }
+        : undefined;
+      setSettings((prev) => ({
         ...prev,
         [category]: {
           ...prev[category as keyof Settings],
-          [key]: value
-        }
+          ...(nextStudent ?? { ...prev.student, [key]: value }),
+        },
       }));
     } catch (err) {
-      console.error('Error updating setting:', err);
-      setError(err instanceof Error ? err.message : 'Failed to update setting');
+      setError(err instanceof Error ? err.message : "Failed to update setting");
     }
   };
 
-  // Save all settings
   const saveAllSettings = async (allSettings: Settings) => {
     try {
-      setSaveStatus('saving');
+      setSaveStatus("saving");
       setError(null);
-      
-      const response = await fetch('/api/student/settings', {
-        method: 'PUT',
+
+      const payload = pickStudentPayloadForApi(allSettings.student);
+
+      const response = await fetch("/api/student/settings", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          settings: allSettings.student
+          settings: payload,
         }),
       });
 
@@ -140,53 +146,38 @@ export default function useStudentSettings() {
       }
 
       const data = await response.json();
-      setSettings(allSettings);
-      setSaveStatus('success');
-      
-      // Reset success status after 2 seconds
-      setTimeout(() => setSaveStatus('idle'), 2000);
+      const mergedStudent = data.student
+        ? { ...defaultStudentSettings, ...data.student }
+        : { ...allSettings.student, ...payload };
+      setSettings({ student: mergedStudent });
+      setSaveStatus("success");
+
+      setTimeout(() => setSaveStatus("idle"), 2000);
     } catch (err) {
-      console.error('Error saving settings:', err);
-      setError(err instanceof Error ? err.message : 'Failed to save settings');
-      setSaveStatus('error');
+      setError(err instanceof Error ? err.message : "Failed to save settings");
+      setSaveStatus("error");
     }
   };
 
-  // Reset settings
   const resetSettings = async (category?: string) => {
     try {
       if (category) {
-        // Reset specific category
-        setSettings(prev => ({
+        setSettings((prev) => ({
           ...prev,
-          [category]: defaultStudentSettings
+          [category]: defaultStudentSettings,
         }));
       } else {
-        // Reset all settings
         setSettings({ student: defaultStudentSettings });
       }
       setError(null);
     } catch (err) {
-      console.error('Error resetting settings:', err);
-      setError(err instanceof Error ? err.message : 'Failed to reset settings');
+      setError(err instanceof Error ? err.message : "Failed to reset settings");
     }
   };
 
-  // Load settings on mount
   useEffect(() => {
-    fetchSettings();
-    
-    // Add timeout to prevent infinite loading
-    const timeout = setTimeout(() => {
-      if (isLoading) {
-        console.log('useStudentSettings: Loading timeout, using default settings');
-        setSettings({ student: defaultStudentSettings });
-        setIsLoading(false);
-      }
-    }, 5000);
-    
-    return () => clearTimeout(timeout);
-  }, []);
+    void fetchSettings();
+  }, [fetchSettings]);
 
   return {
     settings,
@@ -196,6 +187,6 @@ export default function useStudentSettings() {
     updateSettings,
     saveAllSettings,
     resetSettings,
-    refetch: fetchSettings
+    refetch: fetchSettings,
   };
 }

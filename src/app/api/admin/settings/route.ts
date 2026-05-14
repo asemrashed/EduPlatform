@@ -1,20 +1,18 @@
 import { NextResponse } from "next/server";
 import { requireSessionUser } from "@/app/api/_lib/phase12";
 import {
+  ADMIN_PLATFORM_CATEGORY_KEYS,
+  deepMergePlainObjects,
+  mergeAdminPlatformPayload,
+} from "@/lib/settingsScope";
+import {
   ADMIN_PLATFORM_SETTINGS_CATEGORY,
   getSettingsRecord,
   setSettingsRecord,
   deleteSettingsDoc,
 } from "@/app/api/_lib/roleSettings";
 
-const ADMIN_SETTING_KEYS = new Set([
-  "system",
-  "security",
-  "notifications",
-  "database",
-  "email",
-  "payment",
-]);
+const ADMIN_SETTING_KEYS = new Set<string>(ADMIN_PLATFORM_CATEGORY_KEYS);
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -63,8 +61,9 @@ export async function POST(req: Request) {
 
     const current = await getSettingsRecord(ADMIN_PLATFORM_SETTINGS_CATEGORY);
     const prevCat = isPlainObject(current[category]) ? (current[category] as Record<string, unknown>) : {};
-    const merged = { ...current, [category]: { ...prevCat, ...body.settings } };
-    await setSettingsRecord(ADMIN_PLATFORM_SETTINGS_CATEGORY, merged);
+    const mergedCategory = deepMergePlainObjects(prevCat, body.settings as Record<string, unknown>);
+    const merged = { ...current, [category]: mergedCategory };
+    await setSettingsRecord(ADMIN_PLATFORM_SETTINGS_CATEGORY, merged, auth.user!.id);
 
     return NextResponse.json({ success: true, data: merged[category] });
   } catch (e) {
@@ -90,13 +89,10 @@ export async function PUT(req: Request) {
     }
 
     const incoming = body.settings as Record<string, unknown>;
-    const next: Record<string, unknown> = {};
-    for (const key of ADMIN_SETTING_KEYS) {
-      const v = incoming[key];
-      next[key] = isPlainObject(v) ? { ...v } : {};
-    }
+    const current = await getSettingsRecord(ADMIN_PLATFORM_SETTINGS_CATEGORY);
+    const next = mergeAdminPlatformPayload(current, incoming, ADMIN_PLATFORM_CATEGORY_KEYS);
 
-    await setSettingsRecord(ADMIN_PLATFORM_SETTINGS_CATEGORY, next);
+    await setSettingsRecord(ADMIN_PLATFORM_SETTINGS_CATEGORY, next, auth.user!.id);
     return NextResponse.json({ success: true, data: next });
   } catch (e) {
     console.error("[admin/settings] PUT", e);
@@ -124,7 +120,7 @@ export async function DELETE(req: Request) {
       }
       const current = await getSettingsRecord(ADMIN_PLATFORM_SETTINGS_CATEGORY);
       const next = { ...current, [category]: {} };
-      await setSettingsRecord(ADMIN_PLATFORM_SETTINGS_CATEGORY, next);
+      await setSettingsRecord(ADMIN_PLATFORM_SETTINGS_CATEGORY, next, auth.user!.id);
     } else {
       await deleteSettingsDoc(ADMIN_PLATFORM_SETTINGS_CATEGORY);
     }

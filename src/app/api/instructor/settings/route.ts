@@ -6,6 +6,7 @@ import {
   deleteSettingsDoc,
   instructorSettingsCategory,
 } from "@/app/api/_lib/roleSettings";
+import { pickInstructorSettingsForStorage } from "@/lib/settingsScope";
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -18,7 +19,8 @@ export async function GET() {
   try {
     const category = instructorSettingsCategory(auth.user!.id);
     const stored = await getSettingsRecord(category);
-    const instructor = isPlainObject(stored.instructor) ? stored.instructor : {};
+    const instructorRaw = isPlainObject(stored.instructor) ? stored.instructor : {};
+    const instructor = pickInstructorSettingsForStorage(instructorRaw as Record<string, unknown>);
     const hasSavedFields = Object.keys(instructor).length > 0;
     if (!hasSavedFields) {
       return NextResponse.json({ success: true, data: {} });
@@ -60,8 +62,11 @@ export async function POST(req: Request) {
     const prev = isPlainObject(current.instructor)
       ? (current.instructor as Record<string, unknown>)
       : {};
-    const mergedInstructor = { ...prev, ...body.settings };
-    await setSettingsRecord(category, { ...current, instructor: mergedInstructor });
+    const mergedInstructor = pickInstructorSettingsForStorage({
+      ...prev,
+      ...(body.settings as Record<string, unknown>),
+    });
+    await setSettingsRecord(category, { ...current, instructor: mergedInstructor }, auth.user!.id);
 
     return NextResponse.json({ success: true, data: { instructor: mergedInstructor } });
   } catch (e) {
@@ -87,16 +92,25 @@ export async function PUT(req: Request) {
     }
 
     const incoming = body.settings as Record<string, unknown>;
-    const instructor = isPlainObject(incoming.instructor)
-      ? { ...incoming.instructor }
+    const incomingInstructor = isPlainObject(incoming.instructor)
+      ? (incoming.instructor as Record<string, unknown>)
       : {};
 
     const category = instructorSettingsCategory(auth.user!.id);
-    await setSettingsRecord(category, { instructor });
+    const current = await getSettingsRecord(category);
+    const prev = isPlainObject(current.instructor)
+      ? (current.instructor as Record<string, unknown>)
+      : {};
+    const mergedInstructor = pickInstructorSettingsForStorage({
+      ...prev,
+      ...incomingInstructor,
+    });
+
+    await setSettingsRecord(category, { ...current, instructor: mergedInstructor }, auth.user!.id);
 
     return NextResponse.json({
       success: true,
-      data: { instructor },
+      data: { instructor: mergedInstructor },
     });
   } catch (e) {
     console.error("[instructor/settings] PUT", e);
@@ -119,7 +133,7 @@ export async function DELETE(req: Request) {
     if (categoryParam === "instructor") {
       const current = await getSettingsRecord(category);
       const next = { ...current, instructor: {} };
-      await setSettingsRecord(category, next);
+      await setSettingsRecord(category, next, auth.user!.id);
     } else if (!categoryParam) {
       await deleteSettingsDoc(category);
     } else {

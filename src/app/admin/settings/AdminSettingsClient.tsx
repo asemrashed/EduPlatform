@@ -13,7 +13,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { AttractiveInput } from '@/components/ui/attractive-input';
-import { LuSettings as Settings, LuUser as User, LuMail as Mail, LuLock as Lock, LuSave as Save, LuRefreshCw as RefreshCw, LuTriangleAlert as AlertTriangle, LuCheck as CheckCircle, LuInfo as LuInfo, LuRotateCcw, LuKey, LuCreditCard } from 'react-icons/lu';;
+import { LuSave as Save, LuRefreshCw as RefreshCw, LuTriangleAlert as AlertTriangle, LuCheck as CheckCircle, LuInfo as LuInfo, LuRotateCcw, LuKey, LuCreditCard, LuMail as Mail } from 'react-icons/lu';
+import AccountChangePasswordPanel from '@/components/AccountChangePasswordPanel';
 
 interface SystemSettings {
   siteName: string;
@@ -35,15 +36,6 @@ function SettingsPageContent() {
   const { user } = useAppSelector((state) => state.auth);
   const [activeTab, setActiveTab] = useState('password');
   const [hasChanges, setHasChanges] = useState(false);
-  
-  // Password change state
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
-  const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
   
   // Local state to track changes without API calls
   const [localSettings, setLocalSettings] = useState<Record<string, Record<string, any>>>({});
@@ -122,81 +114,6 @@ function SettingsPageContent() {
       }
     }));
     setHasChanges(true);
-  };
-
-  const handlePasswordChange = (field: string, value: string) => {
-    setPasswordData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (passwordErrors[field]) {
-      setPasswordErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  };
-
-  const validatePassword = () => {
-    const errors: Record<string, string> = {};
-    
-    if (!passwordData.currentPassword) {
-      errors.currentPassword = 'Current password is required';
-    }
-    
-    if (!passwordData.newPassword) {
-      errors.newPassword = 'New password is required';
-    } else if (passwordData.newPassword.length < 8) {
-      errors.newPassword = 'Password must be at least 8 characters long';
-    }
-    
-    if (!passwordData.confirmPassword) {
-      errors.confirmPassword = 'Please confirm your new password';
-    } else if (passwordData.newPassword !== passwordData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
-    }
-    
-    if (passwordData.currentPassword === passwordData.newPassword) {
-      errors.newPassword = 'New password must be different from current password';
-    }
-    
-    setPasswordErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleChangePassword = async () => {
-    if (!validatePassword()) return;
-    
-    setIsChangingPassword(true);
-    try {
-      const response = await fetch('/api/admin/change-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword,
-        }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to change password');
-      }
-      
-      // Reset form on success
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      });
-      setPasswordErrors({});
-      
-      // Show success message (you could add a toast notification here)
-      alert('Password changed successfully!');
-      
-    } catch (error) {
-      console.error('Error changing password:', error);
-      setPasswordErrors({ general: error instanceof Error ? error.message : 'Failed to change password' });
-    } finally {
-      setIsChangingPassword(false);
-    }
   };
 
   const renderGeneralSettings = () => {
@@ -599,98 +516,7 @@ function SettingsPageContent() {
     </div>
   );
 
-  const renderPasswordSettings = () => {
-    return (
-      <div className="space-y-6">
-        <PageSection
-          title="Change Password"
-          description="Update your account password for enhanced security"
-          className="bg-gradient-to-br from-red-50 via-white to-pink-50 border-2 border-red-200 shadow-lg hover:shadow-xl transition-all duration-200"
-        >
-          <div className="space-y-6">
-            {/* General Error */}
-            {passwordErrors.general && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg shadow-md">
-                <div className="flex items-center gap-2 text-red-700">
-                  <AlertTriangle className="h-4 w-4" />
-                  <span className="text-sm font-medium">{passwordErrors.general}</span>
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <AttractiveInput
-                type="password"
-                label="Current Password"
-                placeholder="Enter your current password"
-                value={passwordData.currentPassword}
-                onChange={(e) => handlePasswordChange('currentPassword', e.target.value)}
-                error={passwordErrors.currentPassword}
-                icon="lock"
-                variant="default"
-                colorScheme="primary"
-                size="md"
-                helperText="Enter your current password to verify your identity"
-              />
-
-              <AttractiveInput
-                type="password"
-                label="New Password"
-                placeholder="Enter your new password"
-                value={passwordData.newPassword}
-                onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
-                error={passwordErrors.newPassword}
-                icon="lock"
-                variant="default"
-                colorScheme="primary"
-                size="md"
-                helperText="Password must be at least 8 characters long"
-              />
-
-              <AttractiveInput
-                type="password"
-                label="Confirm New Password"
-                placeholder="Confirm your new password"
-                value={passwordData.confirmPassword}
-                onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
-                error={passwordErrors.confirmPassword}
-                icon="lock"
-                variant="default"
-                colorScheme="primary"
-                size="md"
-                helperText="Re-enter your new password to confirm"
-              />
-            </div>
-
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-red-200 shadow-md hover:shadow-lg transition-all duration-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-semibold text-sm text-foreground">Password Requirements</h4>
-                  <ul className="text-xs text-muted-foreground mt-1 space-y-1">
-                    <li>• At least 8 characters long</li>
-                    <li>• Must be different from current password</li>
-                    <li>• Consider using a mix of letters, numbers, and symbols</li>
-                  </ul>
-                </div>
-                <Button
-                  onClick={handleChangePassword}
-                  disabled={isChangingPassword || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
-                  className="flex items-center gap-2 border-2 border-red-300 hover:border-red-400 transition-all duration-200 font-semibold"
-                >
-                  {isChangingPassword ? (
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <LuKey className="h-4 w-4" />
-                  )}
-                  {isChangingPassword ? 'Changing...' : 'Change Password'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </PageSection>
-      </div>
-    );
-  };
+  const renderPasswordSettings = () => <AccountChangePasswordPanel />;
 
 
   const renderTabContent = () => {

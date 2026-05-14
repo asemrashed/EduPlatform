@@ -1,5 +1,14 @@
 import mongoose, { Document, Schema } from "mongoose";
 
+const SocialLinksSchema = new Schema(
+  {
+    linkedin: { type: String, trim: true },
+    twitter: { type: String, trim: true },
+    website: { type: String, trim: true },
+  },
+  { _id: false },
+);
+
 export interface IUser extends Document {
   _id: mongoose.Types.ObjectId;
   name: string;
@@ -13,6 +22,17 @@ export interface IUser extends Document {
   /** When true, student cannot create new course reviews */
   isBlockedFromReviews?: boolean;
   avatar?: string;
+  bio?: string;
+  address?: string;
+  parentPhone?: string;
+  education?: string;
+  specialization?: string;
+  experience?: string;
+  socialLinks?: {
+    linkedin?: string;
+    twitter?: string;
+    website?: string;
+  };
   createdAt: Date;
   updatedAt: Date;
   lastLogin?: Date;
@@ -71,6 +91,34 @@ const UserSchema = new Schema<IUser>(
       type: String,
       default: "",
     },
+    bio: {
+      type: String,
+      trim: true,
+    },
+    address: {
+      type: String,
+      trim: true,
+    },
+    parentPhone: {
+      type: String,
+      trim: true,
+    },
+    education: {
+      type: String,
+      trim: true,
+    },
+    specialization: {
+      type: String,
+      trim: true,
+    },
+    experience: {
+      type: String,
+      trim: true,
+    },
+    socialLinks: {
+      type: SocialLinksSchema,
+      default: undefined,
+    },
     lastLogin: {
       type: Date,
     },
@@ -87,7 +135,6 @@ UserSchema.methods.toJSON = function toJSON() {
   return userObject;
 };
 
-const User =
-  mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
+const User = mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
 
 export default User;
