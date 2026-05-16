@@ -68,22 +68,25 @@ import {
   LuEye as Eye,
   LuEyeOff as EyeOff
 } from 'react-icons/lu';
-import { defaultHeroContent } from '@/constants/heroContent';
-import { defaultAboutContent } from '@/constants/aboutContent';
-import { defaultWhyChooseUsContent } from '@/constants/whyChooseUsContent';
-import { defaultStatisticsContent } from '@/constants/statisticsContent';
-import { defaultServicesContent } from '@/constants/servicesContent';
-import { defaultCertificatesContent } from '@/constants/certificatesContent';
-import { defaultPhotoGalleryContent } from '@/constants/photoGalleryContent';
-import { defaultBlogContent } from '@/constants/blogContent';
-import { defaultDownloadAppContent } from '@/constants/downloadAppContent';
-import { defaultFooterContent } from '@/constants/footerContent';
-import { defaultSectionOrder, SectionConfig } from '@/constants/sectionOrder';
-import { defaultCoursesContent } from '@/constants/coursesContent';
-import { defaultCoursesByCategoryContent } from '@/constants/coursesByCategoryContent';
-import { defaultFAQContent } from '@/constants/faqContent';
-import { defaultPromoBannerContent } from '@/constants/promoBannerContent';
-import { defaultCourseLessonBannerContent } from '@/constants/courseLessonBannerContent';
+import {
+  defaultAboutContent,
+  defaultBlogContent,
+  defaultCertificatesContent,
+  defaultCourseLessonBannerContent,
+  defaultCoursesByCategoryContent,
+  defaultCoursesContent,
+  defaultDownloadAppContent,
+  defaultFAQContent,
+  defaultFooterContent,
+  defaultHeroContent,
+  defaultPhotoGalleryContent,
+  defaultPromoBannerContent,
+  defaultSectionOrder,
+  defaultServicesContent,
+  defaultStatisticsContent,
+  defaultWhyChooseUsContent,
+  type SectionConfig,
+} from '@/lib/websiteContentDefaults';
 
 interface WebsiteContent {
   metaTitle?: string;

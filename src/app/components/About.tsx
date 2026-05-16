@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import type { AboutContent } from "@/constants/aboutContent";
-import { defaultAboutContent } from "@/constants/aboutContent";
+import { type AboutContent, defaultAboutContent } from "@/lib/websiteContentDefaults";
 import { htmlToPlainText } from "@/lib/utils";
 
 interface AboutProps {

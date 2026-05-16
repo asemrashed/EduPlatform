@@ -127,31 +127,6 @@ export async function handleMockApi(req: NextRequest, segments: string[]) {
       ? await readBody(req)
       : {};
 
-  // --- Website / public content ---
-  if (pathKey === "website-content" && method === "GET") {
-    return json({
-      data: {
-        promotionalBanner: {
-          enabled: true,
-          imageUrl: "",
-          link: "/courses",
-          headline: "Explore more courses",
-          subtext: "Special offers on new programs",
-          ctaLabel: "Browse",
-        },
-        courseLessonBanner: {
-          title: "Welcome to today’s lesson",
-          subtitle: "Keep your streak going",
-        },
-      },
-    });
-  }
-
-  if (pathKey.startsWith("admin/website-content")) {
-    if (method === "GET") return json({ success: true, data: {} });
-    return json({ success: true, data: {} });
-  }
-
   if (pathKey === "upload/branding" && method === "POST") {
     return json({ success: true, url: "/mock-brand.png" });
   }
@@ -722,20 +697,6 @@ export async function handleMockApi(req: NextRequest, segments: string[]) {
 
   if (pathKey === "admin/seed-reviews" && method === "POST") {
     return json({ success: true, seeded: 0 });
-  }
-
-  // --- FAQ ---
-  if (pathKey.startsWith("admin/faqs")) {
-    if (method === "GET") {
-      return json({
-        success: true,
-        data: {
-          faqs: [],
-          pagination: defaultPagination(1, 10, 0),
-        },
-      });
-    }
-    return json({ success: true });
   }
 
   // --- Payment / refunds ---

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { HeroContent, defaultHeroContent } from "@/constants/heroContent";
+import { type HeroContent, defaultHeroContent } from "@/lib/websiteContentDefaults";
 import { htmlToPlainText } from "@/lib/utils";
 
 interface HeroProps {

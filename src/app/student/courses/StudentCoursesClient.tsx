@@ -17,10 +17,11 @@ import { LuBookOpen as BookOpen, LuClock as Clock, LuUsers as Users, LuStar as S
 import { studentLearningService } from '@/services/studentLearningService';
 
 // Fallback when API doesn't return promotional banner
-const DEFAULT_PROMO_HEADLINE = 'আরও কোর্স এক্সপ্লোর করুন';
-const DEFAULT_PROMO_SUBTEXT = 'নতুন কোর্সে বিশেষ ছাড় পেতে এখনই দেখুন';
-const DEFAULT_PROMO_LINK = '/#courses';
-const DEFAULT_PROMO_CTA = 'দেখুন';
+const DEFAULT_PROMO_HEADLINE = 'Courses Designed for Success';
+const DEFAULT_PROMO_SUBTEXT =
+  'Curated paths focusing on high-impact skills that the global market demands today..';
+const DEFAULT_PROMO_LINK = '/courses';
+const DEFAULT_PROMO_CTA = 'View all';
 
 interface Course {
   _id: string;

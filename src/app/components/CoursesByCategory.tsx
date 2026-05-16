@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { LuBookOpen } from "react-icons/lu";
 import GradientButton from "./Button";
 import CourseCard from "./CourseCard";
-import type { CoursesByCategoryContent } from "@/constants/coursesByCategoryContent";
-import { defaultCoursesByCategoryContent } from "@/constants/coursesByCategoryContent";
+import {
+  type CoursesByCategoryContent,
+  defaultCoursesByCategoryContent,
+} from "@/lib/websiteContentDefaults";
 import type { Category } from "@/lib/categories";
 import type { CourseWithStats } from "@/lib/courses";
 

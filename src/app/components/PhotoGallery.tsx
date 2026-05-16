@@ -3,8 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { LuImage } from "react-icons/lu";
-import type { PhotoGalleryContent } from "@/constants/photoGalleryContent";
-import { defaultPhotoGalleryContent } from "@/constants/photoGalleryContent";
+import { type PhotoGalleryContent, defaultPhotoGalleryContent } from "@/lib/websiteContentDefaults";
 
 interface PhotoGalleryProps {
   initialContent?: PhotoGalleryContent;

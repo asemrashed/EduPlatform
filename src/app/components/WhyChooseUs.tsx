@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import type { WhyChooseUsContent } from "@/constants/whyChooseUsContent";
-import { defaultWhyChooseUsContent } from "@/constants/whyChooseUsContent";
+import { type WhyChooseUsContent, defaultWhyChooseUsContent } from "@/lib/websiteContentDefaults";
 import { htmlToPlainText } from "@/lib/utils";
 
 interface WhyChooseUsProps {

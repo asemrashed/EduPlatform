@@ -1,204 +1,38 @@
-import 'server-only';
-import { unstable_cache } from 'next/cache';
-import connectDB from '@/lib/mongodb';
-import { defaultHeroContent, HeroContent } from '@/constants/heroContent';
-import { defaultAboutContent, AboutContent } from '@/constants/aboutContent';
-import { defaultWhyChooseUsContent, WhyChooseUsContent } from '@/constants/whyChooseUsContent';
-import { defaultStatisticsContent, StatisticsContent } from '@/constants/statisticsContent';
-import { defaultServicesContent, ServicesContent } from '@/constants/servicesContent';
-import { defaultCertificatesContent, CertificatesContent } from '@/constants/certificatesContent';
-import { defaultPhotoGalleryContent, PhotoGalleryContent } from '@/constants/photoGalleryContent';
-import { defaultBlogContent, BlogContent } from '@/constants/blogContent';
-import { defaultDownloadAppContent, DownloadAppContent } from '@/constants/downloadAppContent';
-import { defaultFooterContent, FooterContent } from '@/constants/footerContent';
-import { defaultCoursesContent, CoursesContent } from '@/constants/coursesContent';
-import { defaultCoursesByCategoryContent, CoursesByCategoryContent } from '@/constants/coursesByCategoryContent';
-import { defaultCourseLessonBannerContent, CourseLessonBannerContent } from '@/constants/courseLessonBannerContent';
+import "server-only";
+import { unstable_cache } from "next/cache";
+import connectDB from "@/lib/mongodb";
+import {
+  defaultAboutContent,
+  defaultBlogContent,
+  defaultCertificatesContent,
+  defaultCourseLessonBannerContent,
+  defaultCoursesByCategoryContent,
+  defaultCoursesContent,
+  defaultDownloadAppContent,
+  defaultFooterContent,
+  defaultHeroContent,
+  defaultPhotoGalleryContent,
+  defaultServicesContent,
+  defaultStatisticsContent,
+  defaultWebsiteContent,
+  defaultWhyChooseUsContent,
+  WEBSITE_CONTENT_CATEGORY,
+  type AboutContent,
+  type BlogContent,
+  type CertificatesContent,
+  type CoursesByCategoryContent,
+  type CoursesContent,
+  type DownloadAppContent,
+  type FooterContent,
+  type HeroContent,
+  type PhotoGalleryContent,
+  type ServicesContent,
+  type StatisticsContent,
+  type WebsiteContent,
+  type WhyChooseUsContent,
+} from "@/lib/websiteContentDefaults";
 
-export interface WebsiteContent {
-  metaTitle?: string;
-  marquee: {
-    enabled: boolean;
-    messages: string[];
-    gradientFrom: string;
-    gradientTo: string;
-  };
-  contact: {
-    registrationNumber: string;
-  };
-  socialMedia: {
-    facebook: string;
-    twitter: string;
-    linkedin: string;
-    instagram?: string;
-    youtube?: string;
-  };
-  branding: {
-    logoText: string;
-    logoTextColor1: string;
-    logoTextColor2: string;
-    logoIconColor1: string;
-    logoIconColor2: string;
-    logoUrl?: string;
-    faviconUrl?: string;
-  };
-  navigation: {
-    home: {
-      label: string;
-      items: Array<{ label: string; href: string; icon?: string }>;
-    };
-    category: {
-      label: string;
-      items: Array<{ label: string; href: string; icon?: string }>;
-    };
-    pages: {
-      label: string;
-      items: Array<{ label: string; href: string; icon?: string }>;
-    };
-    courses: {
-      label: string;
-      items: Array<{ label: string; href: string; icon?: string }>;
-    };
-    account: {
-      label: string;
-      items: Array<{ label: string; href: string; icon?: string }>;
-    };
-    contact: {
-      label: string;
-      href: string;
-    };
-  };
-  buttons: {
-    liveCourse: {
-      enabled: boolean;
-      text: string;
-      href?: string;
-    };
-    login: {
-      text: string;
-      href: string;
-    };
-  };
-  mobileMenu: {
-    items: Array<{ label: string; href: string }>;
-  };
-  hero?: any; // Hero content is optional for header
-  about?: AboutContent;
-  whyChooseUs?: WhyChooseUsContent;
-  statistics?: StatisticsContent;
-  services?: ServicesContent;
-  certificates?: CertificatesContent;
-  photoGallery?: PhotoGalleryContent;
-  blog?: BlogContent;
-  downloadApp?: DownloadAppContent;
-  footer?: FooterContent;
-  courses?: CoursesContent;
-  coursesByCategory?: CoursesByCategoryContent;
-  courseLessonBanner?: CourseLessonBannerContent;
-}
-
-const defaultWebsiteContent: WebsiteContent = {
-  metaTitle: "CodeZyne - Online Learning Platform",
-  marquee: {
-    enabled: true,
-    messages: [
-      "🎉 নতুন কোর্সে ৫০% ছাড়! এখনই নিবন্ধন করুন",
-      "✨ ১০০+ কোর্স উপলব্ধ - আপনার পছন্দের কোর্স খুঁজে নিন",
-      "🚀 বিশেষ অফার: প্রথম ১০০ জন শিক্ষার্থী পাবে বিনামূল্যে সার্টিফিকেট",
-      "📚 মাসিক নতুন কোর্স যোগ করা হচ্ছে - সর্বশেষ আপডেটের জন্য সাবস্ক্রাইব করুন",
-    ],
-    gradientFrom: "#EC4899",
-    gradientTo: "#A855F7",
-  },
-  contact: {
-    registrationNumber: "বাংলাদেশ সরকার অনুমোদিত রেজিঃ নং- ৩১১০৫",
-  },
-  socialMedia: {
-    facebook: "#",
-    twitter: "#",
-    linkedin: "#",
-  },
-  branding: {
-    logoText: "à¦®à§à¦¨à¦¾à¦®à¦¤à¦¿ à¦¸à¦¾à¦°à§à¦­à§ à¦à§à¦à¦¨à¦¿à¦à§à¦¯à¦¾à¦² à¦à§à¦°à§à¦¨à¦¿à¦ à¦à¦¨à¦¸à§à¦à¦¿à¦à¦¿à¦à¦",
-    logoTextColor1: "#7B2CBF",
-    logoTextColor2: "#FF6B35",
-    logoIconColor1: "#FF6B35",
-    logoIconColor2: "#7B2CBF",
-    logoUrl: "",
-    faviconUrl: "",
-  },
-  navigation: {
-    home: {
-      label: "হোম",
-      items: [
-        { label: "হোমপেজ", href: "/" },
-        { label: "আমাদের সম্পর্কে", href: "/#about" },
-        { label: "কোর্সসমূহ", href: "/#courses" },
-      ],
-    },
-    category: {
-      label: "বিভাগ",
-      items: [
-        { label: "ডেভেলপমেন্ট", href: "/#courses" },
-        { label: "ডিজাইন", href: "/#courses" },
-        { label: "মার্কেটিং", href: "/#courses" },
-        { label: "ব্যবসা", href: "/#courses" },
-      ],
-    },
-    pages: {
-      label: "পাতা",
-      items: [
-        { label: "আমাদের সম্পর্কে", href: "/about" },
-        { label: "ব্লগ", href: "/blog" },
-        { label: "যোগাযোগ", href: "/contact" },
-        { label: "প্রশ্নোত্তর", href: "/faq" },
-      ],
-    },
-    courses: {
-      label: "কোর্স",
-      items: [
-        { label: "সব কোর্স", href: "/#courses" },
-        { label: "কোর্স বিস্তারিত", href: "/course-details" },
-        { label: "জনপ্রিয় কোর্স", href: "/#courses" },
-        { label: "নতুন কোর্স", href: "/#courses" },
-      ],
-    },
-    account: {
-      label: "হিসাব",
-      items: [
-        { label: "লগ ইন", href: "/login" },
-        { label: "নিবন্ধন", href: "/register" },
-        { label: "প্রোফাইল", href: "/profile" },
-        { label: "ড্যাশবোর্ড", href: "/dashboard" },
-      ],
-    },
-    contact: {
-      label: "যোগাযোগ",
-      href: "/contact",
-    },
-  },
-  buttons: {
-    liveCourse: {
-      enabled: true,
-      text: "লাইভ কোর্স",
-    },
-    login: {
-      text: "লগ ইন",
-      href: "/login",
-    },
-  },
-  mobileMenu: {
-    items: [
-      { label: "হোম", href: "#" },
-      { label: "বিভাগ", href: "#" },
-      { label: "পাতা", href: "#" },
-      { label: "কোর্স", href: "#" },
-      { label: "হিসাব", href: "#" },
-      { label: "যোগাযোগ", href: "#" },
-    ],
-  },
-  courseLessonBanner: defaultCourseLessonBannerContent,
-};
+export type { WebsiteContent };
 
 // Server-side function to get website content with caching
 export async function getWebsiteContent(): Promise<WebsiteContent> {
@@ -213,8 +47,8 @@ export async function getWebsiteContent(): Promise<WebsiteContent> {
         await connectDB();
         // Dynamic import to prevent client-side bundling
         const Settings = (await import('@/models/Settings')).default;
-        const settings = await Settings.findOne({ category: 'website-content' });
-        return settings?.settings || defaultWebsiteContent;
+        const settings = await Settings.findOne({ category: WEBSITE_CONTENT_CATEGORY });
+        return (settings?.settings as WebsiteContent | undefined) || defaultWebsiteContent;
       } catch (error) {
         console.error('Error fetching website content:', error);
         return defaultWebsiteContent;
@@ -243,7 +77,7 @@ export async function getHeroContent(): Promise<HeroContent> {
         await connectDB();
         // Dynamic import to prevent client-side bundling
         const Settings = (await import('@/models/Settings')).default;
-        const settings = await Settings.findOne({ category: 'website-content' });
+        const settings = await Settings.findOne({ category: WEBSITE_CONTENT_CATEGORY });
         const websiteContent = settings?.settings;
         
         // Return hero content if available, otherwise return default
@@ -279,7 +113,7 @@ export async function getAboutContent(): Promise<AboutContent> {
         await connectDB();
         // Dynamic import to prevent client-side bundling
         const Settings = (await import('@/models/Settings')).default;
-        const settings = await Settings.findOne({ category: 'website-content' });
+        const settings = await Settings.findOne({ category: WEBSITE_CONTENT_CATEGORY });
         const websiteContent = settings?.settings;
         
         // Return about content if available, otherwise return default
@@ -315,7 +149,7 @@ export async function getWhyChooseUsContent(): Promise<WhyChooseUsContent> {
         await connectDB();
         // Dynamic import to prevent client-side bundling
         const Settings = (await import('@/models/Settings')).default;
-        const settings = await Settings.findOne({ category: 'website-content' });
+        const settings = await Settings.findOne({ category: WEBSITE_CONTENT_CATEGORY });
         const websiteContent = settings?.settings;
         
         // Return why choose us content if available, otherwise return default
@@ -351,7 +185,7 @@ export async function getStatisticsContent(): Promise<StatisticsContent> {
         await connectDB();
         // Dynamic import to prevent client-side bundling
         const Settings = (await import('@/models/Settings')).default;
-        const settings = await Settings.findOne({ category: 'website-content' });
+        const settings = await Settings.findOne({ category: WEBSITE_CONTENT_CATEGORY });
         const websiteContent = settings?.settings;
         
         // Return statistics content if available, otherwise return default
@@ -387,7 +221,7 @@ export async function getServicesContent(): Promise<ServicesContent> {
         await connectDB();
         // Dynamic import to prevent client-side bundling
         const Settings = (await import('@/models/Settings')).default;
-        const settings = await Settings.findOne({ category: 'website-content' });
+        const settings = await Settings.findOne({ category: WEBSITE_CONTENT_CATEGORY });
         const websiteContent = settings?.settings;
         
         // Return services content if available, otherwise return default
@@ -423,7 +257,7 @@ export async function getCertificatesContent(): Promise<CertificatesContent> {
         await connectDB();
         // Dynamic import to prevent client-side bundling
         const Settings = (await import('@/models/Settings')).default;
-        const settings = await Settings.findOne({ category: 'website-content' });
+        const settings = await Settings.findOne({ category: WEBSITE_CONTENT_CATEGORY });
         const websiteContent = settings?.settings;
         
         // Return certificates content if available, otherwise return default
@@ -459,7 +293,7 @@ export async function getPhotoGalleryContent(): Promise<PhotoGalleryContent> {
         await connectDB();
         // Dynamic import to prevent client-side bundling
         const Settings = (await import('@/models/Settings')).default;
-        const settings = await Settings.findOne({ category: 'website-content' });
+        const settings = await Settings.findOne({ category: WEBSITE_CONTENT_CATEGORY });
         const websiteContent = settings?.settings;
         
         // Return photo gallery content if available, otherwise return default
@@ -495,7 +329,7 @@ export async function getBlogContent(): Promise<BlogContent> {
         await connectDB();
         // Dynamic import to prevent client-side bundling
         const Settings = (await import('@/models/Settings')).default;
-        const settings = await Settings.findOne({ category: 'website-content' });
+        const settings = await Settings.findOne({ category: WEBSITE_CONTENT_CATEGORY });
         const websiteContent = settings?.settings;
         
         // Return blog content if available, otherwise return default
@@ -531,7 +365,7 @@ export async function getDownloadAppContent(): Promise<DownloadAppContent> {
         await connectDB();
         // Dynamic import to prevent client-side bundling
         const Settings = (await import('@/models/Settings')).default;
-        const settings = await Settings.findOne({ category: 'website-content' });
+        const settings = await Settings.findOne({ category: WEBSITE_CONTENT_CATEGORY });
         const websiteContent = settings?.settings;
         
         // Return download app content if available, otherwise return default
@@ -567,7 +401,7 @@ export async function getFooterContent(): Promise<FooterContent> {
         await connectDB();
         // Dynamic import to prevent client-side bundling
         const Settings = (await import('@/models/Settings')).default;
-        const settings = await Settings.findOne({ category: 'website-content' });
+        const settings = await Settings.findOne({ category: WEBSITE_CONTENT_CATEGORY });
         const websiteContent = settings?.settings;
         
         // Return footer content if available, otherwise return default
@@ -603,7 +437,7 @@ export async function getCoursesContent(): Promise<CoursesContent> {
         await connectDB();
         // Dynamic import to prevent client-side bundling
         const Settings = (await import('@/models/Settings')).default;
-        const settings = await Settings.findOne({ category: 'website-content' });
+        const settings = await Settings.findOne({ category: WEBSITE_CONTENT_CATEGORY });
         const websiteContent = settings?.settings;
         
         // Merge DB courses with default so featuredCourseIds and all fields are preserved
@@ -647,7 +481,7 @@ export async function getCoursesByCategoryContent(): Promise<CoursesByCategoryCo
         await connectDB();
         // Dynamic import to prevent client-side bundling
         const Settings = (await import('@/models/Settings')).default;
-        const settings = await Settings.findOne({ category: 'website-content' });
+        const settings = await Settings.findOne({ category: WEBSITE_CONTENT_CATEGORY });
         const websiteContent = settings?.settings;
         
         // Return courses by category content if available, otherwise return default

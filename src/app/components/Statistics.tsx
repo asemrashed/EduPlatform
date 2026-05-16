@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { LuUsers, LuBookOpen, LuGraduationCap, LuAward } from "react-icons/lu";
-import type { StatisticsContent } from "@/constants/statisticsContent";
-import { defaultStatisticsContent } from "@/constants/statisticsContent";
+import { type StatisticsContent, defaultStatisticsContent } from "@/lib/websiteContentDefaults";
 
 interface StatisticsProps {
   initialContent?: StatisticsContent;

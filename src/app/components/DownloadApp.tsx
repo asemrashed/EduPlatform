@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { LuDownload } from "react-icons/lu";
-import type { DownloadAppContent } from "@/constants/downloadAppContent";
-import { defaultDownloadAppContent } from "@/constants/downloadAppContent";
+import { type DownloadAppContent, defaultDownloadAppContent } from "@/lib/websiteContentDefaults";
 import { htmlToPlainText } from "@/lib/utils";
 
 interface DownloadAppProps {

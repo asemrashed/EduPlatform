@@ -15,7 +15,7 @@ import { htmlToPlainText } from '@/lib/utils';
 import { studentLearningService } from '@/services/studentLearningService';
 import { fetchAccountProfile } from '@/lib/accountClient';
 
-const DEFAULT_LESSON_BANNER_TITLE = 'আজকের লেসনে স্বাগতম';
+const DEFAULT_LESSON_BANNER_TITLE = 'Student Dashboard';
 const QUIZ_KEEP_PRACTICING_THRESHOLD = 60;
 const getLastLessonStorageKey = (courseId: string) => `student-course-last-lesson:${courseId}`;
 const getLessonPlaybackStorageKey = (courseId: string, lessonId: string) =>

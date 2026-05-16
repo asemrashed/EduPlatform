@@ -3,8 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { LuAward, LuBuilding } from "react-icons/lu";
-import type { CertificatesContent } from "@/constants/certificatesContent";
-import { defaultCertificatesContent } from "@/constants/certificatesContent";
+import { type CertificatesContent, defaultCertificatesContent } from "@/lib/websiteContentDefaults";
 import { htmlToPlainText } from "@/lib/utils";
 
 interface CertificatesProps {

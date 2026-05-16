@@ -3,8 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { LuFileText, LuUser, LuMessageSquare, LuArrowRight } from "react-icons/lu";
-import type { BlogContent } from "@/constants/blogContent";
-import { defaultBlogContent } from "@/constants/blogContent";
+import { type BlogContent, defaultBlogContent } from "@/lib/websiteContentDefaults";
 import { htmlToPlainText } from "@/lib/utils";
 
 interface BlogProps {

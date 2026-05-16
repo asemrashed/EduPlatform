@@ -6,8 +6,7 @@ import { LuBookOpen } from "react-icons/lu";
 import { useSession } from "next-auth/react";
 import CourseCard from "./CourseCard";
 import type { CourseWithStats } from "@/lib/courses";
-import type { CoursesContent } from "@/constants/coursesContent";
-import { defaultCoursesContent } from "@/constants/coursesContent";
+import { type CoursesContent, defaultCoursesContent } from "@/lib/websiteContentDefaults";
 
 interface CoursesProps {
   initialCourses?: CourseWithStats[];

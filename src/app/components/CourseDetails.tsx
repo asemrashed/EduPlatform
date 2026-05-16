@@ -13,9 +13,11 @@ import { useCart } from "@/hooks/useCart";
 import { usePayment } from "@/hooks/usePayment";
 import { LuCheck as Check, LuX as X } from 'react-icons/lu';
 import StickySidebar from "./StickySidebar";
-import type { FAQContent } from '@/constants/faqContent';
-import { defaultFAQContent } from '@/constants/faqContent';
-import { defaultFooterContent } from '@/constants/footerContent';
+import {
+  type FAQContent,
+  defaultFAQContent,
+  defaultFooterContent,
+} from '@/lib/websiteContentDefaults';
 import { LuPlay as Play } from 'react-icons/lu';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import VideoWatermark from "@/components/VideoWatermark";

@@ -4,8 +4,11 @@ import { useEffect, useState } from "react";
 import { LuMonitor, LuChevronDown } from "react-icons/lu";
 import { motion, AnimatePresence } from "framer-motion";
 
-import type { BatchLevelItem, ServicesContent } from "@/constants/servicesContent";
-import { defaultServicesContent } from "@/constants/servicesContent";
+import {
+  type BatchLevelItem,
+  type ServicesContent,
+  defaultServicesContent,
+} from "@/lib/websiteContentDefaults";
 
 interface ServicesProps {
   initialContent?: ServicesContent;

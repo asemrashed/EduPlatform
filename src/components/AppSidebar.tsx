@@ -36,9 +36,9 @@ const AppSidebar = () => {
   const pathname = usePathname();
   const { user, isLoading } = useAppSelector((state) => state.auth);
   const [branding, setBranding] = useState({
-    logoText: 'à¦®à§à¦¨à¦¾à¦®à¦¤à¦¿ à¦¸à¦¾à¦°à§à¦­à§ à¦à§à¦à¦¨à¦¿à¦à§à¦¯à¦¾à¦² à¦à§à¦°à§à¦¨à¦¿à¦ à¦à¦¨à¦¸à§à¦à¦¿à¦à¦¿à¦à¦',
-    logoTextColor1: '#7B2CBF',
+    logoText: 'EduPlatform',
     logoUrl: '',
+    primaryColor: '#0040a1',
   });
 
   // Fetch data for dynamic badges
@@ -94,8 +94,8 @@ const AppSidebar = () => {
         setBranding((prev) => ({
           ...prev,
           logoText: apiBranding.logoText || prev.logoText,
-          logoTextColor1: apiBranding.logoTextColor1 || prev.logoTextColor1,
           logoUrl: apiBranding.logoUrl || '',
+          primaryColor: apiBranding.logoTextColor1 || prev.primaryColor,
         }));
       } catch (error) {
         console.error('Error fetching branding:', error);
@@ -403,19 +403,19 @@ const AppSidebar = () => {
             {branding.logoUrl ? (
               <img
                 src={branding.logoUrl}
-                alt={branding.logoText || 'à¦®à§à¦¨à¦¾à¦®à¦¤à¦¿ à¦¸à¦¾à¦°à§à¦­à§ à¦à§à¦à¦¨à¦¿à¦à§à¦¯à¦¾à¦² à¦à§à¦°à§à¦¨à¦¿à¦ à¦à¦¨à¦¸à§à¦à¦¿à¦à¦¿à¦à¦ logo'}
+                alt={branding.logoText ? `${branding.logoText} logo` : 'EduPlatform logo'}
                 className="h-9 w-9 rounded object-contain bg-white"
               />
             ) : (
               <div className="h-9 w-9 rounded bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-sm font-bold text-white">
-                {branding.logoText?.charAt(0) || 'I'}
+                {branding.logoText?.charAt(0) || 'E'}
               </div>
             )}
             <span
               className="truncate font-semibold text-base"
-              style={{ color: branding.logoTextColor1 }}
+              style={{ color: branding.primaryColor }}
             >
-              {branding.logoText || 'à¦®à§à¦¨à¦¾à¦®à¦¤à¦¿ à¦¸à¦¾à¦°à§à¦­à§ à¦à§à¦à¦¨à¦¿à¦à§à¦¯à¦¾à¦² à¦à§à¦°à§à¦¨à¦¿à¦ à¦à¦¨à¦¸à§à¦à¦¿à¦à¦¿à¦à¦'}
+              {branding.logoText || 'EduPlatform'}
             </span>
           </div>
 
