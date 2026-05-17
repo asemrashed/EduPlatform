@@ -38,6 +38,17 @@ export interface PublicCourseDetailData {
     avatar?: string;
     phone?: string;
     address?: string;
+    bio?: string;
+    specialization?: string;
+    experience?: string;
+    socialLinks?: {
+      linkedin?: string;
+      twitter?: string;
+      website?: string;
+    };
+    coursesCount?: number;
+    studentsCount?: number;
+    rating?: number;
   };
   createdAt: string;
   updatedAt: string;

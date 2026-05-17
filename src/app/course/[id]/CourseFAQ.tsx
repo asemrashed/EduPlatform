@@ -1,18 +1,14 @@
 "use client";
 
-import { Chapter } from "@/types/chapter";
-import { Lesson } from "@/types/lesson";
 import { useState, useEffect } from "react";
-import { FaRegPlayCircle } from "react-icons/fa";
-import { MdLockOutline } from "react-icons/md";
-import { IoChevronUp, IoChevronDown } from "react-icons/io5";
-import { GrPlayFill } from "react-icons/gr";
+import { LuChevronDown, LuChevronUp } from "react-icons/lu";
+import { cn } from "@/lib/cn";
 
 type Props = {
   q: string;
   a: string;
-    isFirst?: boolean; 
-    courseId?: string;
+  isFirst?: boolean; 
+  courseId?: string;
 };
 
 export default function CourseFAQ({
@@ -20,7 +16,6 @@ export default function CourseFAQ({
   a,
   isFirst = false,
 }: Props) {
-  // ✅ open only if first chapter
   const [open, setOpen] = useState(isFirst);
 
   useEffect(() => {
@@ -36,33 +31,35 @@ export default function CourseFAQ({
   }
 
   return (
-    <div className="rounded-md p-2 border-b bg-muted/30">
+    <div 
+      className={cn(
+        "border-b border-border/30 overflow-hidden mx-4",
+        open && "border-primary/10"
+      )}
+    >
       {/* Header */}
       <div
-        className="flex cursor-pointer items-center justify-between px-4 py-3"
+        className="flex cursor-pointer items-center justify-between px-6 py-4 select-none group"
         onClick={handleToggle}
       >
-        <div className="flex items-center gap-3">
-          <h3 className="font-bold text-foreground">
-            {q}
-          </h3>
+        <h3 className="font-headline font-bold text-foreground text-sm md:text-base group-hover:text-primary transition-colors duration-200 pr-4">
+          {q}
+        </h3>
+        <div className="shrink-0 text-muted-foreground group-hover:text-primary transition-colors p-1">
+          {open ? (
+            <LuChevronUp className="w-5 h-5 transition-transform duration-300 transform rotate-180 text-primary" />
+          ) : (
+            <LuChevronDown className="w-5 h-5 transition-transform duration-300" />
+          )}
         </div>
-
-        {open ? (
-          <IoChevronUp className="text-muted-foreground" />
-        ) : (
-          <IoChevronDown className="text-muted-foreground" />
-        )}
       </div>
 
-      {/* Lessons */}
+      {/* Answer Panel */}
       {open && (
-        <div className="mb-2 ml-3">
-            <div className="flex items-center gap-3">
-                <span className="text-sm text-foreground">
-                 -- {a}
-                </span>
-            </div>
+        <div className="px-6 pb-5 pt-1 bg-muted/5 animate-in slide-in-from-top-2 duration-200">
+          <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+            {a}
+          </p>
         </div>
       )}
     </div>
