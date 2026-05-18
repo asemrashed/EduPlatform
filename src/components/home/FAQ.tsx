@@ -2,7 +2,17 @@ import { cn } from "@/lib/cn";
 import { HOME_FAQ } from "@/data/homePageContent";
 import { useState } from "react";
 
-export default function FAQ() {
+type FaqItem = {
+  q: string;
+  a: string;
+};
+
+type FAQProps = {
+  items?: FaqItem[];
+};
+
+export default function FAQ({ items }: FAQProps) {
+    const faqs = items ?? HOME_FAQ;
     const [openFaq, setOpenFaq] = useState<number | null>(1);
     return (
         <section className="mx-auto max-w-4xl px-8 py-24">
@@ -10,7 +20,7 @@ export default function FAQ() {
           Frequently Asked Questions
         </h2>
         <div className="space-y-4">
-          {HOME_FAQ.map((item, i) => {
+          {faqs.map((item, i) => {
             const open = openFaq === i;
             const expandable = Boolean(item.a);
             return (

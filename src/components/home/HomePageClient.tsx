@@ -16,11 +16,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { cn } from "@/lib/cn";
 import banner from "@/public/banner.png";
 import { fetchPublicCourses, useAppDispatch, useAppSelector } from "@/store";
 import type { PublicCourseRow } from "@/mock/publicCourses";
+import type { WebsiteContent } from "@/lib/websiteContentDefaults";
+import type { WhyChooseUsFeature } from "@/lib/websiteContentTypes";
 import {
   HOME_EXPERTS,
   HOME_FAQ,
@@ -30,16 +32,155 @@ import {
   HOME_HERO,
   HOME_PARTNERS,
   HOME_STATS,
+  HOME_TESTIMONIALS,
 } from "@/data/homePageContent";
 import CourseCard from "../CourseCard";
 import ExpertsCarousel from "../carousals/ExpertsCarousel";
 import Testimonials from "./Testimonials";
 import FAQ from "./FAQ";
 
+const FEATURE_ICON_BY_TYPE: Record<
+  WhyChooseUsFeature["iconType"],
+  { icon: string; iconBg: string }
+> = {
+  flexible: { icon: "route", iconBg: "bg-primary" },
+  instructor: { icon: "video_chat", iconBg: "bg-secondary" },
+  community: { icon: "groups", iconBg: "bg-tertiary-container" },
+  money: { icon: "dashboard", iconBg: "bg-[#0040a1]" },
+};
 
-export function HomePageClient() {
+function joinTitleParts(...parts: (string | undefined)[]) {
+  return parts.filter(Boolean).join("");
+}
+
+function parseExpertAlt(alt: string) {
+  const separator = " — ";
+  const index = alt.indexOf(separator);
+  if (index === -1) {
+    return { name: alt, role: "" };
+  }
+  return {
+    name: alt.slice(0, index),
+    role: alt.slice(index + separator.length),
+  };
+}
+
+type HomePageClientProps = {
+  cmsData: WebsiteContent | null;
+};
+
+export function HomePageClient({ cmsData }: HomePageClientProps) {
   const dispatch = useAppDispatch();
   const { publicList } = useAppSelector((s) => s.courses);
+
+  const hero = cmsData?.hero;
+  const heroTitleBefore = hero?.title?.part1 || HOME_HERO.titleBefore;
+  const heroTitleAccent =
+    joinTitleParts(hero?.title?.part2, hero?.title?.part3, hero?.title?.part4, hero?.title?.part5) ||
+    HOME_HERO.titleAccent;
+  const heroDescription = hero?.description || HOME_HERO.description;
+  const heroCtaText = hero?.buttons?.primary?.text || "Join Now";
+  const heroImage =
+    hero?.carousel?.items?.[0]?.image || cmsData?.promotionalBanner?.imageUrl || banner.src;
+
+  const stats = useMemo(() => {
+    const items = cmsData?.statistics?.items;
+    if (items?.length) {
+      return items.map((item) => ({
+        value: `${item.number}${item.suffix}`,
+        label: item.label,
+      }));
+    }
+    return [...HOME_STATS];
+  }, [cmsData?.statistics?.items]);
+
+  const promo = cmsData?.promotionalBanner;
+  const coursesTitle = promo?.headline || "Courses Designed for Success";
+  const coursesDescription =
+    promo?.subtext ||
+    "Curated paths focusing on high-impact skills that the global market demands today..";
+  const coursesCtaLabel = promo?.ctaLabel || "View all";
+  const coursesCtaHref = promo?.link || "/courses";
+
+  const featuresSection = cmsData?.whyChooseUs;
+  const featuresTitle =
+    joinTitleParts(
+      featuresSection?.title?.part1,
+      featuresSection?.title?.part2,
+      featuresSection?.title?.part3,
+      featuresSection?.title?.part4,
+      featuresSection?.title?.part5,
+    ) || "Powerful Features for an Elite Experience";
+  const featuresDescription =
+    featuresSection?.description ||
+    "Our platform isn't just about video lessons; it's a complete ecosystem designed to facilitate mastery and networking.";
+  const featuresImage = featuresSection?.image || HOME_FEATURES_IMAGE;
+  const features = useMemo(() => {
+    const cmsFeatures = featuresSection?.features;
+    if (cmsFeatures?.length) {
+      return cmsFeatures.map((feature, index) => {
+        const fallback = HOME_FEATURES[index % HOME_FEATURES.length];
+        const iconMeta = FEATURE_ICON_BY_TYPE[feature.iconType] ?? {
+          icon: fallback.icon,
+          iconBg: fallback.iconBg,
+        };
+        return {
+          icon: iconMeta.icon,
+          iconBg: iconMeta.iconBg,
+          title: feature.title,
+          body: feature.description,
+        };
+      });
+    }
+    return [...HOME_FEATURES];
+  }, [featuresSection?.features]);
+
+  const experts = useMemo(() => {
+    const images = cmsData?.photoGallery?.images;
+    if (images?.length) {
+      return images.map((item) => {
+        const parsed = parseExpertAlt(item.alt);
+        return {
+          name: parsed.name,
+          role: parsed.role,
+          image: item.image,
+        };
+      });
+    }
+    return [...HOME_EXPERTS];
+  }, [cmsData?.photoGallery?.images]);
+
+  const testimonials = useMemo(() => {
+    const posts = cmsData?.blog?.posts;
+    if (posts?.length) {
+      return posts.map((post) => ({
+        quote: post.title,
+        name: post.author,
+        role: post.description,
+        avatar: post.image,
+      }));
+    }
+    return [...HOME_TESTIMONIALS];
+  }, [cmsData?.blog?.posts]);
+
+  const partners = useMemo(() => {
+    const methods = cmsData?.footer?.paymentGateway?.methods;
+    if (methods?.length) {
+      return methods;
+    }
+    return [...HOME_PARTNERS];
+  }, [cmsData?.footer?.paymentGateway?.methods]);
+
+  const faqItems = useMemo(() => {
+    const faqs = cmsData?.faq?.faqs;
+    if (faqs?.length) {
+      return faqs.map((item) => ({
+        q: item.question,
+        a: item.answer,
+      }));
+    }
+    return [...HOME_FAQ];
+  }, [cmsData?.faq?.faqs]);
 
   useEffect(() => {
     dispatch(fetchPublicCourses(undefined));
@@ -72,34 +213,34 @@ export function HomePageClient() {
     <div className="max-w-xl text-center lg:text-left">
       
       <h1 className="mb-6 text-4xl font-extrabold leading-tight text-white md:text-6xl">
-        {HOME_HERO.titleBefore} 
+        {heroTitleBefore} 
         {" "}
         <span className="text-primary">
-          {HOME_HERO.titleAccent}
+          {heroTitleAccent}
         </span>{" "}
         <br />
       </h1>
 
       <p className="mb-8 text-lg text-white/80">
-        {HOME_HERO.description}
+        {heroDescription}
       </p>
 
       <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
         <button className="rounded-lg bg-primary px-6 py-3 font-semibold text-on-primary shadow-lg hover:scale-105 transition">
-          Join Now
+          {heroCtaText}
         </button>
       </div>
     </div>
 
     {/* RIGHT IMAGE */}
-    <div className="relative w-full max-w-md">
+    <div className="flex-1 relative w-full min-w-sm max-w-2xl rounded-xl">
 
       <div className="relative w-full overflow-hidden rounded-3xl p-6 backdrop-blur-xl">
 
         <img
-          src={banner.src}
+          src={heroImage}
           alt="Hero"
-          className="w-full object-contain"
+          className="w-full object-contain rounded-xl"
         />
 
       </div>
@@ -112,7 +253,7 @@ export function HomePageClient() {
       <section className="bg-surface-container-low py-16">
         <div className="mx-auto max-w-screen-2xl px-8">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            {HOME_STATS.map((s, i) => (
+            {stats.map((s, i) => (
               <div
                 key={s.label}
                 className={cn(
@@ -134,18 +275,17 @@ export function HomePageClient() {
           <div className="mb-16 flex flex-col items-end justify-between gap-8 md:flex-row">
             <div className="max-w-2xl">
               <h2 className="mb-4 font-[family-name:var(--font-headline)] text-5xl font-extrabold tracking-tight text-foreground">
-                Courses Designed for Success
+                {coursesTitle}
               </h2>
               <p className="text-lg leading-relaxed text-muted-foreground">
-                Curated paths focusing on high-impact skills that the global market
-                demands today..
+                {coursesDescription}
               </p>
             </div>
             <Link
-              href="/courses"
+              href={coursesCtaHref}
               className="flex items-center gap-2 font-bold text-primary hover:underline hover:underline-offset-8"
             >
-              View all
+              {coursesCtaLabel}
               <span className="material-symbols-outlined">north_east</span>
             </Link>
           </div>
@@ -168,7 +308,7 @@ export function HomePageClient() {
             <div className="relative overflow-hidden rounded-3xl border-8 border-white shadow-2xl">
               <div className="relative aspect-square w-full">
                 <Image
-                  src={HOME_FEATURES_IMAGE}
+                  src={featuresImage}
                   alt="Student Learning"
                   fill
                   className="object-cover"
@@ -179,14 +319,13 @@ export function HomePageClient() {
           </div>
           <div className="order-1 lg:order-2">
             <h2 className="mb-8 font-[family-name:var(--font-headline)] text-5xl font-extrabold tracking-tight text-foreground">
-              Powerful Features for an Elite Experience
+              {featuresTitle}
             </h2>
             <p className="mb-12 text-lg leading-relaxed text-muted-foreground">
-              Our platform isn&apos;t just about video lessons; it&apos;s a complete
-              ecosystem designed to facilitate mastery and networking.
+              {featuresDescription}
             </p>
             <div className="space-y-8">
-              {HOME_FEATURES.map((f) => (
+              {features.map((f) => (
                 <div key={f.title} className="flex gap-6">
                   <div
                     className={cn(
@@ -212,10 +351,10 @@ export function HomePageClient() {
       </section>
 
       {/* Experts */}
-      <ExpertsCarousel experts={HOME_EXPERTS} />
+      <ExpertsCarousel experts={experts} />
 
       {/* Testimonials */}
-      <Testimonials />
+      <Testimonials items={testimonials} />
 
       {/* Partners */}
       <section className="bg-surface px-8 py-20">
@@ -225,7 +364,7 @@ export function HomePageClient() {
           </p>
         </div>
         <div className="mx-auto flex max-w-screen-2xl flex-wrap items-center justify-center gap-12 opacity-50 grayscale transition-all hover:grayscale-0 md:gap-24">
-          {HOME_PARTNERS.map((p) => (
+          {partners.map((p) => (
             <span
               key={p}
               className={cn(
@@ -240,7 +379,7 @@ export function HomePageClient() {
       </section>
 
   {/* FAQ */}
-      <FAQ/>
+      <FAQ items={faqItems} />
       
     </div>
   );

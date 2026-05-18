@@ -10,7 +10,19 @@ import { FaQuoteLeft } from "react-icons/fa";
 
 import "swiper/css";
 
-export default function Testimonials() {
+type TestimonialItem = {
+  quote: string;
+  name: string;
+  role: string;
+  avatar: string;
+};
+
+type TestimonialsProps = {
+  items?: TestimonialItem[];
+};
+
+export default function Testimonials({ items }: TestimonialsProps) {
+  const testimonials = items ?? HOME_TESTIMONIALS;
   const swiperRef = useRef<SwiperType | null>(null);
 
   return (
@@ -62,7 +74,7 @@ export default function Testimonials() {
               1024: { slidesPerView: 2 },
             }}
           >
-            {HOME_TESTIMONIALS.map((t, i) => (
+            {testimonials.map((t, i) => (
               <SwiperSlide key={`${t.name}-${i}`}>
                 <div className="rounded-3xl border border-on-primary/20 bg-primary/20 p-8 backdrop-blur h-full">
                   <FaQuoteLeft className="mb-6 text-2xl text-primary" />

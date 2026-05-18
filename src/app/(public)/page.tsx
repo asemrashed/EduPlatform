@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { HomePageClient } from "@/components/home/HomePageClient";
+import { loadWebsiteContentSettings } from "@/app/api/_lib/websiteContentStore";
+import type { WebsiteContent } from "@/lib/websiteContentDefaults";
 
 export const metadata: Metadata = {
   title: "Home",
@@ -8,6 +10,9 @@ export const metadata: Metadata = {
 };
 
 /** Phase 3: marketing home; featured courses from Redux (mock api client). */
-export default function HomePage() {
-  return <HomePageClient />;
+export default async function HomePage() {
+  const raw = await loadWebsiteContentSettings();
+  const cmsData = raw as unknown as WebsiteContent;
+
+  return <HomePageClient cmsData={cmsData} />;
 }
