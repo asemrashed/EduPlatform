@@ -163,13 +163,24 @@ export function HomePageClient({ cmsData }: HomePageClientProps) {
     return [...HOME_TESTIMONIALS];
   }, [cmsData?.blog?.posts]);
 
+  const partnersTitle =
+    cmsData?.partners?.title?.trim() || "Our Trusted Partners & Integrations";
+
   const partners = useMemo(() => {
-    const methods = cmsData?.footer?.paymentGateway?.methods;
-    if (methods?.length) {
-      return methods;
+    const items = cmsData?.partners?.items?.filter((item) => item.name?.trim());
+    if (items && items.length > 0) {
+      return items.map((item) => ({
+        name: item.name.trim(),
+        imageUrl: item.imageUrl?.trim() || "",
+        href: item.href?.trim() || "",
+      }));
     }
-    return [...HOME_PARTNERS];
-  }, [cmsData?.footer?.paymentGateway?.methods]);
+    const legacy = cmsData?.footer?.paymentGateway?.methods;
+    if (legacy?.length) {
+      return legacy.map((name) => ({ name, imageUrl: "", href: "" }));
+    }
+    return HOME_PARTNERS.map((name) => ({ name, imageUrl: "", href: "" }));
+  }, [cmsData?.partners?.items, cmsData?.footer?.paymentGateway?.methods]);
 
   const faqItems = useMemo(() => {
     const faqs = cmsData?.faq?.faqs;
@@ -360,21 +371,48 @@ export function HomePageClient({ cmsData }: HomePageClientProps) {
       <section className="bg-surface px-8 py-20">
         <div className="mx-auto mb-12 max-w-screen-2xl text-center">
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground">
-            Our Trusted Partners & Integrations
+            {partnersTitle}
           </p>
         </div>
-        <div className="mx-auto flex max-w-screen-2xl flex-wrap items-center justify-center gap-12 opacity-50 grayscale transition-all hover:grayscale-0 md:gap-24">
-          {partners.map((p) => (
-            <span
-              key={p}
-              className={cn(
-                "text-3xl font-black text-foreground",
-                p === "Zoom" && "italic",
-              )}
-            >
-              {p}
-            </span>
-          ))}
+        <div className="mx-auto flex max-w-screen-2xl flex-wrap items-center justify-center gap-10 transition-all md:gap-20">
+          {partners.map((p) => {
+            const inner = p.imageUrl ? (
+              <Image
+                src={p.imageUrl}
+                alt={p.name}
+                width={150}
+                height={70}
+              />
+            ) : (
+              <span
+                className={cn(
+                  "text-3xl font-black text-foreground",
+                  p.name === "Zoom" && "italic",
+                )}
+              >
+                {p.name}
+              </span>
+            );
+            const key = `${p.name}-${p.imageUrl}-${p.href}`;
+            if (p.href) {
+              return (
+                <Link
+                  key={key}
+                  href={p.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex"
+                >
+                  {inner}
+                </Link>
+              );
+            }
+            return (
+              <span key={key} className="inline-flex">
+                {inner}
+              </span>
+            );
+          })}
         </div>
       </section>
 

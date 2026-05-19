@@ -1,62 +1,113 @@
 import Link from "next/link";
+import {
+  defaultWebsiteContent,
+  type WebsiteContent,
+} from "@/lib/websiteContentDefaults";
+import type { FooterLink } from "@/lib/websiteContentTypes";
 
-export function SiteFooter() {
+type SiteFooterProps = {
+  cmsData?: WebsiteContent | null;
+};
+
+function resolveFooterLinks(
+  links: FooterLink[] | undefined,
+  fallback: FooterLink[],
+): FooterLink[] {
+  const resolved = links?.filter((link) => link.label?.trim());
+  if (resolved && resolved.length > 0) {
+    return resolved.map((link) => ({
+      label: link.label.trim(),
+      href: link.href?.trim() || "#",
+    }));
+  }
+  return fallback;
+}
+
+function resolveFooterContent(cmsData?: WebsiteContent | null) {
+  const footer = cmsData?.footer;
+  const defaults = defaultWebsiteContent.footer;
+
+  return {
+    branding: {
+      logoText:
+        footer?.branding?.logoText?.trim() || defaults.branding.logoText,
+      description:
+        footer?.branding?.description?.trim() || defaults.branding.description,
+    },
+    companyLinks: resolveFooterLinks(
+      footer?.companyLinks,
+      defaults.companyLinks,
+    ),
+    quickLinks: resolveFooterLinks(footer?.quickLinks, defaults.quickLinks),
+    newsletter: {
+      title: footer?.newsletter?.title?.trim() || defaults.newsletter.title,
+      emailPlaceholder:
+        footer?.newsletter?.emailPlaceholder?.trim() ||
+        defaults.newsletter.emailPlaceholder,
+    },
+    copyright:
+      footer?.copyright?.trim() ||
+      `© ${new Date().getFullYear()} ${defaults.branding.logoText}. The digital curator of elite knowledge.`,
+  };
+}
+
+function FooterLinkColumn({
+  title,
+  links,
+  className,
+}: {
+  title: string;
+  links: FooterLink[];
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <h2 className="mb-6 text-xs font-bold uppercase tracking-widest text-primary">
+        {title}
+      </h2>
+      <ul className="space-y-4">
+        {links.map((link) => (
+          <li key={`${title}-${link.href}-${link.label}`}>
+            {link.href && link.href !== "#" ? (
+              <Link
+                href={link.href}
+                className="text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-primary hover:underline"
+              >
+                {link.label}
+              </Link>
+            ) : (
+              <span className="text-sm text-muted-foreground">{link.label}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export function SiteFooter({ cmsData }: SiteFooterProps) {
+  const content = resolveFooterContent(cmsData);
+
   return (
     <footer className="mt-auto border-t border-transparent bg-surface-container-low">
       <div className="mx-auto grid max-w-screen-2xl grid-cols-2 gap-12 px-6 py-16 md:grid-cols-6 md:px-12">
         <div className="col-span-2 flex flex-col items-center md:items-start">
           <span className="mb-4 block font-[family-name:var(--font-headline)] text-xl font-bold text-primary">
-            EduPlatform
+            {content.branding.logoText}
           </span>
           <p className="max-w-xs text-sm leading-7 text-muted-foreground">
-            Elevating digital education through premium curation and world-class expert networks.
+            {content.branding.description}
           </p>
         </div>
-        <div className="flex flex-col items-center md:items-start">
-          <h2 className="mb-6 text-xs font-bold uppercase tracking-widest text-primary">
-            Platform
-          </h2>
-          <ul className="space-y-4">
-            <li>
-              <Link
-                href="/about"
-                className="text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-primary hover:underline"
-              >
-                About us
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/courses"
-                className="text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-primary hover:underline"
-              >
-                Courses
-              </Link>
-            </li>
-            <li>
-              <span className="text-sm text-muted-foreground">Expert network</span>
-            </li>
-          </ul>
-        </div>
-        <div>
-          <h2 className="mb-6 text-xs font-bold uppercase tracking-widest text-primary">
-            Policy
-          </h2>
-          <ul className="space-y-4">
-            <li>
-              <span className="text-sm text-muted-foreground">Legal</span>
-            </li>
-            <li>
-              <span className="text-sm text-muted-foreground">Privacy policy</span>
-            </li>
-            <li>
-              <span className="text-sm text-muted-foreground">Contact</span>
-            </li>
-          </ul>
-        </div>
+        <FooterLinkColumn
+          title="Platform"
+          links={content.companyLinks}
+          className="flex flex-col items-center md:items-start"
+        />
+        <FooterLinkColumn title="Policy" links={content.quickLinks} />
         <div className="col-span-2 flex flex-col items-center md:items-start">
           <h2 className="mb-6 text-xs font-bold uppercase tracking-widest text-primary">
-            Newsletter
+            {content.newsletter.title}
           </h2>
           <p className="mb-4 text-sm text-muted-foreground">
             Stay updated with our curated knowledge.
@@ -70,7 +121,7 @@ export function SiteFooter() {
               type="email"
               name="email"
               autoComplete="email"
-              placeholder="Email"
+              placeholder={content.newsletter.emailPlaceholder}
               disabled
               className="w-full rounded-lg border border-border bg-surface-container-lowest px-4 py-2 text-sm text-muted-foreground"
             />
@@ -89,7 +140,7 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="border-t border-outline-variant/20 px-6 py-8 text-center text-xs text-muted-foreground md:px-12">
-        © {new Date().getFullYear()} EduPlatform. The digital curator of elite knowledge.
+        {content.copyright}
       </div>
     </footer>
   );

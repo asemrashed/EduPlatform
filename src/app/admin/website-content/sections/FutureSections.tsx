@@ -38,21 +38,36 @@ interface FutureSectionsProps {
   updateContent: (path: string[], value: unknown) => void;
   activeSubTab: FutureSubTab;
   onSubTabChange: (tab: FutureSubTab) => void;
+  subTabs?: FutureSubTab[];
+  hideSubNav?: boolean;
 }
 
-export function FutureSections({ content, updateContent, activeSubTab, onSubTabChange }: FutureSectionsProps) {
+const ALL_FUTURE_TABS: { id: FutureSubTab; label: string }[] = [
+  { id: 'whyChooseUs', label: 'Why Choose Us' },
+  { id: 'statistics', label: 'Statistics' },
+  { id: 'services', label: 'Services' },
+  { id: 'certificates', label: 'Certificates' },
+  { id: 'photoGallery', label: 'Photo Gallery' },
+  { id: 'blog', label: 'Blog' },
+  { id: 'downloadApp', label: 'Download App' },
+];
+
+export function FutureSections({
+  content,
+  updateContent,
+  activeSubTab,
+  onSubTabChange,
+  subTabs,
+  hideSubNav = false,
+}: FutureSectionsProps) {
+  const visibleTabs = ALL_FUTURE_TABS.filter((tab) => (subTabs ? subTabs.includes(tab.id) : true));
+  const showSubNav = !hideSubNav && visibleTabs.length > 1;
+
   return (
     <>
+      {showSubNav && (
       <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-3 mb-6">
-        {([
-          { id: 'whyChooseUs' as const, label: 'Why Choose Us' },
-          { id: 'statistics' as const, label: 'Statistics' },
-          { id: 'services' as const, label: 'Services' },
-          { id: 'certificates' as const, label: 'Certificates' },
-          { id: 'photoGallery' as const, label: 'Photo Gallery' },
-          { id: 'blog' as const, label: 'Blog' },
-          { id: 'downloadApp' as const, label: 'Download App' },
-        ]).map((tab) => (
+        {visibleTabs.map((tab) => (
           <button
             key={tab.id}
             type="button"
@@ -67,6 +82,7 @@ export function FutureSections({ content, updateContent, activeSubTab, onSubTabC
           </button>
         ))}
       </div>
+      )}
       {(() => {
         switch (activeSubTab) {
           case 'whyChooseUs':

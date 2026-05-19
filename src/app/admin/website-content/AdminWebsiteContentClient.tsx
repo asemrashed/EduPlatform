@@ -37,13 +37,18 @@ import {
   defaultServicesContent,
   defaultStatisticsContent,
   defaultWhyChooseUsContent,
+  defaultContactPageContent,
+  defaultPartnersContent,
+  defaultWebsiteContent,
 } from '@/lib/websiteContentDefaults';
 import type { WebsiteContent } from './sections/types';
-import { CMS_SIDEBAR_GROUPS, getCmsTabLabel, isFutureTab } from './cmsSidebarConfig';
-import { CmsContentSidebar } from './CmsContentSidebar';
+import { CMS_SIDEBAR_GROUPS, getCmsTabLabel, isMoreTab, MORE_TAB_IDS } from './cmsSidebarConfig';
+import { CmsSectionsLayout } from './CmsSectionsLayout';
+import { ContactPageSection } from './sections/ContactPageSection';
 import { HeroSection } from './sections/HeroSection';
 import { AboutSection } from './sections/AboutSection';
 import { FAQSection } from './sections/FAQSection';
+import { PartnersSection } from './sections/PartnersSection';
 import { BrandingSection } from './sections/BrandingSection';
 import { MarqueeSection } from './sections/MarqueeSection';
 import { ContactSocialSection } from './sections/ContactSocialSection';
@@ -389,20 +394,16 @@ function WebsiteContentPageContent() {
         quickLinks: content.footer?.quickLinks && content.footer.quickLinks.length > 0 
           ? content.footer.quickLinks 
           : [...defaultFooterContent.quickLinks],
-        socialMedia: content.footer?.socialMedia && content.footer.socialMedia.length > 0 
-          ? content.footer.socialMedia 
-          : [...defaultFooterContent.socialMedia],
-        paymentGateway: {
-          ...defaultFooterContent.paymentGateway,
-          ...(content.footer?.paymentGateway || {}),
-          methods: content.footer?.paymentGateway?.methods && content.footer.paymentGateway.methods.length > 0
-            ? content.footer.paymentGateway.methods
-            : [...defaultFooterContent.paymentGateway.methods],
-        },
       };
       setContent({
         ...content,
         footer: updatedFooter
+      });
+    }
+    if (activeTab === 'contactPage' && content && !content.contactPage?.headline) {
+      setContent({
+        ...content,
+        contactPage: { ...defaultContactPageContent, ...(content.contactPage || {}) },
       });
     }
   }, [activeTab]); // Only depend on activeTab to avoid infinite loops
@@ -462,6 +463,12 @@ function WebsiteContentPageContent() {
           registrationNumber: fetchedContent.contact?.registrationNumber || 'বাংলাদেশ সরকার অনুমোদিত রেজিঃ নং- ৩১১০৫'
         };
       }
+      if (!fetchedContent.contactPage || !fetchedContent.contactPage.headline) {
+        fetchedContent.contactPage = {
+          ...defaultContactPageContent,
+          ...(fetchedContent.contactPage || {}),
+        };
+      }
       // Ensure meta title and branding defaults exist
       if (!fetchedContent.metaTitle) {
         fetchedContent.metaTitle = 'CodeZyne - Online Learning Platform';
@@ -483,6 +490,30 @@ function WebsiteContentPageContent() {
       // Ensure course lesson banner has defaults
       if (!fetchedContent.courseLessonBanner || fetchedContent.courseLessonBanner.title === undefined) {
         fetchedContent.courseLessonBanner = { ...defaultCourseLessonBannerContent, ...(fetchedContent.courseLessonBanner || {}) };
+      }
+      if (!fetchedContent.mobileMenu?.items?.length) {
+        fetchedContent.mobileMenu = {
+          items: [...defaultWebsiteContent.mobileMenu.items],
+        };
+      }
+      if (!fetchedContent.partners?.items?.length) {
+        const legacyMethods = (
+          fetchedContent.footer as { paymentGateway?: { methods?: string[]; title?: string } }
+        )?.paymentGateway?.methods;
+        if (legacyMethods?.length) {
+          fetchedContent.partners = {
+            title:
+              (fetchedContent.footer as { paymentGateway?: { title?: string } })
+                ?.paymentGateway?.title || defaultPartnersContent.title,
+            items: legacyMethods.map((name: string) => ({
+              name,
+              imageUrl: "",
+              href: "",
+            })),
+          };
+        } else {
+          fetchedContent.partners = { ...defaultPartnersContent };
+        }
       }
       setContent(fetchedContent);
     } catch (error) {
@@ -517,7 +548,8 @@ function WebsiteContentPageContent() {
         sectionOrder: defaultSectionOrder,
         contact: {
           registrationNumber: 'বাংলাদেশ সরকার অনুমোদিত রেজিঃ নং- ৩১১০৫'
-        }
+        },
+        contactPage: defaultContactPageContent,
       } as WebsiteContent);
     } finally {
       setIsLoading(false);
@@ -921,6 +953,20 @@ function WebsiteContentPageContent() {
     if (activeTab === 'about') {
       return <AboutSection content={content} updateContent={updateContent} />;
     }
+    if (activeTab === 'contactPage') {
+      return <ContactPageSection content={content} updateContent={updateContent} />;
+    }
+    if (activeTab === 'whyChooseUs' || activeTab === 'statistics') {
+      return (
+        <FutureSections
+          content={content}
+          updateContent={updateContent}
+          activeSubTab={activeTab as FutureSubTab}
+          onSubTabChange={(tab) => setActiveTab(tab)}
+          hideSubNav
+        />
+      );
+    }
     if (activeTab === 'faq') {
       return <FAQSection content={content} updateContent={updateContent} />;
     }
@@ -1012,29 +1058,31 @@ function WebsiteContentPageContent() {
       );
     }
     if (activeTab === 'navigation' || activeTab === 'buttons' || activeTab === 'mobile') {
+      const navSubTab =
+        activeTab === 'buttons' ? 'buttons' : 'navigation';
       return (
         <NavigationSection
           content={content}
           updateContent={updateContent}
-          activeSubTab={activeTab as 'navigation' | 'buttons' | 'mobile'}
+          activeSubTab={navSubTab}
           onSubTabChange={(tab) => setActiveTab(tab)}
-          editingNavItem={editingNavItem}
-          setEditingNavItem={setEditingNavItem}
-          addNavItem={addNavItem}
-          removeNavItem={removeNavItem}
         />
       );
+    }
+    if (activeTab === 'partners') {
+      return <PartnersSection content={content} updateContent={updateContent} />;
     }
     if (activeTab === 'footer') {
       return <FooterSection content={content} updateContent={updateContent} />;
     }
-    if (isFutureTab(activeTab)) {
+    if (isMoreTab(activeTab)) {
       return (
         <FutureSections
           content={content}
           updateContent={updateContent}
           activeSubTab={activeTab as FutureSubTab}
           onSubTabChange={(tab) => setActiveTab(tab)}
+          subTabs={MORE_TAB_IDS}
         />
       );
     }
@@ -1160,22 +1208,19 @@ function WebsiteContentPageContent() {
             Update website header content, navigation menus, branding, and contact information.
           </div>
         </PageSection>
-        <div className="mb-2 flex flex-col gap-4 sm:mb-4 md:flex-row">
-          <CmsContentSidebar
-            groups={CMS_SIDEBAR_GROUPS}
-            activeTab={activeTab}
-            onSelectTab={setActiveTab}
-          />
-          <div className="min-w-0 flex-1">
-            <PageSection
-              title={tabLabel}
-              description={`Manage ${tabLabel.toLowerCase()} settings`}
-              className="mb-0"
-            >
-              <div className="space-y-6">{renderActivePanel()}</div>
-            </PageSection>
-          </div>
-        </div>
+        <CmsSectionsLayout
+          groups={CMS_SIDEBAR_GROUPS}
+          activeTab={activeTab}
+          onSelectTab={setActiveTab}
+        >
+          <PageSection
+            title={tabLabel}
+            description={`Manage ${tabLabel.toLowerCase()} settings`}
+            className="mb-0"
+          >
+            <div className="space-y-6">{renderActivePanel()}</div>
+          </PageSection>
+        </CmsSectionsLayout>
 
       </main>
     </AdminRoleShell>

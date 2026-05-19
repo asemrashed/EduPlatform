@@ -258,6 +258,17 @@ export interface FooterLink {
   href: string;
 }
 
+export interface PartnerItem {
+  name: string;
+  imageUrl: string;
+  href: string;
+}
+
+export interface PartnersContent {
+  title: string;
+  items: PartnerItem[];
+}
+
 export interface SocialMedia {
   name: string;
   icon: string;
@@ -287,10 +298,12 @@ export interface FooterContent {
     phone: { label: string; value: string };
     email: { label: string; value: string };
   };
-  paymentGateway: { title: string; methods: string[] };
   copyright: string;
-  socialMedia: SocialMedia[];
   backgroundGradient: { from: string; to: string };
+  /** @deprecated Use top-level `partners` — kept for legacy DB payloads */
+  paymentGateway?: { title: string; methods: string[] };
+  /** @deprecated Removed from footer UI */
+  socialMedia?: SocialMedia[];
 }
 
 export interface CoursesContent {
@@ -367,4 +380,14 @@ export interface CourseLessonBannerContent {
   enabled: boolean;
   title: string;
   imageUrl: string;
+}
+
+/** Public /contact page copy and contact details. */
+export interface ContactPageContent {
+  headline: string;
+  subheadline: string;
+  mapEmbedUrl: string;
+  phone: string;
+  email: string;
+  address: string;
 }

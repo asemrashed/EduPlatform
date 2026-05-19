@@ -2,21 +2,79 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/cn";
 import { useAppSelector } from "@/store/hooks";
+import {
+  defaultWebsiteContent,
+  type WebsiteContent,
+} from "@/lib/websiteContentDefaults";
 
 import { LuShoppingBag } from "react-icons/lu";
 
-const NAV = [
+const FALLBACK_NAV = [
   { href: "/", label: "Home" },
   { href: "/courses", label: "All Courses" },
   { href: "/about", label: "About us" },
   { href: "/contact", label: "Contact" },
 ] as const;
 
-export function SiteHeader() {
+type NavItem = { href: string; label: string };
+
+function resolveHeaderNav(cmsData?: WebsiteContent | null): NavItem[] {
+  const items = cmsData?.mobileMenu?.items?.filter(
+    (item) => item.label?.trim() && item.href?.trim(),
+  );
+  if (items && items.length > 0) {
+    return items.map((item) => ({
+      href: item.href.trim(),
+      label: item.label.trim(),
+    }));
+  }
+  return [...FALLBACK_NAV];
+}
+
+function resolveHeaderBranding(cmsData?: WebsiteContent | null) {
+  const branding = cmsData?.branding;
+  const defaults = defaultWebsiteContent.branding;
+  return {
+    logoText: branding?.logoText?.trim() || defaults.logoText,
+    logoUrl: branding?.logoUrl?.trim() || "",
+  };
+}
+
+function resolveHeaderCtas(cmsData?: WebsiteContent | null) {
+  const defaults = defaultWebsiteContent;
+  const login = cmsData?.buttons?.login;
+  const accountItems = cmsData?.navigation?.account?.items;
+  const registerItem = accountItems?.find(
+    (item) => item.href?.trim() === "/register",
+  );
+  const fallbackRegister = defaults.navigation.account.items.find(
+    (item) => item.href === "/register",
+  );
+
+  return {
+    signIn: {
+      text: login?.text?.trim() || defaults.buttons.login.text,
+      href: login?.href?.trim() || defaults.buttons.login.href,
+    },
+    register: {
+      text:
+        registerItem?.label?.trim() ||
+        fallbackRegister?.label ||
+        "Join for free",
+      href: registerItem?.href?.trim() || fallbackRegister?.href || "/register",
+    },
+  };
+}
+
+type SiteHeaderProps = {
+  cmsData?: WebsiteContent | null;
+};
+
+export function SiteHeader({ cmsData }: SiteHeaderProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
@@ -36,6 +94,10 @@ export function SiteHeader() {
 
   const avatarLabel =
     session?.user?.name?.trim().charAt(0).toUpperCase() || "U";
+
+  const nav = useMemo(() => resolveHeaderNav(cmsData), [cmsData]);
+  const branding = useMemo(() => resolveHeaderBranding(cmsData), [cmsData]);
+  const ctas = useMemo(() => resolveHeaderCtas(cmsData), [cmsData]);
 
   useEffect(() => {
     setOpen(false);
@@ -70,14 +132,27 @@ export function SiteHeader() {
         <div className="flex min-w-0 flex-1 items-center gap-8 lg:gap-12">
           <Link
             href="/"
-            className="shrink-0 text-xl font-black tracking-tighter text-primary sm:text-2xl"
+            className="shrink-0 flex items-center gap-2 text-xl font-black tracking-tighter text-primary sm:text-2xl"
           >
-            EduPlatform
+            {branding.logoUrl ? (
+              <img
+                src={branding.logoUrl}
+                alt={`${branding.logoText} logo`}
+                className="h-8 w-auto max-w-[10rem] object-contain sm:h-9"
+              />
+            ) : (
+              branding.logoText
+            )}
           </Link>
 
           <nav className="hidden md:flex md:items-center md:gap-8">
-            {NAV.map(({ href, label }) => (
-              <NavLink key={label} href={href} label={label} pathname={pathname} />
+            {nav.map(({ href, label }) => (
+              <NavLink
+                key={`${href}-${label}`}
+                href={href}
+                label={label}
+                pathname={pathname}
+              />
             ))}
           </nav>
         </div>
@@ -132,16 +207,16 @@ export function SiteHeader() {
           ) : (
             <>
               <Link
-                href="/login"
+                href={ctas.signIn.href}
                 className="rounded-full border border-primary hover:bg-primary transition-all duration-300 hover:text-primary-container px-4 py-2.5 text-sm font-semibold text-muted-foreground hover:text-primary inline-block"
               >
-                Sign in
+                {ctas.signIn.text}
               </Link>
               <Link
-                href="/register"
+                href={ctas.register.href}
                 className="hidden rounded-xl bg-gradient-to-br from-primary to-primary/50 hover:bg-primary transition-all duration-300 px-6 py-3 text-sm font-bold text-on-primary shadow-lg sm:inline-block"
               >
-                Join for free
+                {ctas.register.text}
               </Link>
             </>
           )}
@@ -160,9 +235,9 @@ export function SiteHeader() {
       {open && (
         <div className="border-t border-border/60 w-full bg-surface px-4 py-4 md:hidden">
           <nav className="flex max-w-[96%] mx-auto flex-col gap-1">
-            {NAV.map(({ href, label }) => (
+            {nav.map(({ href, label }) => (
               <MobileNavLink
-                key={label}
+                key={`${href}-${label}`}
                 href={href}
                 label={label}
                 pathname={pathname}

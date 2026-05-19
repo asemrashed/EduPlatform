@@ -11,6 +11,14 @@ export interface WebsiteContent {
   contact: {
     registrationNumber: string;
   };
+  contactPage?: {
+    headline: string;
+    subheadline: string;
+    mapEmbedUrl: string;
+    phone: string;
+    email: string;
+    address: string;
+  };
   socialMedia: {
     facebook: string;
     twitter: string;
@@ -66,6 +74,10 @@ export interface WebsiteContent {
   };
   mobileMenu: {
     items: Array<{ label: string; href: string }>;
+  };
+  partners?: {
+    title: string;
+    items: Array<{ name: string; imageUrl: string; href: string }>;
   };
   hero: {
     subtitle: string;
@@ -512,12 +524,12 @@ export interface WebsiteContent {
         value: string;
       };
     };
-    paymentGateway: {
+    paymentGateway?: {
       title: string;
       methods: string[];
     };
     copyright: string;
-    socialMedia: Array<{
+    socialMedia?: Array<{
       name: string;
       icon: string;
       color: string;

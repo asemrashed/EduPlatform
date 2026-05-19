@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { MdEmail, MdLocationOn, MdPhone } from "react-icons/md";
 import type { WebsiteContent } from "@/lib/websiteContentDefaults";
+import { defaultContactPageContent } from "@/lib/websiteContentDefaults";
 
 type ContactDisplayContent = {
   heading: string;
@@ -10,27 +11,42 @@ type ContactDisplayContent = {
   email: { label: string; value: string };
   phone: { label: string; value: string };
   address: { label: string; value: string };
+  mapEmbedUrl: string;
 };
 
 const staticContactFallback: ContactDisplayContent = {
-  heading: "Get in Touch",
-  subheading:
-    "Have questions about a listing or want to sell your vehicle? We're here to help.",
-  email: { label: "Email", value: "contact@carmarket.premium" },
-  phone: { label: "Phone", value: "+880 1717 1717 1717" },
+  heading: defaultContactPageContent.headline,
+  subheading: defaultContactPageContent.subheadline,
+  email: { label: "Email", value: defaultContactPageContent.email },
+  phone: { label: "Phone", value: defaultContactPageContent.phone },
   address: {
     label: "Headquarters",
-    value: "123, Road 1, Block A, Mirpur 10, Dhaka 1216",
+    value: defaultContactPageContent.address,
   },
+  mapEmbedUrl: defaultContactPageContent.mapEmbedUrl,
 };
 
 function resolveContactContent(cmsData: WebsiteContent | null): ContactDisplayContent {
-  const cmsContact = cmsData?.contact;
-  if (!cmsContact) {
-    return staticContactFallback;
+  const page = cmsData?.contactPage;
+  if (page?.headline) {
+    return {
+      heading: page.headline,
+      subheading: page.subheadline || staticContactFallback.subheading,
+      email: { label: "Email", value: page.email || staticContactFallback.email.value },
+      phone: { label: "Phone", value: page.phone || staticContactFallback.phone.value },
+      address: {
+        label: staticContactFallback.address.label,
+        value: page.address || staticContactFallback.address.value,
+      },
+      mapEmbedUrl: page.mapEmbedUrl || "",
+    };
   }
 
+  const cmsContact = cmsData?.contact;
   const footerContact = cmsData?.footer?.contact;
+  if (!cmsContact && !footerContact) {
+    return staticContactFallback;
+  }
 
   return {
     heading: staticContactFallback.heading,
@@ -40,10 +56,11 @@ function resolveContactContent(cmsData: WebsiteContent | null): ContactDisplayCo
     address: {
       label: footerContact?.address?.label ?? staticContactFallback.address.label,
       value:
-        cmsContact.registrationNumber ||
+        cmsContact?.registrationNumber ||
         footerContact?.address?.value ||
         staticContactFallback.address.value,
     },
+    mapEmbedUrl: staticContactFallback.mapEmbedUrl,
   };
 }
 
@@ -104,6 +121,17 @@ export default function ContactFormClient({ cmsData }: ContactFormClientProps) {
               </div>
             </div>
           </div>
+          {contact.mapEmbedUrl ? (
+            <div className="overflow-hidden rounded-2xl border border-outline-variant">
+              <iframe
+                title="Location map"
+                src={contact.mapEmbedUrl}
+                className="h-48 w-full border-0"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+          ) : null}
         </div>
 
         <div className="flex-1 bg-surface-container-low p-8 rounded-3xl border border-outline-variant">

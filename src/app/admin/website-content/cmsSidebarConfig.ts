@@ -12,7 +12,10 @@ import {
   LuNavigation as Navigation,
   LuSettings as Settings,
   LuFileText as FileText,
+  LuChartBar as BarChart,
+  LuLayers as Layers,
 } from 'react-icons/lu';
+import type { FutureSubTab } from './sections/FutureSections';
 
 export type CmsTabId = string;
 
@@ -34,10 +37,19 @@ export const CMS_SIDEBAR_GROUPS: CmsSidebarGroup[] = [
     label: 'Home Page',
     items: [
       { id: 'hero', label: 'Hero', icon: Sparkles },
-      { id: 'about', label: 'About', icon: Info },
+      { id: 'whyChooseUs', label: 'Why Choose Us', icon: Star },
+      { id: 'statistics', label: 'Statistics', icon: BarChart },
       { id: 'faq', label: 'FAQ', icon: MessageSquare },
+      { id: 'partners', label: 'Partners', icon: Briefcase },
       { id: 'promoBanner', label: 'Promo Banners', icon: ImageIcon },
       { id: 'sectionOrder', label: 'Section Order', icon: Settings },
+    ],
+  },
+  {
+    label: 'Pages',
+    items: [
+      { id: 'about', label: 'About Page', icon: Info },
+      { id: 'contactPage', label: 'Contact Page', icon: Phone },
     ],
   },
   {
@@ -56,30 +68,46 @@ export const CMS_SIDEBAR_GROUPS: CmsSidebarGroup[] = [
     ],
   },
   {
-    label: 'Navigation (Phase 13.4.11–12)',
+    label: 'Navigation',
     items: [
-      { id: 'navigation', label: 'Header & Nav', icon: Navigation, badge: 'Coming Soon', dimmed: true },
-      { id: 'footer', label: 'Footer', icon: LayoutIcon, badge: 'Coming Soon', dimmed: true },
+      { id: 'navigation', label: 'Header & Nav', icon: Navigation },
+      { id: 'footer', label: 'Footer', icon: LayoutIcon },
     ],
   },
   {
-    label: 'Future Sections',
-    items: [{ id: 'whyChooseUs', label: 'Future Sections', icon: FileText, badge: 'Unused', dimmed: true }],
+    label: 'More',
+    items: [{ id: 'services', label: 'More Sections', icon: Layers, badge: 'Unused', dimmed: true }],
   },
 ];
 
-const FUTURE_TAB_IDS = new Set([
-  'whyChooseUs',
-  'statistics',
+export const MORE_TAB_IDS: FutureSubTab[] = [
   'services',
   'certificates',
   'photoGallery',
   'blog',
   'downloadApp',
-]);
+];
+
+const HOME_FEATURE_TABS = new Set(['whyChooseUs', 'statistics']);
+
+export function isMoreTab(tabId: string): boolean {
+  return MORE_TAB_IDS.includes(tabId as FutureSubTab);
+}
 
 export function isFutureTab(tabId: string): boolean {
-  return FUTURE_TAB_IDS.has(tabId);
+  return isMoreTab(tabId) || HOME_FEATURE_TABS.has(tabId);
+}
+
+export function isCmsTabActive(activeTab: string, itemId: string): boolean {
+  if (activeTab === itemId) return true;
+  if (itemId === 'promoBanner' && activeTab === 'courseLessonBanner') return true;
+  if (itemId === 'contact' && activeTab === 'social') return true;
+  if (itemId === 'courses' && activeTab === 'coursesByCategory') return true;
+  if (itemId === 'navigation' && activeTab === 'buttons') return true;
+  if (itemId === 'services' && isMoreTab(activeTab)) return true;
+  if (itemId === 'whyChooseUs' && activeTab === 'whyChooseUs') return true;
+  if (itemId === 'statistics' && activeTab === 'statistics') return true;
+  return false;
 }
 
 export function getCmsTabLabel(tabId: string): string {
@@ -91,7 +119,10 @@ export function getCmsTabLabel(tabId: string): string {
   if (tabId === 'coursesByCategory') return 'Courses by Category';
   if (tabId === 'social') return 'Social Media';
   if (tabId === 'buttons') return 'Buttons';
-  if (tabId === 'mobile') return 'Mobile Menu';
-  if (isFutureTab(tabId)) return 'Future Sections';
+  if (tabId === 'partners') return 'Partners';
+  if (tabId === 'contactPage') return 'Contact Page';
+  if (tabId === 'whyChooseUs') return 'Why Choose Us';
+  if (tabId === 'statistics') return 'Statistics';
+  if (isMoreTab(tabId)) return 'More Sections';
   return tabId;
 }
