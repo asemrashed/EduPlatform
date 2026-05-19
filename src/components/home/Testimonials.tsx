@@ -7,28 +7,86 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { A11y } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
 import { FaQuoteLeft } from "react-icons/fa";
+import { cn } from "@/lib/cn";
 
 import "swiper/css";
 
-type TestimonialItem = {
+export type TestimonialItem = {
   quote: string;
   name: string;
   role: string;
-  avatar: string;
+  avatar?: string;
+  rating?: number;
 };
 
 type TestimonialsProps = {
   items?: TestimonialItem[];
 };
 
+function initialsFromName(name: string) {
+  return (
+    name
+      .trim()
+      .split(/\s+/)
+      .map((part) => part.charAt(0))
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "U"
+  );
+}
+
+function StarRating({ rating }: { rating: number }) {
+  const filled = Math.min(5, Math.max(0, Math.round(rating)));
+  return (
+    <div className="mb-4 flex gap-0.5" aria-label={`${rating} out of 5 stars`}>
+      {Array.from({ length: 5 }, (_, index) => (
+        <span
+          key={index}
+          className={cn(
+            "text-base leading-none",
+            index < filled ? "text-primary" : "text-on-primary/25",
+          )}
+          aria-hidden
+        >
+          ★
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function StudentAvatar({ name, avatar }: { name: string; avatar?: string }) {
+  if (avatar) {
+    return (
+      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full">
+        <Image
+          src={avatar}
+          alt={name}
+          fill
+          className="object-cover"
+          sizes="48px"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-on-primary"
+      aria-hidden
+    >
+      {initialsFromName(name)}
+    </div>
+  );
+}
+
 export default function Testimonials({ items }: TestimonialsProps) {
-  const testimonials = items ?? HOME_TESTIMONIALS;
+  const testimonials: TestimonialItem[] = items ?? [...HOME_TESTIMONIALS];
   const swiperRef = useRef<SwiperType | null>(null);
 
   return (
     <section className="bg-gradient-to-br from-primary-container to-secondary-container px-8 py-24 text-on-primary">
       <div className="mx-auto grid max-w-screen-2xl grid-cols-1 items-center gap-16 lg:grid-cols-12">
-        {/* ── Left panel ── */}
         <div className="lg:col-span-4 flex flex-col items-start justify-center">
           <span className="mb-4 block text-sm font-bold uppercase tracking-widest text-primary/70">
             Testimonials
@@ -60,37 +118,29 @@ export default function Testimonials({ items }: TestimonialsProps) {
           </div>
         </div>
 
-        {/* ── Carousel ── */}
         <div className="lg:col-span-8">
           <Swiper
             modules={[A11y]}
-            onSwiper={(swiper) => { swiperRef.current = swiper; }}
+            onSwiper={(swiper) => {
+              swiperRef.current = swiper;
+            }}
             spaceBetween={32}
-            loop={true}
+            loop={testimonials.length > 1}
             breakpoints={{
-              // mobile – 1 slide
               0: { slidesPerView: 1 },
-              // desktop – 2 slides
               1024: { slidesPerView: 2 },
             }}
           >
             {testimonials.map((t, i) => (
               <SwiperSlide key={`${t.name}-${i}`}>
                 <div className="rounded-3xl border border-on-primary/20 bg-primary/20 p-8 backdrop-blur h-full">
-                  <FaQuoteLeft className="mb-6 text-2xl text-primary" />
-                  <p className="mb-8 text-xl italic leading-relaxed">
-                    {t.quote}
-                  </p>
+                  <FaQuoteLeft className="mb-4 text-2xl text-primary" />
+                  {typeof t.rating === "number" && t.rating > 0 ? (
+                    <StarRating rating={t.rating} />
+                  ) : null}  
+                  <p className="mb-8 text-xl italic leading-relaxed">{t.quote}</p>
                   <div className="flex items-center gap-4">
-                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full">
-                      <Image
-                        src={t.avatar}
-                        alt={t.name}
-                        fill
-                        className="object-cover"
-                        sizes="48px"
-                      />
-                    </div>
+                    <StudentAvatar name={t.name} avatar={t.avatar} />
                     <div>
                       <h5 className="font-bold">{t.name}</h5>
                       <p className="text-sm text-on-primary/70">{t.role}</p>

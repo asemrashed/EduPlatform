@@ -6,6 +6,7 @@ import CourseReview from "@/models/CourseReview";
 import Enrollment from "@/models/Enrollment";
 import User from "@/models/User";
 import {
+  applyReviewListFilters,
   buildPagination,
   buildPublicCourseReviewsPayload,
   mapCourseReview,
@@ -14,6 +15,51 @@ import {
 import { isObjectId, toObjectId } from "@/app/api/_lib/phase12";
 
 const ACTIVE_ENROLLMENT = ["enrolled", "in_progress", "completed"] as const;
+
+async function listFeaturedReviews(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const { page, limit, skip, sort } = parseReviewListQuery(searchParams);
+  const safeLimit = Math.min(limit, 20);
+
+  await connectDB();
+
+  const filter: Record<string, unknown> = {
+    isDisplayed: true,
+    isApproved: true,
+    isPublic: true,
+    comment: { $exists: true, $nin: [null, ""] },
+  };
+  applyReviewListFilters(filter, searchParams);
+  if (!filter.rating) {
+    filter.rating = { $gte: 4 };
+  }
+
+  const sortBy = (searchParams.get("sortBy") || "displayOrder").trim();
+  const featuredSort: Record<string, 1 | -1> =
+    sortBy === "displayOrder"
+      ? { displayOrder: 1, createdAt: -1 }
+      : sort;
+
+  const [rows, total] = await Promise.all([
+    CourseReview.find(filter)
+      .populate("student", "firstName lastName avatar")
+      .populate("course", "title")
+      .sort(featuredSort)
+      .skip(skip)
+      .limit(safeLimit)
+      .lean(),
+    CourseReview.countDocuments(filter),
+  ]);
+
+  const reviews = rows.map((r) => mapCourseReview(r as Record<string, unknown>));
+  return NextResponse.json({
+    success: true,
+    data: {
+      reviews,
+      pagination: buildPagination(page, safeLimit, total),
+    },
+  });
+}
 
 async function listPublicCourseReviews(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -52,11 +98,7 @@ async function listStudentOwnReviews(request: NextRequest, studentId: string) {
     ];
   }
 
-  const rating = searchParams.get("rating");
-  if (rating && rating !== "all") {
-    const n = Number(rating);
-    if (Number.isFinite(n)) filter.rating = n;
-  }
+  applyReviewListFilters(filter, searchParams);
 
   const [rows, total] = await Promise.all([
     CourseReview.find(filter)
@@ -111,11 +153,7 @@ async function listAllReviewsAdmin(request: NextRequest) {
     ];
   }
 
-  const rating = searchParams.get("rating");
-  if (rating && rating !== "all") {
-    const n = Number(rating);
-    if (Number.isFinite(n)) filter.rating = n;
-  }
+  applyReviewListFilters(filter, searchParams);
 
   const isApproved = searchParams.get("isApproved");
   if (isApproved === "true" || isApproved === "false") {
@@ -159,6 +197,10 @@ async function listAllReviewsAdmin(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+
+    if (searchParams.get("featured") === "true") {
+      return listFeaturedReviews(request);
+    }
 
     const publicRead =
       (searchParams.get("public") === "true" ||

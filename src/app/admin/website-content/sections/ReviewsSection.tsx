@@ -202,18 +202,9 @@ export function ReviewsSection(props: ReviewsSectionProps) {
                     <Star className="w-5 h-5" />
                     Reviews Management
                   </CardTitle>
-                <CardDescription>Select which reviews to display on course details pages</CardDescription>
-              </CardHeader>
+                  <CardDescription>Select which reviews to display on course details pages</CardDescription>
+                </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex justify-end">
-                  <Button
-                    onClick={() => setShowAddReviewModal(true)}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Review
-                  </Button>
-                </div>
 
                 {/* Search Bar */}
                 <div className="relative">

@@ -38,6 +38,8 @@ import CourseCard from "../CourseCard";
 import ExpertsCarousel from "../carousals/ExpertsCarousel";
 import Testimonials from "./Testimonials";
 import FAQ from "./FAQ";
+import type { CourseReview } from "@/types/course-review";
+import { mapFeaturedReviewsToTestimonials } from "@/lib/mapFeaturedReviewsToTestimonials";
 
 const FEATURE_ICON_BY_TYPE: Record<
   WhyChooseUsFeature["iconType"],
@@ -67,9 +69,13 @@ function parseExpertAlt(alt: string) {
 
 type HomePageClientProps = {
   cmsData: WebsiteContent | null;
+  featuredReviews?: CourseReview[];
 };
 
-export function HomePageClient({ cmsData }: HomePageClientProps) {
+export function HomePageClient({
+  cmsData,
+  featuredReviews = [],
+}: HomePageClientProps) {
   const dispatch = useAppDispatch();
   const { publicList } = useAppSelector((s) => s.courses);
 
@@ -151,17 +157,12 @@ export function HomePageClient({ cmsData }: HomePageClientProps) {
   }, [cmsData?.photoGallery?.images]);
 
   const testimonials = useMemo(() => {
-    const posts = cmsData?.blog?.posts;
-    if (posts?.length) {
-      return posts.map((post) => ({
-        quote: post.title,
-        name: post.author,
-        role: post.description,
-        avatar: post.image,
-      }));
+    const fromReviews = mapFeaturedReviewsToTestimonials(featuredReviews);
+    if (fromReviews.length > 0) {
+      return fromReviews;
     }
     return [...HOME_TESTIMONIALS];
-  }, [cmsData?.blog?.posts]);
+  }, [featuredReviews]);
 
   const partnersTitle =
     cmsData?.partners?.title?.trim() || "Our Trusted Partners & Integrations";

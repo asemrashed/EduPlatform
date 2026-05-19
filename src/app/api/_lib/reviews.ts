@@ -129,18 +129,46 @@ export async function aggregateRatingStats(courseId: mongoose.Types.ObjectId): P
   };
 }
 
+const REVIEW_SORT_FIELDS = new Set([
+  "createdAt",
+  "rating",
+  "helpfulVotes",
+  "displayOrder",
+]);
+
 export function parseReviewListQuery(searchParams: URLSearchParams) {
   const page = parsePage(searchParams);
   const limit = parseLimit(searchParams, 10, 200);
   const skip = (page - 1) * limit;
-  const sortBy = (searchParams.get("sortBy") || "createdAt").trim();
+  const sortByRaw = (searchParams.get("sortBy") || "createdAt").trim();
+  const sortBy = REVIEW_SORT_FIELDS.has(sortByRaw) ? sortByRaw : "createdAt";
   const sortOrder = searchParams.get("sortOrder") === "asc" ? 1 : -1;
-  const sort: Record<string, 1 | -1> = {
-    [sortBy === "rating" || sortBy === "helpfulVotes" || sortBy === "createdAt"
-      ? sortBy
-      : "createdAt"]: sortOrder,
-  };
+  const sort: Record<string, 1 | -1> = { [sortBy]: sortOrder };
   return { page, limit, skip, sort };
+}
+
+export function applyReviewListFilters(
+  filter: Record<string, unknown>,
+  searchParams: URLSearchParams,
+) {
+  const isDisplayed = searchParams.get("isDisplayed");
+  if (isDisplayed === "true" || isDisplayed === "false") {
+    filter.isDisplayed = isDisplayed === "true";
+  }
+
+  const ratingMin = searchParams.get("ratingMin");
+  if (ratingMin) {
+    const n = Number(ratingMin);
+    if (Number.isFinite(n)) {
+      filter.rating = { $gte: n };
+    }
+  } else {
+    const rating = searchParams.get("rating");
+    if (rating && rating !== "all") {
+      const n = Number(rating);
+      if (Number.isFinite(n)) filter.rating = n;
+    }
+  }
 }
 
 export function buildPagination(page: number, limit: number, total: number) {
