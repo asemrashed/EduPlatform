@@ -10,7 +10,7 @@ import PageSection from '@/components/PageSection';
 import PageGrid from '@/components/PageGrid';
 import WelcomeSection from '@/components/WelcomeSection';
 import ConfirmModal from '@/components/ui/confirm-modal';
-import { Student, StudentFilters as StudentFiltersType } from '@/types/student';
+import { Student, StudentStatsSummary } from '@/types/student';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LuPlus as Plus, LuSearch as Search, LuX as X, LuUsers as Users } from 'react-icons/lu';;
@@ -37,6 +37,7 @@ function InstructorStudentsPageContent() {
     total: 0,
     pages: 0
   });
+  const [statsSummary, setStatsSummary] = useState<StudentStatsSummary | null>(null);
 
   const fetchStudents = async () => {
     try {
@@ -58,6 +59,7 @@ function InstructorStudentsPageContent() {
           total: 0,
           pages: 0
         });
+        setStatsSummary(data.stats ?? null);
       } else {
         console.error('Failed to fetch students:', data.error);
       }
@@ -163,7 +165,7 @@ function InstructorStudentsPageContent() {
           title="Student Statistics"
           className="mb-2 sm:mb-4"
         >
-          <StudentStats students={students} loading={loading} />
+          <StudentStats students={students} loading={loading} summary={statsSummary} />
         </PageSection>
 
         {/* Students Table */}

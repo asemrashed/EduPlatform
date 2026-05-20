@@ -80,6 +80,34 @@ export async function getInstructorDashboard(): Promise<InstructorDashboardApiPa
             }))
           : [],
       },
+      courses: Array.isArray(raw.courses)
+        ? raw.courses.map((item) => ({
+            _id: item._id ?? "",
+            title: item.title ?? "",
+            description: item.description ?? "",
+            thumbnailUrl: item.thumbnailUrl,
+            category: {
+              _id: item.category?._id ?? "general",
+              name: item.category?.name ?? "General",
+            },
+            studentCount: item.studentCount ?? 0,
+            averageRating: item.averageRating ?? 0,
+            totalLessons: item.totalLessons ?? 0,
+            createdAt: item.createdAt ?? "",
+            status: item.status ?? "draft",
+          }))
+        : [],
+      students: Array.isArray(raw.students)
+        ? raw.students.map((item) => ({
+            _id: item._id ?? "",
+            firstName: item.firstName ?? "",
+            lastName: item.lastName ?? "",
+            email: item.email ?? "",
+            avatar: item.avatar,
+            enrolledCourses: item.enrolledCourses ?? 0,
+            lastActive: item.lastActive ?? "",
+          }))
+        : [],
     };
   } catch (error) {
     if (isMockFallbackEnabled()) {

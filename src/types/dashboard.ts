@@ -25,6 +25,27 @@ export interface InstructorDashboardApiPayload {
   trends: {
     enrollments: Array<{ _id: string; count: number }>;
   };
+  courses: Array<{
+    _id: string;
+    title: string;
+    description: string;
+    thumbnailUrl?: string;
+    category: { _id: string; name: string };
+    studentCount: number;
+    averageRating: number;
+    totalLessons: number;
+    createdAt: string;
+    status: "draft" | "published" | "archived";
+  }>;
+  students: Array<{
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    avatar?: string;
+    enrolledCourses: number;
+    lastActive: string;
+  }>;
 }
 
 /** `GET /api/admin/dashboard` — `learning-project/src/app/api/admin/dashboard/route.ts` */

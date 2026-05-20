@@ -6,6 +6,7 @@ import Course from "@/models/Course";
 import CourseProgress from "@/models/CourseProgress";
 import Enrollment from "@/models/Enrollment";
 import Payment from "@/models/Payment";
+import User from "@/models/User";
 
 type RecentEnrollmentItem = {
   id: string;
@@ -38,11 +39,10 @@ export async function GET() {
 
     await connectDB();
 
-    const totalCourses = await Course.countDocuments({ instructor: userId });
     const instructorCourses = await Course.find({ instructor: userId })
-      .select("_id")
       .sort({ createdAt: -1 })
       .lean();
+    const totalCourses = instructorCourses.length;
     const courseIds = instructorCourses.map((c: { _id: unknown }) => c._id);
 
     const [totalEnrollments, enrollmentStudentDocs, recentEnrollmentDocs] = await Promise.all([
@@ -142,6 +142,95 @@ export async function GET() {
           ? 100
           : 0;
 
+    const enrollmentCounts = await Enrollment.aggregate<{
+      _id: unknown;
+      count: number;
+    }>([
+      { $match: { course: { $in: courseIds } } },
+      { $group: { _id: "$course", count: { $sum: 1 } } },
+    ]);
+    const countByCourse = new Map(
+      enrollmentCounts.map((row) => [String(row._id), Number(row.count || 0)]),
+    );
+
+    const courses = instructorCourses.map((course: Record<string, unknown>) => {
+      const categoryRaw = course.category;
+      const categoryName =
+        typeof categoryRaw === "string" && categoryRaw.trim()
+          ? categoryRaw.trim()
+          : "General";
+      return {
+        _id: String(course._id ?? ""),
+        title: String(course.title ?? ""),
+        description: String(course.description ?? course.shortDescription ?? ""),
+        thumbnailUrl: course.thumbnailUrl
+          ? String(course.thumbnailUrl)
+          : undefined,
+        category: {
+          _id: categoryName,
+          name: categoryName,
+        },
+        studentCount: countByCourse.get(String(course._id)) ?? 0,
+        averageRating: 0,
+        totalLessons: Number(course.lessonCount ?? 0),
+        createdAt: new Date(
+          (course.createdAt as Date | string | undefined) ?? new Date(),
+        ).toISOString(),
+        status: String(course.status ?? "draft") as
+          | "draft"
+          | "published"
+          | "archived",
+      };
+    });
+
+    const studentRollups = await Enrollment.aggregate<{
+      _id: unknown;
+      enrolledCourses: number;
+      lastActive: Date;
+      lastEnrolled: Date;
+    }>([
+      { $match: { course: { $in: courseIds } } },
+      {
+        $group: {
+          _id: "$student",
+          enrolledCourses: { $sum: 1 },
+          lastActive: {
+            $max: { $ifNull: ["$lastAccessedAt", "$enrolledAt"] },
+          },
+          lastEnrolled: { $max: "$enrolledAt" },
+        },
+      },
+      { $sort: { lastEnrolled: -1 } },
+      { $limit: 12 },
+    ]);
+
+    const studentUserIds = studentRollups.map((r) => r._id);
+    const studentUsers = await User.find({ _id: { $in: studentUserIds } })
+      .select("firstName lastName email avatar name")
+      .lean();
+    const userById = new Map(
+      studentUsers.map((u) => [String(u._id), u as Record<string, unknown>]),
+    );
+
+    const students = studentRollups.map((rollup) => {
+      const user = userById.get(String(rollup._id));
+      const firstName = String(user?.firstName ?? "");
+      const lastName = String(user?.lastName ?? "");
+      const name = String(user?.name ?? "").trim();
+      const [nameFirst = "", ...nameRest] = name.split(/\s+/);
+      return {
+        _id: String(rollup._id),
+        firstName: firstName || nameFirst || "Student",
+        lastName: lastName || nameRest.join(" "),
+        email: String(user?.email ?? ""),
+        avatar: user?.avatar ? String(user.avatar) : undefined,
+        enrolledCourses: Number(rollup.enrolledCourses ?? 0),
+        lastActive: new Date(
+          (rollup.lastActive as Date | undefined) ?? new Date(),
+        ).toISOString(),
+      };
+    });
+
     return NextResponse.json({
       success: true,
       data: {
@@ -161,6 +250,8 @@ export async function GET() {
             count: Number(row.count || 0),
           })),
         },
+        courses,
+        students,
       },
     });
   } catch (error) {

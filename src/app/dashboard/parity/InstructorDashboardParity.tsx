@@ -106,52 +106,41 @@ export function InstructorDashboardParity({
     if (!apiData) return;
     const data = apiData;
 
-    const titleToCount = new Map<string, number>();
-    data.recentEnrollments.forEach((e) => {
-      titleToCount.set(
-        e.courseTitle,
-        (titleToCount.get(e.courseTitle) ?? 0) + 1,
-      );
-    });
+    const coursesFromApi: Course[] = (data.courses ?? []).map((course) => ({
+      _id: course._id,
+      title: course.title,
+      description: course.description,
+      thumbnailUrl: course.thumbnailUrl,
+      category: course.category,
+      studentCount: course.studentCount,
+      averageRating: course.averageRating,
+      totalLessons: course.totalLessons,
+      createdAt: course.createdAt,
+      status: course.status,
+    }));
 
-    const coursesFromMock: Course[] = [...titleToCount.keys()].map(
-      (title, i) => {
-        const first = data.recentEnrollments.find(
-          (en) => en.courseTitle === title,
-        );
-        return {
-          _id: `mock-course-${i}`,
-          title,
-          description: `${title} — activity from recent enrollments.`,
-          category: { _id: "cat-mock", name: "Teaching" },
-          studentCount: titleToCount.get(title) ?? 0,
-          averageRating: 4.5,
-          totalLessons: 24,
-          createdAt: first?.enrolledAt ?? new Date().toISOString(),
-          status: "published" as const,
-        };
-      },
-    );
+    const studentsFromApi: Student[] = (data.students ?? []).map((student) => ({
+      _id: student._id,
+      firstName: student.firstName,
+      lastName: student.lastName,
+      email: student.email,
+      avatar: student.avatar,
+      enrolledCourses: student.enrolledCourses,
+      lastActive: student.lastActive,
+    }));
 
-    const studentsFromMock: Student[] = data.recentEnrollments.map((e) => {
-      const parts = e.studentName.trim().split(/\s+/);
-      const firstName = parts[0] ?? "Student";
-      const lastName = parts.length > 1 ? parts.slice(1).join(" ") : "";
-      return {
-        _id: e.id,
-        firstName,
-        lastName,
-        email: e.studentEmail,
-        enrolledCourses: 1,
-        lastActive: e.enrolledAt,
-      };
-    });
+    const ratedCourses = coursesFromApi.filter((c) => c.averageRating > 0);
+    const averageRating =
+      ratedCourses.length > 0
+        ? ratedCourses.reduce((sum, c) => sum + c.averageRating, 0) /
+          ratedCourses.length
+        : 0;
 
     setStats({
       totalCourses: data.overview.totalCourses,
       totalStudents: data.overview.totalStudents,
       totalAssignments: 0,
-      averageRating: 4.5,
+      averageRating,
       totalHours: 0,
       unreadMessages: 0,
       recentActivity: data.recentEnrollments.map((e) => ({
@@ -162,8 +151,8 @@ export function InstructorDashboardParity({
         status: "completed",
       })),
     });
-    setCourses(coursesFromMock);
-    setStudents(studentsFromMock);
+    setCourses(coursesFromApi);
+    setStudents(studentsFromApi);
   }, [apiData]);
 
   const getStatusColor = (status: string) => {

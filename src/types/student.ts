@@ -50,6 +50,15 @@ export interface StudentUpdateData {
   };
 }
 
+export interface StudentStatsSummary {
+  totalStudents: number;
+  activeStudents: number;
+  inactiveStudents: number;
+  totalEnrolledAmount: number;
+  totalEnrollments: number;
+  enrolledThisMonth: number;
+}
+
 export interface StudentsResponse {
   students: Student[];
   pagination: {
@@ -58,6 +67,7 @@ export interface StudentsResponse {
     total: number;
     pages: number;
   };
+  stats?: StudentStatsSummary;
 }
 
 export interface StudentFilters {

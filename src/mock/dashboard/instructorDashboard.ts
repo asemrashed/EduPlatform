@@ -39,5 +39,36 @@ export function getMockInstructorDashboard(): InstructorDashboardApiPayload {
         { _id: "2026-04-11", count: 3 },
       ],
     },
+    courses: [
+      {
+        _id: "65f1b1b1b1b1b1b1b1b1b1b1",
+        title: "HSC Physics — Full syllabus (Bangladesh)",
+        description: "Complete HSC physics preparation.",
+        category: { _id: "science", name: "Science" },
+        studentCount: 42,
+        averageRating: 4.6,
+        totalLessons: 48,
+        createdAt: new Date("2025-11-01T00:00:00.000Z").toISOString(),
+        status: "published",
+      },
+    ],
+    students: [
+      {
+        _id: "65f1c1c1c1c1c1c1c1c1c1c1",
+        firstName: "Nadia",
+        lastName: "Rahman",
+        email: "nadia@example.com",
+        enrolledCourses: 2,
+        lastActive: new Date("2026-04-11T08:00:00.000Z").toISOString(),
+      },
+      {
+        _id: "65f1c1c1c1c1c1c1c1c1c1c2",
+        firstName: "Imran",
+        lastName: "Hossain",
+        email: "imran@example.com",
+        enrolledCourses: 1,
+        lastActive: new Date("2026-04-10T19:15:00.000Z").toISOString(),
+      },
+    ],
   };
 }

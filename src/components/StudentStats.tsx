@@ -1,15 +1,17 @@
 'use client';
 
-import { Student } from '@/types/student';
+import { Student, StudentStatsSummary } from '@/types/student';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LuUsers as Users, LuUserCheck as UserCheck, LuUserX as UserX, LuCalendar as Calendar, LuMail as Mail } from 'react-icons/lu';;
 
 interface StudentStatsProps {
   students: Student[];
   loading: boolean;
+  /** When set, uses server aggregates instead of the current page slice. */
+  summary?: StudentStatsSummary | null;
 }
 
-export default function StudentStats({ students, loading }: StudentStatsProps) {
+export default function StudentStats({ students, loading, summary }: StudentStatsProps) {
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
@@ -29,31 +31,38 @@ export default function StudentStats({ students, loading }: StudentStatsProps) {
     );
   }
 
-  const totalStudents = students.length;
-  const activeStudents = students.filter(student => student.isActive).length;
-  const inactiveStudents = totalStudents - activeStudents;
-  
+  const totalStudents = summary?.totalStudents ?? students.length;
+  const activeStudents =
+    summary?.activeStudents ??
+    students.filter((student) => student.isActive).length;
+  const inactiveStudents =
+    summary?.inactiveStudents ?? totalStudents - activeStudents;
 
-  // Calculate students with parent phone numbers
-  const studentsWithParentPhone = students.filter(student => student.parentPhone).length;
+  const enrolledThisMonth =
+    summary?.enrolledThisMonth ??
+    (() => {
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      return students.filter((student) => {
+        const enrollmentDate = new Date(
+          student.enrollmentDate || student.createdAt,
+        );
+        return (
+          enrollmentDate.getMonth() === currentMonth &&
+          enrollmentDate.getFullYear() === currentYear
+        );
+      }).length;
+    })();
 
-  // Calculate students with addresses
-  const studentsWithAddress = students.filter(student =>
-    student.address &&
-    student.address.fullAddress
-  ).length;
-
-  // Calculate enrollment this month
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
-  const enrolledThisMonth = students.filter(student => {
-    const enrollmentDate = new Date(student.enrollmentDate || student.createdAt);
-    return enrollmentDate.getMonth() === currentMonth && enrollmentDate.getFullYear() === currentYear;
-  }).length;
-
-  // Calculate total enrolled amount across all students
-  const totalEnrolledAmount = students.reduce((sum, student) => sum + (student.totalEnrolledAmount || 0), 0);
-  const totalEnrollments = students.reduce((sum, student) => sum + (student.enrollmentCount || 0), 0);
+  const totalEnrolledAmount =
+    summary?.totalEnrolledAmount ??
+    students.reduce(
+      (sum, student) => sum + (student.totalEnrolledAmount || 0),
+      0,
+    );
+  const totalEnrollments =
+    summary?.totalEnrollments ??
+    students.reduce((sum, student) => sum + (student.enrollmentCount || 0), 0);
 
   const stats = [
     {
