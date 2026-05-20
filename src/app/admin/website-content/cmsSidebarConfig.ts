@@ -34,10 +34,24 @@ export interface CmsSidebarGroup {
 
 export const CMS_SIDEBAR_GROUPS: CmsSidebarGroup[] = [
   {
+    label: 'Global Settings',
+    items: [
+      { id: 'branding', label: 'Branding', icon: Palette },
+      { id: 'marquee', label: 'Marquee', icon: MessageSquare },
+    ],
+  },
+  {
+    label: 'Navigation',
+    items: [
+      { id: 'navigation', label: 'Header & Nav', icon: Navigation },
+      { id: 'footer', label: 'Footer', icon: LayoutIcon },
+    ],
+  },
+  {
     label: 'Home Page',
     items: [
       { id: 'hero', label: 'Hero', icon: Sparkles },
-      { id: 'whyChooseUs', label: 'Why Choose Us', icon: Star },
+      { id: 'features', label: 'Features', icon: Star },
       { id: 'statistics', label: 'Statistics', icon: BarChart },
       { id: 'faq', label: 'FAQ', icon: MessageSquare },
       { id: 'partners', label: 'Partners', icon: Briefcase },
@@ -54,23 +68,8 @@ export const CMS_SIDEBAR_GROUPS: CmsSidebarGroup[] = [
     ],
   },
   {
-    label: 'Global Settings',
-    items: [
-      { id: 'branding', label: 'Branding', icon: Palette },
-      { id: 'contact', label: 'Contact & Social', icon: Phone },
-      { id: 'marquee', label: 'Marquee', icon: MessageSquare },
-    ],
-  },
-  {
     label: 'Student Portal',
     items: [{ id: 'courses', label: 'Featured Courses', icon: Briefcase }],
-  },
-  {
-    label: 'Navigation',
-    items: [
-      { id: 'navigation', label: 'Header & Nav', icon: Navigation },
-      { id: 'footer', label: 'Footer', icon: LayoutIcon },
-    ],
   },
   {
     label: 'More',
@@ -86,7 +85,7 @@ export const MORE_TAB_IDS: FutureSubTab[] = [
   'downloadApp',
 ];
 
-const HOME_FEATURE_TABS = new Set(['whyChooseUs', 'statistics']);
+const HOME_FEATURE_TABS = new Set(['features', 'statistics']);
 
 export function isMoreTab(tabId: string): boolean {
   return MORE_TAB_IDS.includes(tabId as FutureSubTab);
@@ -99,11 +98,10 @@ export function isFutureTab(tabId: string): boolean {
 export function isCmsTabActive(activeTab: string, itemId: string): boolean {
   if (activeTab === itemId) return true;
   if (itemId === 'promoBanner' && activeTab === 'courseLessonBanner') return true;
-  if (itemId === 'contact' && activeTab === 'social') return true;
   if (itemId === 'courses' && activeTab === 'coursesByCategory') return true;
   if (itemId === 'navigation' && activeTab === 'buttons') return true;
   if (itemId === 'services' && isMoreTab(activeTab)) return true;
-  if (itemId === 'whyChooseUs' && activeTab === 'whyChooseUs') return true;
+  if (itemId === 'features' && activeTab === 'features') return true;
   if (itemId === 'statistics' && activeTab === 'statistics') return true;
   return false;
 }
@@ -119,7 +117,7 @@ export function getCmsTabLabel(tabId: string): string {
   if (tabId === 'buttons') return 'Buttons';
   if (tabId === 'partners') return 'Partners';
   if (tabId === 'contactPage') return 'Contact Page';
-  if (tabId === 'whyChooseUs') return 'Why Choose Us';
+  if (tabId === 'features') return 'Features';
   if (tabId === 'statistics') return 'Statistics';
   if (isMoreTab(tabId)) return 'More Sections';
   return tabId;

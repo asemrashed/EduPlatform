@@ -1,5 +1,6 @@
 import type {
   AboutContent,
+  AboutPageContent,
   BlogContent,
   CertificatesContent,
   ContactPageContent,
@@ -54,7 +55,7 @@ const DEFAULT_SECTION_ORDER: SectionConfig[] = [
   { id: "hero", label: "Hero", enabled: true, order: 1 },
   { id: "about", label: "About", enabled: true, order: 2 },
   { id: "courses", label: "Courses", enabled: true, order: 3 },
-  { id: "whyChooseUs", label: "Why Choose Us", enabled: true, order: 4 },
+  { id: "whyChooseUs", label: "Features", enabled: true, order: 4 },
   { id: "statistics", label: "Statistics", enabled: true, order: 5 },
   { id: "services", label: "Services", enabled: true, order: 6 },
   { id: "certificates", label: "Certificates", enabled: true, order: 7 },
@@ -97,6 +98,7 @@ export interface WebsiteContent {
     registrationNumber: string;
   };
   contactPage: ContactPageContent;
+  aboutPage: AboutPageContent;
   socialMedia: {
     facebook: string;
     twitter: string;
@@ -216,6 +218,14 @@ export const defaultWebsiteContent: WebsiteContent = {
     phone: "+880 1717 1717 1717",
     email: "contact@carmarket.premium",
     address: "123, Road 1, Block A, Mirpur 10, Dhaka 1216",
+  },
+  aboutPage: {
+    heading: "The digital elite knowledge platform",
+    description:
+      "We are a team of dedicated educators and professionals who are passionate about helping students achieve their academic goals.",
+    aboutContent:
+      "Welcome to EduPlatform, a premier education hub dedicated to transforming academic dreams into reality. We bridge the gap between aspiring students and top-tier global universities through expert guidance, personalized counseling, and comprehensive test preparation. Our team specializes in holistic support, covering everything from university selection and visa processing to pre-departure briefing. By combining years of experience with a network of world-class institutions, we empower students to unlock their potential and achieve academic excellence.",
+    imageUrl: ABOUT_HERO_IMAGE,
   },
   socialMedia: {
     facebook: "#",
@@ -400,6 +410,9 @@ export const defaultWebsiteContent: WebsiteContent = {
     },
   },
   whyChooseUs: {
+    sectionHeading: "Why Choose EduPlatform",
+    sectionSubtitle:
+      "Everything you need to succeed in your learning journey.",
     label: {
       text: "Features",
       backgroundColor: PRIMARY_COLOR,
@@ -839,3 +852,4 @@ export const defaultFAQContent = defaultWebsiteContent.faq;
 export const defaultPromoBannerContent = defaultWebsiteContent.promotionalBanner;
 export const defaultCourseLessonBannerContent = defaultWebsiteContent.courseLessonBanner;
 export const defaultContactPageContent = defaultWebsiteContent.contactPage;
+export const defaultAboutPageContent = defaultWebsiteContent.aboutPage;

@@ -81,6 +81,10 @@ export interface WhyChooseUsFeature {
 }
 
 export interface WhyChooseUsContent {
+  /** Home / About features section main heading */
+  sectionHeading?: string;
+  /** Home / About features section subtitle */
+  sectionSubtitle?: string;
   label: { text: string; backgroundColor: string };
   title: {
     part1: string;
@@ -379,6 +383,14 @@ export interface PromoBannerContent {
 export interface CourseLessonBannerContent {
   enabled: boolean;
   title: string;
+  imageUrl: string;
+}
+
+/** Public /about page copy and media. */
+export interface AboutPageContent {
+  heading: string;
+  description: string;
+  aboutContent: string;
   imageUrl: string;
 }
 

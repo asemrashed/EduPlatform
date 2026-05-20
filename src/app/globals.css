@@ -1,6 +1,14 @@
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
 
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /*
  * Design tokens — Frontend-design/HomePage.html (EduPlatform Master Plan §1).
  * Use Tailwind semantic classes (bg-background, text-primary, …), not raw hex in components.

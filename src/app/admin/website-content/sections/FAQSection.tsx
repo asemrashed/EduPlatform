@@ -75,22 +75,22 @@ export function FAQSection({ content, updateContent }: FAQSectionProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MessageSquare className="w-5 h-5" />
-                FAQ সেকশন সেটিংস
+                FAQ Section Settings
               </CardTitle>
-              <CardDescription>কোর্স বিবরণ পৃষ্ঠার জন্য FAQ সেকশন কনটেন্ট কনফিগার করুন</CardDescription>
+              <CardDescription>Configure FAQ section content for the home and course pages</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Label */}
               <div>
-                <label className="text-sm font-semibold mb-2 block">লেবেল</label>
+                <label className="text-sm font-semibold mb-2 block">Label</label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <AttractiveInput
                     value={content.faq?.label?.text || ''}
                     onChange={(e) => updateContent(['faq', 'label', 'text'], e.target.value)}
-                    placeholder="লেবেল টেক্সট"
+                    placeholder="Label text"
                   />
                   <div className="flex items-center gap-2">
-                    <label className="text-xs text-gray-600">ব্যাকগ্রাউন্ড রঙ</label>
+                    <label className="text-xs text-gray-600">Background color</label>
                     <input
                       type="color"
                       value={content.faq?.label?.backgroundColor || '#A855F7'}
@@ -110,14 +110,14 @@ export function FAQSection({ content, updateContent }: FAQSectionProps) {
 
               {/* Title Parts */}
               <div className="space-y-4">
-                <label className="text-sm font-semibold mb-2 block">শিরোনাম অংশ</label>
+                <label className="text-sm font-semibold mb-2 block">Title parts</label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {['part1', 'part2'].map((part) => (
                     <div key={part}>
                       <AttractiveInput
                         value={content.faq?.title?.[part as keyof typeof content.faq.title] || ''}
                         onChange={(e) => updateContent(['faq', 'title', part], e.target.value)}
-                        placeholder={`শিরোনাম ${part === 'part1' ? '১' : '২'}`}
+                        placeholder={`Title part ${part === 'part1' ? '1' : '2'}`}
                         className="mb-2"
                       />
                       <div className="flex items-center gap-2">
@@ -130,7 +130,7 @@ export function FAQSection({ content, updateContent }: FAQSectionProps) {
                                 : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
                             }`}
                           >
-                            {content.faq?.titleColors?.[part as keyof typeof content.faq.titleColors] === 'gradient' ? '✓ গ্রেডিয়েন্ট' : 'গ্রেডিয়েন্ট ব্যবহার করুন'}
+                            {content.faq?.titleColors?.[part as keyof typeof content.faq.titleColors] === 'gradient' ? '✓ Gradient' : 'Use gradient'}
                           </button>
                         )}
                         <input
@@ -167,10 +167,10 @@ export function FAQSection({ content, updateContent }: FAQSectionProps) {
                 <Card className="p-4 bg-purple-50">
                   <CardContent className="space-y-4">
                     <div>
-                      <label className="text-xs font-semibold text-gray-700 mb-2 block">গ্রেডিয়েন্ট রঙ</label>
+                      <label className="text-xs font-semibold text-gray-700 mb-2 block">Gradient colors</label>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="flex items-center gap-2">
-                          <label className="text-xs text-gray-600">থেকে</label>
+                          <label className="text-xs text-gray-600">From</label>
                           <input
                             type="color"
                             value={content.faq?.gradientColors?.from || '#10B981'}
@@ -220,10 +220,10 @@ export function FAQSection({ content, updateContent }: FAQSectionProps) {
                       </div>
                       {/* Preview */}
                       <div className="mt-4 p-4 bg-white rounded-lg border">
-                        <p className="text-xs text-gray-600 mb-2">পূর্বরূপ:</p>
+                        <p className="text-xs text-gray-600 mb-2">Preview:</p>
                         <div className="text-2xl font-bold">
                           <span style={{ color: content.faq?.titleColors?.part1 || '#1E3A8A' }}>
-                            {content.faq?.title?.part1 || 'সচরাচর'}
+                            {content.faq?.title?.part1 || 'Frequently Asked'}
                           </span>{" "}
                           <span
                             className="bg-clip-text text-transparent"
@@ -236,11 +236,11 @@ export function FAQSection({ content, updateContent }: FAQSectionProps) {
                               backgroundClip: "text",
                             }}
                           >
-                            {content.faq?.title?.part2 || 'জিজ্ঞাসিত প্রশ্ন'}
+                            {content.faq?.title?.part2 || 'Questions'}
                           </span>
                         </div>
                         <p className="text-xs text-gray-500 mt-2">
-                          এটি আপনার গ্রেডিয়েন্ট শিরোনামে কীভাবে প্রদর্শিত হবে
+                          This is how your gradient title will appear on the site
                         </p>
                       </div>
                     </div>
@@ -250,7 +250,7 @@ export function FAQSection({ content, updateContent }: FAQSectionProps) {
 
               {/* FAQ Items */}
               <div className="space-y-4">
-                <label className="text-sm font-semibold mb-2 block">FAQ আইটেম</label>
+                <label className="text-sm font-semibold mb-2 block">FAQ items</label>
                 {(content.faq?.faqs && content.faq.faqs.length > 0 ? content.faq.faqs : defaultFAQContent.faqs)
                   .sort((a, b) => a.order - b.order)
                   .map((faq, index) => {
@@ -270,7 +270,7 @@ export function FAQSection({ content, updateContent }: FAQSectionProps) {
                                   updateContent(['faq', 'faqs'], [...currentFAQs]);
                                 }}
                               >
-                                আপডেট FAQ
+                                Update FAQ
                               </Button>
                               <Button
                                 variant="destructive"
@@ -281,12 +281,12 @@ export function FAQSection({ content, updateContent }: FAQSectionProps) {
                                 }}
                               >
                                 <Trash className="w-4 h-4 mr-2" />
-                                FAQ মুছুন
+                                Delete FAQ
                               </Button>
                             </div>
                           </div>
                           <div>
-                            <label className="text-xs text-gray-600 mb-1 block">প্রশ্ন</label>
+                            <label className="text-xs text-gray-600 mb-1 block">Question</label>
                             <Input
                               type="text"
                               value={faq.question}
@@ -295,12 +295,12 @@ export function FAQSection({ content, updateContent }: FAQSectionProps) {
                                 newFAQs[index] = { ...newFAQs[index], question: e.target.value };
                                 updateContent(['faq', 'faqs'], newFAQs);
                               }}
-                              placeholder="প্রশ্ন লিখুন"
+                              placeholder="Enter question"
                               className="w-full"
                             />
                           </div>
                           <div>
-                            <label className="text-xs text-gray-600 mb-1 block">উত্তর</label>
+                            <label className="text-xs text-gray-600 mb-1 block">Answer</label>
                             <textarea
                               value={faq.answer}
                               onChange={(e) => {
@@ -308,13 +308,13 @@ export function FAQSection({ content, updateContent }: FAQSectionProps) {
                                 newFAQs[index] = { ...newFAQs[index], answer: e.target.value };
                                 updateContent(['faq', 'faqs'], newFAQs);
                               }}
-                              placeholder="উত্তর লিখুন"
+                              placeholder="Enter answer"
                               rows={4}
                               className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-[#7B2CBF] focus:outline-none focus:ring-2 focus:ring-[#7B2CBF]/20"
                             />
                           </div>
                           <div>
-                            <label className="text-xs text-gray-600 mb-1 block">ক্রম</label>
+                            <label className="text-xs text-gray-600 mb-1 block">Order</label>
                             <Input
                               type="number"
                               value={faq.order}
@@ -323,7 +323,7 @@ export function FAQSection({ content, updateContent }: FAQSectionProps) {
                                 newFAQs[index] = { ...newFAQs[index], order: parseInt(e.target.value) || 0 };
                                 updateContent(['faq', 'faqs'], newFAQs);
                               }}
-                              placeholder="প্রদর্শনের ক্রম"
+                              placeholder="Display order"
                               className="w-full"
                               min="1"
                             />
@@ -334,7 +334,7 @@ export function FAQSection({ content, updateContent }: FAQSectionProps) {
                   })}
                 {(!content.faq?.faqs || content.faq.faqs.length === 0) && (
                   <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded-lg text-center">
-                    ডিফল্ট FAQ দেখানো হচ্ছে। আরও যোগ করতে বা বিদ্যমানগুলি সম্পাদনা করতে "FAQ যোগ করুন" ক্লিক করুন।
+                    Showing default FAQs. Click &quot;Add FAQ&quot; to add more or edit existing items.
                   </div>
                 )}
                 <Button
@@ -356,7 +356,7 @@ export function FAQSection({ content, updateContent }: FAQSectionProps) {
                   className="w-full"
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  FAQ যোগ করুন
+                  Add FAQ
                 </Button>
               </div>
             </CardContent>

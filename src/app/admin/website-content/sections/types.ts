@@ -19,6 +19,12 @@ export interface WebsiteContent {
     email: string;
     address: string;
   };
+  aboutPage?: {
+    heading: string;
+    description: string;
+    aboutContent: string;
+    imageUrl: string;
+  };
   socialMedia: {
     facebook: string;
     twitter: string;
@@ -174,6 +180,8 @@ export interface WebsiteContent {
     };
   };
   whyChooseUs?: {
+    sectionHeading?: string;
+    sectionSubtitle?: string;
     label: {
       text: string;
       backgroundColor: string;

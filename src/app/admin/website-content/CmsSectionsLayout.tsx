@@ -83,16 +83,17 @@ export function CmsSectionsLayout({
         <div className="flex w-full min-w-0 flex-col md:flex-row md:items-start md:gap-0">
           {!isMobile && (
             <aside
-              className={`hidden shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white transition-[width] duration-200 ease-in-out md:flex ${
+              className={`hidden shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white transition-[width] duration-200 ease-in-out md:sticky md:top-4 md:flex md:max-h-[calc(100vh-6rem)] md:self-start ${
                 desktopCollapsed ? 'w-14' : 'w-[220px]'
               }`}
             >
-              {renderHeader(desktopCollapsed)}  
+              {renderHeader(desktopCollapsed)}
               <CmsSidebarNav
                 groups={groups}
                 activeTab={activeTab}
                 onSelectTab={handleSelectTab}
                 collapsed={desktopCollapsed}
+                className="scrollbar-hide min-h-0 flex-1 overflow-y-auto"
               />
             </aside>
           )}
@@ -114,6 +115,7 @@ export function CmsSectionsLayout({
                     activeTab={activeTab}
                     onSelectTab={handleSelectTab}
                     collapsed={false}
+                    className="scrollbar-hide min-h-0 flex-1 overflow-y-auto"
                   />
                 </SheetContent>
               </Sheet>

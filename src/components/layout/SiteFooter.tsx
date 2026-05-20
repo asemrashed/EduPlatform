@@ -4,6 +4,7 @@ import {
   type WebsiteContent,
 } from "@/lib/websiteContentDefaults";
 import type { FooterLink } from "@/lib/websiteContentTypes";
+import { BrandLogo } from "@/components/layout/BrandLogo";
 
 type SiteFooterProps = {
   cmsData?: WebsiteContent | null;
@@ -26,11 +27,15 @@ function resolveFooterLinks(
 function resolveFooterContent(cmsData?: WebsiteContent | null) {
   const footer = cmsData?.footer;
   const defaults = defaultWebsiteContent.footer;
+  const siteBranding = cmsData?.branding;
 
   return {
     branding: {
       logoText:
-        footer?.branding?.logoText?.trim() || defaults.branding.logoText,
+        footer?.branding?.logoText?.trim() ||
+        siteBranding?.logoText?.trim() ||
+        defaults.branding.logoText,
+      logoUrl: siteBranding?.logoUrl?.trim() || "",
       description:
         footer?.branding?.description?.trim() || defaults.branding.description,
     },
@@ -92,9 +97,13 @@ export function SiteFooter({ cmsData }: SiteFooterProps) {
     <footer className="mt-auto border-t border-transparent bg-surface-container-low">
       <div className="mx-auto grid max-w-screen-2xl grid-cols-2 gap-12 px-6 py-16 md:grid-cols-6 md:px-12">
         <div className="col-span-2 flex flex-col items-center md:items-start">
-          <span className="mb-4 block font-[family-name:var(--font-headline)] text-xl font-bold text-primary">
-            {content.branding.logoText}
-          </span>
+          <div className="mb-4">
+            <BrandLogo
+              logoUrl={content.branding.logoUrl}
+              logoText={content.branding.logoText}
+              textClassName="font-[family-name:var(--font-headline)] text-xl font-bold"
+            />
+          </div>
           <p className="max-w-xs text-sm leading-7 text-muted-foreground">
             {content.branding.description}
           </p>

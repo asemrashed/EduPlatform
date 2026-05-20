@@ -22,7 +22,7 @@ import banner from "@/public/banner.png";
 import { fetchPublicCourses, useAppDispatch, useAppSelector } from "@/store";
 import type { PublicCourseRow } from "@/mock/publicCourses";
 import type { WebsiteContent } from "@/lib/websiteContentDefaults";
-import type { WhyChooseUsFeature } from "@/lib/websiteContentTypes";
+import { FEATURE_ICON_BY_TYPE } from "@/lib/featureIconMeta";
 import {
   HOME_EXPERTS,
   HOME_FAQ,
@@ -40,16 +40,6 @@ import Testimonials from "./Testimonials";
 import FAQ from "./FAQ";
 import type { CourseReview } from "@/types/course-review";
 import { mapFeaturedReviewsToTestimonials } from "@/lib/mapFeaturedReviewsToTestimonials";
-
-const FEATURE_ICON_BY_TYPE: Record<
-  WhyChooseUsFeature["iconType"],
-  { icon: string; iconBg: string }
-> = {
-  flexible: { icon: "route", iconBg: "bg-primary" },
-  instructor: { icon: "video_chat", iconBg: "bg-secondary" },
-  community: { icon: "groups", iconBg: "bg-tertiary-container" },
-  money: { icon: "dashboard", iconBg: "bg-[#0040a1]" },
-};
 
 function joinTitleParts(...parts: (string | undefined)[]) {
   return parts.filter(Boolean).join("");
@@ -110,14 +100,17 @@ export function HomePageClient({
 
   const featuresSection = cmsData?.whyChooseUs;
   const featuresTitle =
+    featuresSection?.sectionHeading?.trim() ||
     joinTitleParts(
       featuresSection?.title?.part1,
       featuresSection?.title?.part2,
       featuresSection?.title?.part3,
       featuresSection?.title?.part4,
       featuresSection?.title?.part5,
-    ) || "Powerful Features for an Elite Experience";
+    ) ||
+    "Powerful Features for an Elite Experience";
   const featuresDescription =
+    featuresSection?.sectionSubtitle?.trim() ||
     featuresSection?.description ||
     "Our platform isn't just about video lessons; it's a complete ecosystem designed to facilitate mastery and networking.";
   const featuresImage = featuresSection?.image || HOME_FEATURES_IMAGE;

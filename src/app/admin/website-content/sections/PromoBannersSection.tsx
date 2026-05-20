@@ -8,6 +8,7 @@ import { AttractiveInput } from '@/components/ui/attractive-input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { LuImage as ImageIcon } from 'react-icons/lu';
 import { defaultCourseLessonBannerContent, defaultPromoBannerContent } from '@/lib/websiteContentDefaults';
+import { CmsImageField } from './CmsImageField';
 interface PromoBannersSectionProps {
   content: WebsiteContent;
   updateContent: (path: string[], value: unknown) => void;
@@ -55,15 +56,13 @@ export function PromoBannersSection({ content, updateContent, activeSubTab, onSu
                         />
                         <label htmlFor="promoBannerEnabled" className="text-sm font-medium cursor-pointer">Show promotional banner on My Courses page</label>
                       </div>
-                      <div>
-                        <label className="text-sm font-semibold mb-2 block">Banner image URL (optional)</label>
-                        <Input
-                          value={content.promotionalBanner?.imageUrl ?? ''}
-                          onChange={(e) => updateContent(['promotionalBanner', 'imageUrl'], e.target.value)}
-                          placeholder="https://example.com/banner.jpg or leave empty for gradient"
-                          className="w-full"
-                        />
-                      </div>
+                      <CmsImageField
+                        label="Banner image (optional)"
+                        value={content.promotionalBanner?.imageUrl ?? ''}
+                        onChange={(url) => updateContent(['promotionalBanner', 'imageUrl'], url)}
+                        placeholder="https://example.com/banner.jpg"
+                        hint="Leave empty to use a gradient background."
+                      />
                       <div>
                         <label className="text-sm font-semibold mb-2 block">Link URL (when banner is clicked)</label>
                         <Input
@@ -126,15 +125,12 @@ export function PromoBannersSection({ content, updateContent, activeSubTab, onSu
                           placeholder="e.g. আজকের লেসনে স্বাগতম"
                         />
                       </div>
-                      <div>
-                        <label className="text-sm font-semibold mb-2 block">Banner image URL</label>
-                        <Input
-                          value={content.courseLessonBanner?.imageUrl ?? ''}
-                          onChange={(e) => updateContent(['courseLessonBanner', 'imageUrl'], e.target.value)}
-                          placeholder="https://example.com/lesson-banner.jpg"
-                          className="w-full"
-                        />
-                      </div>
+                      <CmsImageField
+                        label="Banner image"
+                        value={content.courseLessonBanner?.imageUrl ?? ''}
+                        onChange={(url) => updateContent(['courseLessonBanner', 'imageUrl'], url)}
+                        placeholder="https://example.com/lesson-banner.jpg"
+                      />
                     </CardContent>
                   </Card>
       )}

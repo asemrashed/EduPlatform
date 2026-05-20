@@ -94,11 +94,11 @@ export function BrandingSection({ content, updateContent, uploadingAsset, handle
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-3">
-                  <label className="text-sm font-semibold block">à¦®à§à¦¨à¦¾à¦®à¦¤à¦¿ à¦¸à¦¾à¦°à§à¦­à§ à¦à§à¦à¦¨à¦¿à¦à§à¦¯à¦¾à¦² à¦à§à¦°à§à¦¨à¦¿à¦ à¦à¦¨à¦¸à§à¦à¦¿à¦à¦¿à¦à¦ Logo</label>
+                  <label className="text-sm font-semibold block">Logo</label>
                   {content.branding.logoUrl ? (
                     <img
                       src={content.branding.logoUrl}
-                      alt="à¦®à§à¦¨à¦¾à¦®à¦¤à¦¿ à¦¸à¦¾à¦°à§à¦­à§ à¦à§à¦à¦¨à¦¿à¦à§à¦¯à¦¾à¦² à¦à§à¦°à§à¦¨à¦¿à¦ à¦à¦¨à¦¸à§à¦à¦¿à¦à¦¿à¦à¦ logo"
+                      alt="logo"
                       className="h-16 w-16 rounded border object-contain bg-white"
                     />
                   ) : (

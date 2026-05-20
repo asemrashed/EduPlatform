@@ -23,6 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AttractiveInput } from '@/components/ui/attractive-input';
+import { CmsImageField } from './CmsImageField';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -468,14 +469,15 @@ export function HeroSection({ content, updateContent }: HeroSectionProps) {
                                 <Trash className="w-4 h-4" />
                               </Button>
                             </div>
-                            <AttractiveInput
+                            <CmsImageField
+                              label="Carousel image"
                               value={item.image}
-                              onChange={(e) => {
+                              onChange={(url) => {
                                 const newItems = [...(content.hero?.carousel?.items || [])];
-                                newItems[index] = { ...newItems[index], image: e.target.value };
+                                newItems[index] = { ...newItems[index], image: url };
                                 updateContent(['hero', 'carousel', 'items'], newItems);
                               }}
-                              placeholder="Image URL"
+                              previewAlt={`Carousel ${index + 1}`}
                             />
                             <AttractiveInput
                               value={item.title}

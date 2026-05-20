@@ -12,6 +12,7 @@ import {
 } from "@/lib/websiteContentDefaults";
 
 import { LuShoppingBag } from "react-icons/lu";
+import { BrandLogo } from "@/components/layout/BrandLogo";
 
 const FALLBACK_NAV = [
   { href: "/", label: "Home" },
@@ -130,19 +131,12 @@ export function SiteHeader({ cmsData }: SiteHeaderProps) {
 
         {/* LEFT */}
         <div className="flex min-w-0 flex-1 items-center gap-8 lg:gap-12">
-          <Link
-            href="/"
-            className="shrink-0 flex items-center gap-2 text-xl font-black tracking-tighter text-primary sm:text-2xl"
-          >
-            {branding.logoUrl ? (
-              <img
-                src={branding.logoUrl}
-                alt={`${branding.logoText} logo`}
-                className="h-8 w-auto max-w-[10rem] object-contain sm:h-9"
-              />
-            ) : (
-              branding.logoText
-            )}
+          <Link href="/" className="shrink-0">
+            <BrandLogo
+              logoUrl={branding.logoUrl}
+              logoText={branding.logoText}
+              textClassName="text-xl sm:text-2xl"
+            />
           </Link>
 
           <nav className="hidden md:flex md:items-center md:gap-8">

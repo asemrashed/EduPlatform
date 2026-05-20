@@ -13,6 +13,7 @@ interface CmsSidebarNavProps {
   activeTab: string;
   onSelectTab: (tabId: string) => void;
   collapsed?: boolean;
+  className?: string;
 }
 
 export function CmsSidebarNav({
@@ -20,9 +21,13 @@ export function CmsSidebarNav({
   activeTab,
   onSelectTab,
   collapsed = false,
+  className,
 }: CmsSidebarNavProps) {
   return (
-    <nav className="flex-1 overflow-y-auto px-1 py-2" aria-label="CMS content sections">
+    <nav
+      className={`px-1 py-2 ${className ?? 'flex-1 overflow-y-auto'}`}
+      aria-label="CMS content sections"
+    >
       {groups.map((group) => (
         <div key={group.label} className="mb-4 last:mb-0">
           {!collapsed && (

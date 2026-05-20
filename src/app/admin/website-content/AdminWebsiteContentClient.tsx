@@ -38,6 +38,7 @@ import {
   defaultStatisticsContent,
   defaultWhyChooseUsContent,
   defaultContactPageContent,
+  defaultAboutPageContent,
   defaultPartnersContent,
   defaultWebsiteContent,
 } from '@/lib/websiteContentDefaults';
@@ -51,7 +52,7 @@ import { FAQSection } from './sections/FAQSection';
 import { PartnersSection } from './sections/PartnersSection';
 import { BrandingSection } from './sections/BrandingSection';
 import { MarqueeSection } from './sections/MarqueeSection';
-import { ContactSocialSection } from './sections/ContactSocialSection';
+import { FeaturesSection } from './sections/FeaturesSection';
 import { NavigationSection } from './sections/NavigationSection';
 import { FooterSection } from './sections/FooterSection';
 import { ReviewsSection } from './sections/ReviewsSection';
@@ -127,28 +128,14 @@ function WebsiteContentPageContent() {
 
   // Ensure about content is initialized when switching to about tab
   useEffect(() => {
-    if (activeTab === 'about' && content && (!content.about || !content.about.label || !content.about.title || !content.about.description)) {
-      const updatedAbout = { 
-        ...defaultAboutContent, 
-        ...(content.about || {}),
-        // Ensure nested objects are properly merged
-        label: { ...defaultAboutContent.label, ...(content.about?.label || {}) },
-        title: { ...defaultAboutContent.title, ...(content.about?.title || {}) },
-        titleColors: { ...defaultAboutContent.titleColors, ...(content.about?.titleColors || {}) },
-        experience: { ...defaultAboutContent.experience, ...(content.about?.experience || {}) },
-        images: { ...defaultAboutContent.images, ...(content.about?.images || {}) },
-        button: { ...defaultAboutContent.button, ...(content.about?.button || {}) },
-        features: content.about?.features && content.about.features.length > 0 
-          ? content.about.features 
-          : [...defaultAboutContent.features],
-      };
+    if (activeTab === 'about' && content && !content.aboutPage?.heading) {
       setContent({
         ...content,
-        about: updatedAbout
+        aboutPage: { ...defaultAboutPageContent, ...(content.aboutPage || {}) },
       });
     }
-    // Ensure whyChooseUs content is initialized when switching to whyChooseUs tab
-    if (activeTab === 'whyChooseUs' && content && (!content.whyChooseUs || !content.whyChooseUs.label || !content.whyChooseUs.title || !content.whyChooseUs.description)) {
+    // Ensure features (whyChooseUs) content is initialized when switching to features tab
+    if (activeTab === 'features' && content && (!content.whyChooseUs || !content.whyChooseUs.features?.length)) {
       const updatedWhyChooseUs = { 
         ...defaultWhyChooseUsContent, 
         ...(content.whyChooseUs || {}),
@@ -469,6 +456,12 @@ function WebsiteContentPageContent() {
           ...(fetchedContent.contactPage || {}),
         };
       }
+      if (!fetchedContent.aboutPage || !fetchedContent.aboutPage.heading) {
+        fetchedContent.aboutPage = {
+          ...defaultAboutPageContent,
+          ...(fetchedContent.aboutPage || {}),
+        };
+      }
       // Ensure meta title and branding defaults exist
       if (!fetchedContent.metaTitle) {
         fetchedContent.metaTitle = 'CodeZyne - Online Learning Platform';
@@ -550,6 +543,7 @@ function WebsiteContentPageContent() {
           registrationNumber: 'বাংলাদেশ সরকার অনুমোদিত রেজিঃ নং- ৩১১০৫'
         },
         contactPage: defaultContactPageContent,
+        aboutPage: defaultAboutPageContent,
       } as WebsiteContent);
     } finally {
       setIsLoading(false);
@@ -951,17 +945,26 @@ function WebsiteContentPageContent() {
       return <HeroSection content={content} updateContent={updateContent} />;
     }
     if (activeTab === 'about') {
-      return <AboutSection content={content} updateContent={updateContent} />;
+      return (
+        <AboutSection
+          content={content}
+          updateContent={updateContent}
+          onNavigateToFeatures={() => setActiveTab('features')}
+        />
+      );
     }
     if (activeTab === 'contactPage') {
       return <ContactPageSection content={content} updateContent={updateContent} />;
     }
-    if (activeTab === 'whyChooseUs' || activeTab === 'statistics') {
+    if (activeTab === 'features') {
+      return <FeaturesSection content={content} updateContent={updateContent} />;
+    }
+    if (activeTab === 'statistics') {
       return (
         <FutureSections
           content={content}
           updateContent={updateContent}
-          activeSubTab={activeTab as FutureSubTab}
+          activeSubTab="statistics"
           onSubTabChange={(tab) => setActiveTab(tab)}
           hideSubNav
         />
@@ -990,16 +993,6 @@ function WebsiteContentPageContent() {
           updateContent={updateContent}
           uploadingAsset={uploadingAsset}
           handleBrandingUpload={handleBrandingUpload}
-        />
-      );
-    }
-    if (activeTab === 'contact' || activeTab === 'social') {
-      return (
-        <ContactSocialSection
-          content={content}
-          updateContent={updateContent}
-          activeSubTab={activeTab as 'contact' | 'social'}
-          onSubTabChange={(tab) => setActiveTab(tab)}
         />
       );
     }
