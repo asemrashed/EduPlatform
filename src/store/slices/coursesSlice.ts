@@ -65,8 +65,9 @@ const coursesSlice = createSlice({
       })
       .addCase(fetchPublicCourses.rejected, (state, action) => {
         state.status = "failed";
-        state.publicList = [];
-        state.pagination = null;
+        if (state.publicList.length === 0) {
+          state.pagination = null;
+        }
         state.error =
           (action.payload as string) ??
           action.error.message ??

@@ -84,6 +84,12 @@ export function SiteHeader({ cmsData }: SiteHeaderProps) {
   const cartCount = useAppSelector((s) =>
     s.cart.items.reduce((n, i) => n + i.quantity, 0),
   );
+  const coursesStatus = useAppSelector((s) => s.courses.status);
+  const publicCoursesCount = useAppSelector((s) => s.courses.publicList.length);
+  const isHomeCatalogLoading =
+    pathname === "/" &&
+    (coursesStatus === "idle" || coursesStatus === "loading") &&
+    publicCoursesCount === 0;
 
   const role = session?.user?.role;
   const dashboardHref =
@@ -127,7 +133,12 @@ export function SiteHeader({ cmsData }: SiteHeaderProps) {
 
   return (
     <header className="sticky top-0 z-50 w-full">
-      <div className="mx-auto flex max-w-[96%] mt-2 md:mt-4 items-center justify-between gap-4 px-4 py-4 sm:px-8 border-b border-border/60 bg-surface rounded-md md:rounded-2xl shadow-[var(--shadow-header)] backdrop-blur-xl">
+      <div
+        className={cn(
+          "mx-auto flex max-w-[96%] mt-2 md:mt-4 items-center justify-between gap-4 px-4 py-4 sm:px-8 border-b border-border/60 bg-surface rounded-md md:rounded-2xl shadow-[var(--shadow-header)] backdrop-blur-xl",
+          isHomeCatalogLoading && "animate-pulse",
+        )}
+      >
 
         {/* LEFT */}
         <div className="flex min-w-0 flex-1 items-center gap-8 lg:gap-12">

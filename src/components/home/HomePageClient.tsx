@@ -36,6 +36,7 @@ import { mapFeaturedReviewsToTestimonials } from "@/lib/mapFeaturedReviewsToTest
 import type { FeaturedInstructor } from "@/types/featured-instructor";
 import { HomeFeaturesSection } from "@/components/features/HomeFeaturesSection";
 import { resolveFeaturesContent } from "@/lib/resolveFeaturesContent";
+import { HomePageSkeleton } from "@/components/skeletons/HomePageSkeleton";
 
 function joinTitleParts(...parts: (string | undefined)[]) {
   return parts.filter(Boolean).join("");
@@ -53,7 +54,10 @@ export function HomePageClient({
   featuredInstructors = [],
 }: HomePageClientProps) {
   const dispatch = useAppDispatch();
-  const { publicList } = useAppSelector((s) => s.courses);
+  const { publicList, status: coursesStatus } = useAppSelector((s) => s.courses);
+  const isCatalogInitialLoad =
+    (coursesStatus === "idle" || coursesStatus === "loading") &&
+    publicList.length === 0;
 
   const hero = cmsData?.hero;
   const heroTitleBefore = hero?.title?.part1 || HOME_HERO.titleBefore;
@@ -127,8 +131,10 @@ export function HomePageClient({
   }, [cmsData?.faq?.faqs]);
 
   useEffect(() => {
-    dispatch(fetchPublicCourses(undefined));
-  }, [dispatch]);
+    if (coursesStatus === "idle") {
+      dispatch(fetchPublicCourses(undefined));
+    }
+  }, [dispatch, coursesStatus]);
 
   const featuredCourseIds = cmsData?.courses?.featuredCourseIds ?? [];
   const featuredCourses = useMemo(() => {
@@ -140,7 +146,7 @@ export function HomePageClient({
         : publicList.slice(0, 8);
 
     return ordered.map((course) => ({
-      href: `/${course._id}`,
+      href: `/course/${course._id}`,
       image: course.thumbnailUrl || "",
       imageAlt: course.title,
       badge: course.tags?.[0] || (course.isPaid ? "Premium" : "Free"),
@@ -152,6 +158,10 @@ export function HomePageClient({
       lessons: `${course.lessonCount ?? 0}+ Lessons`,
     }));
   }, [publicList, featuredCourseIds]);
+
+  if (isCatalogInitialLoad) {
+    return <HomePageSkeleton />;
+  }
 
   return (
     <div className="bg-background text-foreground">
@@ -221,9 +231,15 @@ export function HomePageClient({
             </Link>
           </div>
           {featuredCourses.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-border p-12 text-center text-muted-foreground">
-              No courses to display yet. Check back soon or browse the full catalog.
-            </p>
+            coursesStatus === "failed" ? (
+              <p className="rounded-xl border border-dashed border-destructive/40 p-12 text-center text-muted-foreground">
+                Could not load courses. Please refresh the page.
+              </p>
+            ) : (
+              <p className="rounded-xl border border-dashed border-border p-12 text-center text-muted-foreground">
+                No courses to display yet. Check back soon or browse the full catalog.
+              </p>
+            )
           ) : (
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {featuredCourses.map((c, i) => (

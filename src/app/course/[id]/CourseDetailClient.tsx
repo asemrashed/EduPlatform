@@ -35,7 +35,7 @@ import CourseFAQ from "./CourseFAQ";
 import PrimaryActionBtn from "@/components/ui/buttons/PrimaryActionBtn";
 import PrimaryOutLineBtn from "@/components/ui/buttons/PrimaryOutLineBtn";
 import { useCheckout } from "@/hooks/useCheckout";
-import GlobalLoading from "@/components/GlobalLoading";
+import { CourseDetailSkeleton } from "@/components/skeletons/CourseDetailSkeleton";
 
 const SECTIONS = ["about", "instructor", "curriculum", "faq"] as const;
 
@@ -43,9 +43,8 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { handleCheckout, isPending } = useCheckout();
-  const { status, error, course, chapters, lessons, faqs } = useAppSelector(
-    (s) => s.courseDetail,
-  );
+  const { status, error, course, chapters, lessons, faqs, courseId: loadedCourseId } =
+    useAppSelector((s) => s.courseDetail);
   const { isAuthenticated, user: authUser } = useAppSelector((s) => s.auth);
   
   const [activeSection, setActiveSection] = useState<string>("about");
@@ -69,8 +68,10 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
   }, [course]);
 
   useEffect(() => {
-    dispatch(fetchCourseBundle(courseId));
-  }, [dispatch, courseId]);
+    if (status === "idle" || loadedCourseId !== courseId) {
+      dispatch(fetchCourseBundle(courseId));
+    }
+  }, [dispatch, courseId, status, loadedCourseId]);
 
   useEffect(() => {
     if (chapters.length > 0) {
@@ -205,8 +206,8 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
     // router.push("/cart");
   };
 
-  if (status === "loading" || status === "idle") {
-    return <GlobalLoading />;
+  if ((status === "loading" || status === "idle") && !course) {
+    return <CourseDetailSkeleton />;
   }
 
   if (status === "failed") {

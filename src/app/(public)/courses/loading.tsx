@@ -1,5 +1,5 @@
-import GlobalLoading from '@/components/GlobalLoading';
+import { CoursesCatalogSkeleton } from "@/components/skeletons/CoursesCatalogSkeleton";
 
 export default function Loading() {
-  return <GlobalLoading />;
+  return <CoursesCatalogSkeleton />;
 }

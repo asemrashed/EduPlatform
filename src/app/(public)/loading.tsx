@@ -1,5 +1,5 @@
-import GlobalLoading from '@/components/GlobalLoading';
+import { HomePageSkeleton } from "@/components/skeletons/HomePageSkeleton";
 
 export default function Loading() {
-  return <GlobalLoading />;
+  return <HomePageSkeleton />;
 }

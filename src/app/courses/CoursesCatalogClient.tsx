@@ -22,6 +22,7 @@ import {
 } from "@/data/allCoursePageContent";
 import { cn } from "@/lib/cn";
 import CourseCard from "@/components/CourseCard";
+import { CoursesCatalogSkeleton } from "@/components/skeletons/CoursesCatalogSkeleton";
 
 type ViewMode = "grid" | "list";
 
@@ -106,7 +107,7 @@ function mapReduxToDisplay(c: PublicCourseRow): DisplayCard {
                     : "Programming");
   return {
     key: `redux-${c._id}`,
-    href: `/${c._id}`,
+    href: `/course/${c._id}`,
     image: c.thumbnailUrl || "",
     imageAlt: c.title,
     badge,
@@ -133,7 +134,6 @@ function normalizeCategoryId(value: string): CatalogCategoryId {
 export function CoursesCatalogClient() {
   const dispatch = useAppDispatch();
   const { status, error, publicList } = useAppSelector((s) => s.courses);
-  const useMockApi = useAppSelector((s) => s.ui.useMockApi);
 
   const [category, setCategory] = useState<CatalogCategoryId>("all");
   const [sidebarCategories, setSidebarCategories] =
@@ -142,8 +142,10 @@ export function CoursesCatalogClient() {
   const [view, setView] = useState<ViewMode>("grid");
 
   useEffect(() => {
-    dispatch(fetchPublicCourses(undefined));
-  }, [dispatch]);
+    if (status === "idle") {
+      dispatch(fetchPublicCourses(undefined));
+    }
+  }, [dispatch, status]);
 
   useEffect(() => {
     let cancelled = false;
@@ -208,16 +210,11 @@ export function CoursesCatalogClient() {
   const showingFrom = filtered.length === 0 ? 0 : start + 1;
   const showingTo = Math.min(start + PAGE_SIZE, filtered.length);
 
-  if (status === "loading" || status === "idle") {
-    return (
-      <div className="pt-20" role="status" aria-busy="true">
-        <p className="sr-only">Loading courses</p>
-        <div className="h-100 animate-pulse bg-primary/30" />
-        <div className="mx-auto max-w-screen-2xl px-8 py-20">
-          <div className="h-96 animate-pulse rounded-xl bg-muted" />
-        </div>
-      </div>
-    );
+  const isInitialLoad =
+    (status === "loading" || status === "idle") && publicList.length === 0;
+
+  if (isInitialLoad) {
+    return <CoursesCatalogSkeleton />;
   }
 
   if (status === "failed") {

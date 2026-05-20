@@ -59,13 +59,17 @@ const courseDetailSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchCourseBundle.pending, (state, action) => {
+        const nextId = action.meta.arg.trim();
+        const isNewCourse = state.courseId !== nextId;
         state.status = "loading";
         state.error = null;
-        state.courseId = action.meta.arg;
-        state.course = null;
-        state.chapters = [];
-        state.lessons = [];
-        state.faqs = [];
+        state.courseId = nextId;
+        if (isNewCourse) {
+          state.course = null;
+          state.chapters = [];
+          state.lessons = [];
+          state.faqs = [];
+        }
       })
       .addCase(fetchCourseBundle.fulfilled, (state, action) => {
         state.status = "succeeded";
@@ -77,10 +81,11 @@ const courseDetailSlice = createSlice({
       })
       .addCase(fetchCourseBundle.rejected, (state, action) => {
         state.status = "failed";
-        state.course = null;
-        state.chapters = [];
-        state.lessons = [];
-        state.faqs = [];
+        if (!state.course) {
+          state.chapters = [];
+          state.lessons = [];
+          state.faqs = [];
+        }
         state.error =
           (action.payload as string) ??
           action.error.message ??

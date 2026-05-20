@@ -26,8 +26,12 @@ export function readMockEmptyCatalog(): boolean {
   return process.env.NEXT_PUBLIC_MOCK_PUBLIC_COURSES_EMPTY === "true";
 }
 
+/** Mock catalog only in local dev — never substitute fake courses in production. */
 function isMockFallbackEnabled(): boolean {
-  return process.env.NEXT_PUBLIC_USE_MOCK_API === "true";
+  return (
+    process.env.NODE_ENV === "development" &&
+    process.env.NEXT_PUBLIC_USE_MOCK_API === "true"
+  );
 }
 
 async function fetchJsonOrThrow<T>(url: string): Promise<T> {
