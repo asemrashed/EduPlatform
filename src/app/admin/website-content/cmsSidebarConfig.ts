@@ -14,6 +14,7 @@ import {
   LuFileText as FileText,
   LuChartBar as BarChart,
   LuLayers as Layers,
+  LuUsers as Users,
 } from 'react-icons/lu';
 import type { FutureSubTab } from './sections/FutureSections';
 
@@ -52,6 +53,7 @@ export const CMS_SIDEBAR_GROUPS: CmsSidebarGroup[] = [
     items: [
       { id: 'hero', label: 'Hero', icon: Sparkles },
       { id: 'features', label: 'Features', icon: Star },
+      { id: 'instructors', label: 'Instructors', icon: Users },
       { id: 'statistics', label: 'Statistics', icon: BarChart },
       { id: 'faq', label: 'FAQ', icon: MessageSquare },
       { id: 'partners', label: 'Partners', icon: Briefcase },
@@ -102,6 +104,7 @@ export function isCmsTabActive(activeTab: string, itemId: string): boolean {
   if (itemId === 'navigation' && activeTab === 'buttons') return true;
   if (itemId === 'services' && isMoreTab(activeTab)) return true;
   if (itemId === 'features' && activeTab === 'features') return true;
+  if (itemId === 'instructors' && activeTab === 'instructors') return true;
   if (itemId === 'statistics' && activeTab === 'statistics') return true;
   return false;
 }
@@ -118,6 +121,7 @@ export function getCmsTabLabel(tabId: string): string {
   if (tabId === 'partners') return 'Partners';
   if (tabId === 'contactPage') return 'Contact Page';
   if (tabId === 'features') return 'Features';
+  if (tabId === 'instructors') return 'Instructors';
   if (tabId === 'statistics') return 'Statistics';
   if (isMoreTab(tabId)) return 'More Sections';
   return tabId;

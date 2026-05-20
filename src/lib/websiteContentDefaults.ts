@@ -7,6 +7,7 @@ import type {
   CourseLessonBannerContent,
   CoursesByCategoryContent,
   CoursesContent,
+  HomeInstructorsContent,
   DownloadAppContent,
   FAQContent,
   FooterContent,
@@ -30,6 +31,7 @@ export type {
   CourseLessonBannerContent,
   CoursesByCategoryContent,
   CoursesContent,
+  HomeInstructorsContent,
   DownloadAppContent,
   FAQContent,
   FAQItem,
@@ -165,6 +167,7 @@ export interface WebsiteContent {
   footer: FooterContent;
   courses: CoursesContent;
   coursesByCategory: CoursesByCategoryContent;
+  homeInstructors: HomeInstructorsContent;
   sectionOrder: SectionConfig[];
   faq: FAQContent;
   promotionalBanner: PromoBannerContent;
@@ -737,6 +740,13 @@ export const defaultWebsiteContent: WebsiteContent = {
     buttonGradientTo: SECONDARY_COLOR,
     featuredCourseIds: undefined,
   },
+  homeInstructors: {
+    badgeLabel: "Our Mentors",
+    sectionHeading: "Meet Our Expert Mentors",
+    sectionSubtitle:
+      "Learn from the best in the industry—our mentors bring years of experience, knowledge, and passion to guide you.",
+    instructorIds: [],
+  },
   coursesByCategory: {
     label: {
       text: "Categories",
@@ -846,6 +856,7 @@ export const defaultDownloadAppContent = defaultWebsiteContent.downloadApp;
 export const defaultFooterContent = defaultWebsiteContent.footer;
 export const defaultPartnersContent = defaultWebsiteContent.partners;
 export const defaultCoursesContent = defaultWebsiteContent.courses;
+export const defaultHomeInstructorsContent = defaultWebsiteContent.homeInstructors;
 export const defaultCoursesByCategoryContent = defaultWebsiteContent.coursesByCategory;
 export const defaultSectionOrder = defaultWebsiteContent.sectionOrder;
 export const defaultFAQContent = defaultWebsiteContent.faq;

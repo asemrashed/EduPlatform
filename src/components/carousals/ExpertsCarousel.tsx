@@ -11,16 +11,26 @@ import "swiper/css/navigation";
 import ExpertCard from "./ExpertCard";
 
 type Expert = {
+  id?: string;
   name: string;
   role: string;
   image: string;
+  experience?: string;
 };
 
 type Props = {
   experts: Expert[];
+  badgeLabel?: string;
+  sectionHeading?: string;
+  sectionSubtitle?: string;
 };
 
-export default function ExpertsCarousel({ experts }: Props) {
+export default function ExpertsCarousel({
+  experts,
+  badgeLabel = "Our Mentors",
+  sectionHeading = "Meet Our Expert Mentors",
+  sectionSubtitle = "Learn from the best in the industry—our mentors bring years of experience, knowledge, and passion to guide you.",
+}: Props) {
   const swiperRef = useRef<SwiperType | null>(null);
 
   return (
@@ -31,16 +41,15 @@ export default function ExpertsCarousel({ experts }: Props) {
         <div className="mb-12 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-2xl">
             <span className="mb-3 inline-block rounded-md bg-blue-50 px-3 py-1 text-xs font-bold uppercase tracking-widest text-blue-800">
-              Our Mentors
+              {badgeLabel}
             </span>
 
             <h2 className="mb-3 font-[family-name:var(--font-headline)] text-4xl font-extrabold tracking-tight text-foreground lg:text-5xl">
-              Meet Our Expert Mentors
+              {sectionHeading}
             </h2>
 
             <p className="text-base text-muted-foreground lg:text-lg">
-              Learn from the best in the industry—our mentors bring years of
-              experience, knowledge, and passion to guide you.
+              {sectionSubtitle}
             </p>
           </div>
 
@@ -74,7 +83,7 @@ export default function ExpertsCarousel({ experts }: Props) {
           }}
         >
           {experts.map((ex) => (
-            <SwiperSlide key={ex.name}>
+            <SwiperSlide key={ex.id ?? `${ex.name}-${ex.role}`}>
               <ExpertCard expert={ex} />
             </SwiperSlide>
           ))}

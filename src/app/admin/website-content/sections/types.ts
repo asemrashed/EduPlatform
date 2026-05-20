@@ -391,6 +391,12 @@ export interface WebsiteContent {
     buttonGradientTo: string;
     featuredCourseIds?: string[];
   };
+  homeInstructors?: {
+    badgeLabel: string;
+    sectionHeading: string;
+    sectionSubtitle: string;
+    instructorIds?: string[];
+  };
   coursesByCategory?: {
     label: {
       text: string;

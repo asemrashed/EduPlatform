@@ -27,6 +27,7 @@ import {
   defaultCourseLessonBannerContent,
   defaultCoursesByCategoryContent,
   defaultCoursesContent,
+  defaultHomeInstructorsContent,
   defaultDownloadAppContent,
   defaultFAQContent,
   defaultFooterContent,
@@ -57,6 +58,7 @@ import { NavigationSection } from './sections/NavigationSection';
 import { FooterSection } from './sections/FooterSection';
 import { ReviewsSection } from './sections/ReviewsSection';
 import { CoursesSection } from './sections/CoursesSection';
+import { InstructorsSection } from './sections/InstructorsSection';
 import { PromoBannersSection } from './sections/PromoBannersSection';
 import { SectionOrderSection } from './sections/SectionOrderSection';
 import { FutureSections, type FutureSubTab } from './sections/FutureSections';
@@ -462,6 +464,13 @@ function WebsiteContentPageContent() {
           ...(fetchedContent.aboutPage || {}),
         };
       }
+      if (!fetchedContent.homeInstructors?.sectionHeading) {
+        fetchedContent.homeInstructors = {
+          ...defaultHomeInstructorsContent,
+          ...(fetchedContent.homeInstructors || {}),
+          instructorIds: fetchedContent.homeInstructors?.instructorIds ?? [],
+        };
+      }
       // Ensure meta title and branding defaults exist
       if (!fetchedContent.metaTitle) {
         fetchedContent.metaTitle = 'CodeZyne - Online Learning Platform';
@@ -535,6 +544,7 @@ function WebsiteContentPageContent() {
         downloadApp: defaultDownloadAppContent,
         footer: defaultFooterContent,
         courses: defaultCoursesContent,
+        homeInstructors: defaultHomeInstructorsContent,
         coursesByCategory: defaultCoursesByCategoryContent,
         promotionalBanner: defaultPromoBannerContent,
         courseLessonBanner: defaultCourseLessonBannerContent,
@@ -877,6 +887,37 @@ function WebsiteContentPageContent() {
     updateContent(['courses', 'featuredCourseIds'], currentIds);
   };
 
+  const addFeaturedInstructor = (instructorId: string) => {
+    if (!content || !instructorId) return;
+    const currentIds = content.homeInstructors?.instructorIds ?? [];
+    if (currentIds.includes(instructorId)) return;
+    if (currentIds.length >= 12) {
+      alert('You can select up to 12 instructors for the homepage.');
+      return;
+    }
+    updateContent(['homeInstructors', 'instructorIds'], [...currentIds, instructorId]);
+  };
+
+  const removeFeaturedInstructor = (instructorId: string) => {
+    if (!content) return;
+    const currentIds = content.homeInstructors?.instructorIds ?? [];
+    updateContent(
+      ['homeInstructors', 'instructorIds'],
+      currentIds.filter((id) => id !== instructorId),
+    );
+  };
+
+  const moveFeaturedInstructor = (instructorId: string, direction: 'up' | 'down') => {
+    if (!content) return;
+    const currentIds = [...(content.homeInstructors?.instructorIds ?? [])];
+    const index = currentIds.indexOf(instructorId);
+    if (index === -1) return;
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= currentIds.length) return;
+    [currentIds[index], currentIds[targetIndex]] = [currentIds[targetIndex], currentIds[index]];
+    updateContent(['homeInstructors', 'instructorIds'], currentIds);
+  };
+
   const handleBrandingUpload = async (event: any, assetType: 'logo' | 'favicon') => {
     const file = event.target.files?.[0];
     if (!file || !content) return;
@@ -958,6 +999,17 @@ function WebsiteContentPageContent() {
     }
     if (activeTab === 'features') {
       return <FeaturesSection content={content} updateContent={updateContent} />;
+    }
+    if (activeTab === 'instructors') {
+      return (
+        <InstructorsSection
+          content={content}
+          updateContent={updateContent}
+          addFeaturedInstructor={addFeaturedInstructor}
+          removeFeaturedInstructor={removeFeaturedInstructor}
+          moveFeaturedInstructor={moveFeaturedInstructor}
+        />
+      );
     }
     if (activeTab === 'statistics') {
       return (

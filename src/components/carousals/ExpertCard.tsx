@@ -6,6 +6,7 @@ type Expert = {
   name: string;
   role: string;
   image: string;
+  experience?: string;
   students?: number;
   courses?: number;
 };
@@ -42,6 +43,11 @@ export default function ExpertCard({ expert }: { expert: Expert }) {
         <p className="mt-1 text-sm text-gray-500">
           {expert.role}
         </p>
+        {expert.experience?.trim() ? (
+          <p className="mt-1 text-xs text-gray-400 line-clamp-2">
+            {expert.experience.trim()}
+          </p>
+        ) : null}
       </div>
 
       {/* Bottom section */}

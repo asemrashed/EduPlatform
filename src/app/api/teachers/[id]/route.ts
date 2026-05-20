@@ -6,17 +6,10 @@ import connectDB from "@/lib/mongodb";
 import { authOptions } from "@/lib/auth";
 import User from "@/models/User";
 import Course from "@/models/Course";
+import { isValidBdPhone, toBdLocalPhone } from "@/lib/phone";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
-}
-
-function cleanPhone(phone: string): string {
-  return String(phone).replace(/[\s\-\(\)]/g, "");
-}
-
-function isValidBdPhone(phone: string): boolean {
-  return /^01\d{9}$/.test(cleanPhone(phone));
 }
 
 async function requireAdminJson() {
@@ -43,6 +36,7 @@ function mapTeacher(user: Record<string, unknown>) {
     role: "instructor" as const,
     isActive: user.isActive !== false,
     avatar: user.avatar ? String(user.avatar) : undefined,
+    experience: user.experience ? String(user.experience) : undefined,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
     lastLogin: user.lastLogin,
@@ -90,8 +84,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       updateData.lastName = v;
     }
     if (typeof body.phone === "string") {
-      const phoneClean = cleanPhone(body.phone);
-      if (!isValidBdPhone(phoneClean)) {
+      const phoneClean = toBdLocalPhone(body.phone);
+      if (!isValidBdPhone(body.phone)) {
         return NextResponse.json(
           { error: "Phone number must start with 0 and be like 01XXXXXXXXX" },
           { status: 400 },
@@ -116,6 +110,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
     if (typeof body.avatar === "string") {
       updateData.avatar = body.avatar.trim() || "";
+    }
+    if (typeof body.experience === "string") {
+      updateData.experience = body.experience.trim();
     }
     if (typeof body.email === "string" && body.email.trim()) {
       updateData.email = body.email.trim().toLowerCase();

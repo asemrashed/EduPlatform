@@ -5,18 +5,11 @@ import { getServerSession } from "next-auth/next";
 import connectDB from "@/lib/mongodb";
 import { authOptions } from "@/lib/auth";
 import User from "@/models/User";
+import { isValidBdPhone, toBdLocalPhone } from "@/lib/phone";
 
 function toPositiveInt(value: string | null, fallback: number): number {
   const parsed = Number.parseInt(value || "", 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
-function cleanPhone(phone: string): string {
-  return String(phone).replace(/[\s\-\(\)]/g, "");
-}
-
-function isValidBdPhone(phone: string): boolean {
-  return /^01\d{9}$/.test(cleanPhone(phone));
 }
 
 async function requireAdminJson() {
@@ -43,6 +36,7 @@ function mapTeacher(user: Record<string, unknown>) {
     role: "instructor" as const,
     isActive: user.isActive !== false,
     avatar: user.avatar ? String(user.avatar) : undefined,
+    experience: user.experience ? String(user.experience) : undefined,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
     lastLogin: user.lastLogin,
@@ -111,7 +105,7 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as Record<string, unknown>;
     const firstName = String(body.firstName || "").trim();
     const lastName = String(body.lastName || "").trim();
-    const phoneClean = cleanPhone(String(body.phone || ""));
+    const phoneClean = toBdLocalPhone(String(body.phone || ""));
 
     if (!firstName || !lastName) {
       return NextResponse.json(
@@ -157,6 +151,10 @@ export async function POST(request: NextRequest) {
       avatar:
         typeof body.avatar === "string" && body.avatar.trim()
           ? body.avatar.trim()
+          : undefined,
+      experience:
+        typeof body.experience === "string" && body.experience.trim()
+          ? body.experience.trim()
           : undefined,
     });
 

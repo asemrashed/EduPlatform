@@ -7,6 +7,7 @@ export interface Teacher {
   role: 'instructor';
   isActive: boolean;
   avatar?: string;
+  experience?: string;
   address?: {
     fullAddress?: string;
   }; // Teacher address information
@@ -22,6 +23,7 @@ export interface TeacherFormData {
   lastName: string;
   isActive: boolean;
   avatar?: string;
+  experience?: string;
   address?: {
     fullAddress?: string;
   };
@@ -35,6 +37,7 @@ export interface TeacherUpdateData {
   lastName?: string;
   isActive?: boolean;
   avatar?: string;
+  experience?: string;
   address?: {
     fullAddress?: string;
   };

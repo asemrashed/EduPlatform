@@ -9,7 +9,8 @@ import FormModal from '@/components/ui/form-modal';
 import { AttractiveInput } from '@/components/ui/attractive-input';
 import AvatarUpload from '@/components/AvatarUpload';
 import { useAvatarUpload } from '@/hooks/useAvatarUpload';
-import { LuUser as User, LuMail as Mail, LuUserCheck as UserCheck, LuLoader as Loader2, LuPhone as Phone, LuUpload as Upload, LuLock as Lock } from 'react-icons/lu';;
+import { LuUser as User, LuMail as Mail, LuUserCheck as UserCheck, LuLoader as Loader2, LuPhone as Phone, LuUpload as Upload, LuLock as Lock } from 'react-icons/lu';
+import { isValidBdPhone, toBdLocalPhone } from '@/lib/phone';
 
 interface StudentModalProps {
   open: boolean;
@@ -40,9 +41,6 @@ export default function StudentModal({ open, student, onClose, onSuccess, apiEnd
     password: isEdit ? undefined : 'Student123!' // Default password for new students
   });
   const [errors, setErrors] = useState<Partial<StudentFormData>>({});
-
-  const normalizePhone = (value: string) => value.replace(/[\s\-\(\)]/g, '');
-  const isValidBdPhone = (value: string) => /^(?:01\d{9}|8801\d{9}|\+8801\d{9})$/.test(value);
 
   // Debounced phone check
   const debouncedPhoneCheck = useCallback(
@@ -129,15 +127,13 @@ export default function StudentModal({ open, student, onClose, onSuccess, apiEnd
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone number is required';
     } else {
-      const cleanPhone = normalizePhone(formData.phone);
-      if (!isValidBdPhone(cleanPhone)) {
-        newErrors.phone = 'Phone number is invalid. Use 01XXXXXXXXX format';
-      } else {
-        if (!isEdit || (isEdit && formData.phone !== (student as any)?.phone)) {
-          const phoneExists = await checkPhoneExists(cleanPhone);
-          if (phoneExists) {
-            newErrors.phone = 'Phone number already exists';
-          }
+      const localPhone = toBdLocalPhone(formData.phone);
+      if (!isValidBdPhone(formData.phone)) {
+        newErrors.phone = 'Phone number is invalid. Use 01XXXXXXXXX or +8801XXXXXXXXX';
+      } else if (!isEdit || (isEdit && localPhone !== toBdLocalPhone(String((student as any)?.phone || '')))) {
+        const phoneExists = await checkPhoneExists(localPhone);
+        if (phoneExists) {
+          newErrors.phone = 'Phone number already exists';
         }
       }
     }
@@ -155,9 +151,8 @@ export default function StudentModal({ open, student, onClose, onSuccess, apiEnd
     }
 
     if (formData.parentPhone && formData.parentPhone.trim()) {
-      const cleanParentPhone = normalizePhone(formData.parentPhone);
-      if (!isValidBdPhone(cleanParentPhone)) {
-        newErrors.parentPhone = 'Parent phone number is invalid. Use 01XXXXXXXXX format';
+      if (!isValidBdPhone(formData.parentPhone)) {
+        newErrors.parentPhone = 'Parent phone number is invalid. Use 01XXXXXXXXX or +8801XXXXXXXXX';
       }
     }
 
@@ -174,8 +169,8 @@ export default function StudentModal({ open, student, onClose, onSuccess, apiEnd
     setLoading(true);
     try {
       const url = isEdit ? `/api/students/${student._id}` : (apiEndpoint || '/api/students');
-      const normalizedPhone = normalizePhone(formData.phone);
-      const normalizedParentPhone = formData.parentPhone ? normalizePhone(formData.parentPhone) : '';
+      const normalizedPhone = toBdLocalPhone(formData.phone);
+      const normalizedParentPhone = formData.parentPhone ? toBdLocalPhone(formData.parentPhone) : '';
       const payload = isEdit
         ? {
             ...formData,

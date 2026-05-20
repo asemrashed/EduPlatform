@@ -322,6 +322,13 @@ export interface CoursesContent {
   featuredCourseIds?: string[];
 }
 
+export interface HomeInstructorsContent {
+  badgeLabel: string;
+  sectionHeading: string;
+  sectionSubtitle: string;
+  instructorIds?: string[];
+}
+
 export interface CoursesByCategoryContent {
   label: { text: string; backgroundColor: string };
   title: { part1: string; part2: string; part3: string };

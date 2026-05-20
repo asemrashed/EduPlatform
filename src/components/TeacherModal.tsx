@@ -9,6 +9,7 @@ import FormModal from '@/components/ui/form-modal';
 import { AttractiveInput } from '@/components/ui/attractive-input';
 import AvatarUpload from '@/components/AvatarUpload';
 import { LuUser as User, LuPhone as Phone, LuUserCheck as UserCheck, LuLoader as Loader2, LuLock as Lock } from 'react-icons/lu';
+import { isValidBdPhone, toBdLocalPhone } from '@/lib/phone';
 
 interface TeacherModalProps {
   open: boolean;
@@ -29,6 +30,7 @@ export default function TeacherModal({ open, teacher, onClose, onSuccess }: Teac
     lastName: '',
     isActive: true,
     avatar: '',
+    experience: '',
     address: {
       fullAddress: ''
     },
@@ -90,6 +92,7 @@ export default function TeacherModal({ open, teacher, onClose, onSuccess }: Teac
           lastName: teacher.lastName,
           isActive: teacher.isActive,
           avatar: teacher.avatar || '',
+          experience: teacher.experience || '',
           address: teacher.address || {
             fullAddress: ''
           }
@@ -119,17 +122,15 @@ export default function TeacherModal({ open, teacher, onClose, onSuccess }: Teac
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone number is required';
     } else {
-      // Basic phone number validation (allows various formats)
-      const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-      const cleanPhone = formData.phone.replace(/[\s\-\(\)]/g, '');
-      if (!phoneRegex.test(cleanPhone)) {
-        newErrors.phone = 'Phone number is invalid';
-      } else {
-        if (!isEdit || (isEdit && formData.phone !== (teacher as any)?.phone)) {
-          const phoneExists = await checkPhoneExists(formData.phone);
-          if (phoneExists) {
-            newErrors.phone = 'Phone number already exists';
-          }
+      const localPhone = toBdLocalPhone(formData.phone);
+
+      if (!isValidBdPhone(formData.phone)) {
+        newErrors.phone = 'Phone number is invalid. Use 01XXXXXXXXX or +8801XXXXXXXXX';
+      } else if (!isEdit || (isEdit && localPhone !== toBdLocalPhone(String((teacher as any)?.phone || '')))) {
+        const phoneExists = await checkPhoneExists(localPhone);
+
+        if (phoneExists) {
+          newErrors.phone = 'Phone number already exists';
         }
       }
     }
@@ -162,18 +163,21 @@ export default function TeacherModal({ open, teacher, onClose, onSuccess }: Teac
     try {
       const url = isEdit ? `/api/teachers/${teacher._id}` : '/api/teachers';
       const method = isEdit ? 'PUT' : 'POST';
+      const localPhone = toBdLocalPhone(formData.phone);
 
       const payload = isEdit
         ? {
-            phone: formData.phone,
+            phone: localPhone,
             firstName: formData.firstName,
             lastName: formData.lastName,
             isActive: formData.isActive,
             avatar: formData.avatar,
+            experience: formData.experience?.trim() || '',
             address: formData.address?.fullAddress ? { fullAddress: formData.address.fullAddress } : undefined
           } as TeacherUpdateData
         : {
             ...formData,
+            phone: localPhone,
             address: formData.address?.fullAddress ? { fullAddress: formData.address.fullAddress } : undefined,
             password: formData.password || 'Teacher123!' // Default password for new teachers
           };
@@ -193,6 +197,9 @@ export default function TeacherModal({ open, teacher, onClose, onSuccess }: Teac
         onSuccess();
       } else {
         console.error(`Failed to ${isEdit ? 'update' : 'create'} teacher:`, data.error);
+        if (typeof data.error === 'string' && data.error.toLowerCase().includes('phone')) {
+          setErrors((prev) => ({ ...prev, phone: data.error }));
+        }
       }
     } catch (error) {
       console.error('Error saving teacher:', error);
@@ -268,7 +275,7 @@ export default function TeacherModal({ open, teacher, onClose, onSuccess }: Teac
           label="Phone Number"
           icon={<Phone className="w-4 h-4" />}
           type="tel"
-          placeholder="Enter teacher phone number"
+          placeholder="01XXXXXXXXX"
           value={formData.phone}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('phone', e.target.value)}
           error={errors.phone}
@@ -307,6 +314,20 @@ export default function TeacherModal({ open, teacher, onClose, onSuccess }: Teac
           />
         </div>
 
+        <AttractiveInput
+          label="Teaching experience (optional)"
+          icon={<User className="w-4 h-4" />}
+          type="text"
+          placeholder="e.g. 8+ years in web development"
+          value={formData.experience || ''}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            handleInputChange('experience', e.target.value)
+          }
+          variant="default"
+          colorScheme="primary"
+          size="md"
+        />
+
         {/* Address Field */}
         <AttractiveInput
           label="Address"
@@ -325,7 +346,7 @@ export default function TeacherModal({ open, teacher, onClose, onSuccess }: Teac
             label="Password"
             icon={<Lock className="w-4 h-4" />}
             type="password"
-            placeholder="Enter password for teacher"
+            // placeholder="Enter password for teacher"
             value={formData.password || ''}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('password', e.target.value)}
             error={errors.password}

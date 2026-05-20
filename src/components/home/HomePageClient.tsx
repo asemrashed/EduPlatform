@@ -40,6 +40,7 @@ import Testimonials from "./Testimonials";
 import FAQ from "./FAQ";
 import type { CourseReview } from "@/types/course-review";
 import { mapFeaturedReviewsToTestimonials } from "@/lib/mapFeaturedReviewsToTestimonials";
+import type { FeaturedInstructor } from "@/types/featured-instructor";
 
 function joinTitleParts(...parts: (string | undefined)[]) {
   return parts.filter(Boolean).join("");
@@ -60,11 +61,13 @@ function parseExpertAlt(alt: string) {
 type HomePageClientProps = {
   cmsData: WebsiteContent | null;
   featuredReviews?: CourseReview[];
+  featuredInstructors?: FeaturedInstructor[];
 };
 
 export function HomePageClient({
   cmsData,
   featuredReviews = [],
+  featuredInstructors = [],
 }: HomePageClientProps) {
   const dispatch = useAppDispatch();
   const { publicList } = useAppSelector((s) => s.courses);
@@ -134,7 +137,17 @@ export function HomePageClient({
     return [...HOME_FEATURES];
   }, [featuresSection?.features]);
 
+  const instructorsSection = cmsData?.homeInstructors;
   const experts = useMemo(() => {
+    if (featuredInstructors.length > 0) {
+      return featuredInstructors.map((i) => ({
+        id: i.id,
+        name: i.name,
+        role: i.roleLine,
+        image: i.image,
+        experience: i.experience,
+      }));
+    }
     const images = cmsData?.photoGallery?.images;
     if (images?.length) {
       return images.map((item) => {
@@ -147,7 +160,7 @@ export function HomePageClient({
       });
     }
     return [...HOME_EXPERTS];
-  }, [cmsData?.photoGallery?.images]);
+  }, [featuredInstructors, cmsData?.photoGallery?.images]);
 
   const testimonials = useMemo(() => {
     const fromReviews = mapFeaturedReviewsToTestimonials(featuredReviews);
@@ -356,7 +369,12 @@ export function HomePageClient({
       </section>
 
       {/* Experts */}
-      <ExpertsCarousel experts={experts} />
+      <ExpertsCarousel
+        experts={experts}
+        badgeLabel={instructorsSection?.badgeLabel}
+        sectionHeading={instructorsSection?.sectionHeading}
+        sectionSubtitle={instructorsSection?.sectionSubtitle}
+      />
 
       {/* Testimonials */}
       <Testimonials items={testimonials} />
