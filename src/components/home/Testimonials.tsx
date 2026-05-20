@@ -1,6 +1,5 @@
 "use client";
 
-import { HOME_TESTIMONIALS } from "@/data/homePageContent";
 import Image from "next/image";
 import { useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -81,8 +80,12 @@ function StudentAvatar({ name, avatar }: { name: string; avatar?: string }) {
 }
 
 export default function Testimonials({ items }: TestimonialsProps) {
-  const testimonials: TestimonialItem[] = items ?? [...HOME_TESTIMONIALS];
+  const testimonials: TestimonialItem[] = items ?? [];
   const swiperRef = useRef<SwiperType | null>(null);
+
+  if (testimonials.length === 0) {
+    return null;
+  }
 
   return (
     <section className="bg-gradient-to-br from-primary-container to-secondary-container px-8 py-24 text-on-primary">

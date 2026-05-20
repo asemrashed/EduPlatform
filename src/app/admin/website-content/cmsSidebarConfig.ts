@@ -11,10 +11,9 @@ import {
   LuStar as Star,
   LuNavigation as Navigation,
   LuSettings as Settings,
-  LuFileText as FileText,
-  LuChartBar as BarChart,
   LuLayers as Layers,
   LuUsers as Users,
+  LuAward as Award,
 } from 'react-icons/lu';
 import type { FutureSubTab } from './sections/FutureSections';
 
@@ -24,7 +23,7 @@ export interface CmsSidebarItem {
   id: CmsTabId;
   label: string;
   icon: IconType;
-  badge?: 'Coming Soon' | 'Unused';
+  badge?: 'Coming Soon' | 'Unused' | 'Future';
   dimmed?: boolean;
 }
 
@@ -36,10 +35,7 @@ export interface CmsSidebarGroup {
 export const CMS_SIDEBAR_GROUPS: CmsSidebarGroup[] = [
   {
     label: 'Global Settings',
-    items: [
-      { id: 'branding', label: 'Branding', icon: Palette },
-      { id: 'marquee', label: 'Marquee', icon: MessageSquare },
-    ],
+    items: [{ id: 'branding', label: 'Branding', icon: Palette }],
   },
   {
     label: 'Navigation',
@@ -52,9 +48,7 @@ export const CMS_SIDEBAR_GROUPS: CmsSidebarGroup[] = [
     label: 'Home Page',
     items: [
       { id: 'hero', label: 'Hero', icon: Sparkles },
-      { id: 'features', label: 'Features', icon: Star },
       { id: 'instructors', label: 'Instructors', icon: Users },
-      { id: 'statistics', label: 'Statistics', icon: BarChart },
       { id: 'faq', label: 'FAQ', icon: MessageSquare },
       { id: 'partners', label: 'Partners', icon: Briefcase },
       { id: 'reviews', label: 'Reviews', icon: Star },
@@ -74,27 +68,34 @@ export const CMS_SIDEBAR_GROUPS: CmsSidebarGroup[] = [
     items: [{ id: 'courses', label: 'Featured Courses', icon: Briefcase }],
   },
   {
-    label: 'More',
-    items: [{ id: 'services', label: 'More Sections', icon: Layers, badge: 'Unused', dimmed: true }],
+    label: 'Future',
+    items: [
+      {
+        id: 'certificates',
+        label: 'Certificates',
+        icon: Award,
+        badge: 'Future',
+        dimmed: true,
+      },
+      {
+        id: 'photoGallery',
+        label: 'Photo Gallery',
+        icon: ImageIcon,
+        badge: 'Future',
+        dimmed: true,
+      },
+    ],
   },
 ];
 
-export const MORE_TAB_IDS: FutureSubTab[] = [
-  'services',
-  'certificates',
-  'photoGallery',
-  'blog',
-  'downloadApp',
-];
-
-const HOME_FEATURE_TABS = new Set(['features', 'statistics']);
+export const MORE_TAB_IDS: FutureSubTab[] = ['certificates', 'photoGallery'];
 
 export function isMoreTab(tabId: string): boolean {
   return MORE_TAB_IDS.includes(tabId as FutureSubTab);
 }
 
 export function isFutureTab(tabId: string): boolean {
-  return isMoreTab(tabId) || HOME_FEATURE_TABS.has(tabId);
+  return isMoreTab(tabId);
 }
 
 export function isCmsTabActive(activeTab: string, itemId: string): boolean {
@@ -102,10 +103,6 @@ export function isCmsTabActive(activeTab: string, itemId: string): boolean {
   if (itemId === 'promoBanner' && activeTab === 'courseLessonBanner') return true;
   if (itemId === 'courses' && activeTab === 'coursesByCategory') return true;
   if (itemId === 'navigation' && activeTab === 'buttons') return true;
-  if (itemId === 'services' && isMoreTab(activeTab)) return true;
-  if (itemId === 'features' && activeTab === 'features') return true;
-  if (itemId === 'instructors' && activeTab === 'instructors') return true;
-  if (itemId === 'statistics' && activeTab === 'statistics') return true;
   return false;
 }
 
@@ -120,9 +117,8 @@ export function getCmsTabLabel(tabId: string): string {
   if (tabId === 'buttons') return 'Buttons';
   if (tabId === 'partners') return 'Partners';
   if (tabId === 'contactPage') return 'Contact Page';
-  if (tabId === 'features') return 'Features';
   if (tabId === 'instructors') return 'Instructors';
-  if (tabId === 'statistics') return 'Statistics';
-  if (isMoreTab(tabId)) return 'More Sections';
+  if (tabId === 'certificates') return 'Certificates';
+  if (tabId === 'photoGallery') return 'Photo Gallery';
   return tabId;
 }

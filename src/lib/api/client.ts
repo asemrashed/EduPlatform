@@ -2,7 +2,7 @@ import {
   getMockPublicCoursesEmpty,
   getMockPublicCoursesSuccess,
 } from "@/mock/publicCourses";
-import type { PublicCoursesSuccessBody } from "@/mock/publicCourses";
+import type { PublicCoursesSuccessBody } from "@/types/public-course";
 import { API_ENDPOINTS } from "./endpoints";
 import type {
   PublicChaptersResponse,

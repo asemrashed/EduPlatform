@@ -5,19 +5,14 @@ import { defaultAboutPageContent } from '@/lib/websiteContentDefaults';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AttractiveInput } from '@/components/ui/attractive-input';
 import { CmsImageField } from './CmsImageField';
-import { LuInfo as Info, LuArrowRight as ArrowRight } from 'react-icons/lu';
+import { LuInfo as Info } from 'react-icons/lu';
 
 interface AboutSectionProps {
   content: WebsiteContent;
   updateContent: (path: string[], value: unknown) => void;
-  onNavigateToFeatures: () => void;
 }
 
-export function AboutSection({
-  content,
-  updateContent,
-  onNavigateToFeatures,
-}: AboutSectionProps) {
+export function AboutSection({ content, updateContent }: AboutSectionProps) {
   const page = {
     ...defaultAboutPageContent,
     ...(content.aboutPage ?? {}),
@@ -67,19 +62,6 @@ export function AboutSection({
           onChange={(url) => updateContent(['aboutPage', 'imageUrl'], url)}
           previewAlt="About page"
         />
-        <div className="rounded-lg border border-[#7B2CBF]/30 bg-[#7B2CBF]/5 p-4">
-          <p className="text-sm text-gray-700">
-            Features are shared with the Home Page.{' '}
-            <button
-              type="button"
-              onClick={onNavigateToFeatures}
-              className="inline-flex items-center gap-1 font-semibold text-[#7B2CBF] hover:underline"
-            >
-              Edit Features
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </p>
-        </div>
       </CardContent>
     </Card>
   );

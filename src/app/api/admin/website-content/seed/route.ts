@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { getServerSession } from "next-auth/next";
-import connectDB from "@/lib/mongodb";
 import { authOptions } from "@/lib/auth";
-import Settings from "@/models/Settings";
-import { saveWebsiteContentSettings } from "@/app/api/_lib/websiteContentStore";
+import {
+  hasWebsiteContentDocument,
+  loadWebsiteContentSettings,
+  saveWebsiteContentSettings,
+} from "@/app/api/_lib/websiteContentStore";
 import {
   CACHE_TAG_WEBSITE_CONTENT,
-  defaultWebsiteContent,
-  WEBSITE_CONTENT_CATEGORY,
 } from "@/lib/websiteContentDefaults";
 
 export async function POST() {
@@ -21,14 +21,13 @@ export async function POST() {
   }
 
   try {
-    await connectDB();
-    const existing = await Settings.findOne({ category: WEBSITE_CONTENT_CATEGORY }).lean();
+    const existing = await hasWebsiteContentDocument();
     if (existing) {
       return NextResponse.json({ success: true, seeded: false });
     }
 
     await saveWebsiteContentSettings(
-      { ...defaultWebsiteContent },
+      await loadWebsiteContentSettings(),
       session.user.id,
     );
 

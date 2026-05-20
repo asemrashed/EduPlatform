@@ -8,6 +8,7 @@ import {
 import {
   CACHE_TAG_WEBSITE_CONTENT,
   defaultWebsiteContent,
+  sanitizeWebsiteContentForSave,
   validateWebsiteContent,
 } from "@/lib/websiteContentDefaults";
 
@@ -50,7 +51,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const settings = body.settings as Record<string, unknown>;
+    const settings = sanitizeWebsiteContentForSave(
+      body.settings as Record<string, unknown>,
+    );
     const data = await saveWebsiteContentSettings(settings, auth.user!.id);
 
     revalidateTag(CACHE_TAG_WEBSITE_CONTENT);

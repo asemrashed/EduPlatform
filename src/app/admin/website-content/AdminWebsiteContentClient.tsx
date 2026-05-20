@@ -22,26 +22,23 @@ import {
 } from 'react-icons/lu';
 import {
   defaultAboutContent,
-  defaultBlogContent,
   defaultCertificatesContent,
   defaultCourseLessonBannerContent,
   defaultCoursesByCategoryContent,
   defaultCoursesContent,
   defaultHomeInstructorsContent,
-  defaultDownloadAppContent,
   defaultFAQContent,
   defaultFooterContent,
   defaultHeroContent,
   defaultPhotoGalleryContent,
   defaultPromoBannerContent,
   defaultSectionOrder,
-  defaultServicesContent,
-  defaultStatisticsContent,
-  defaultWhyChooseUsContent,
   defaultContactPageContent,
   defaultAboutPageContent,
   defaultPartnersContent,
   defaultWebsiteContent,
+  stripLegacyWebsiteContentKeys,
+  sanitizeWebsiteContentForSave,
 } from '@/lib/websiteContentDefaults';
 import type { WebsiteContent } from './sections/types';
 import { CMS_SIDEBAR_GROUPS, getCmsTabLabel, isMoreTab, MORE_TAB_IDS } from './cmsSidebarConfig';
@@ -52,8 +49,6 @@ import { AboutSection } from './sections/AboutSection';
 import { FAQSection } from './sections/FAQSection';
 import { PartnersSection } from './sections/PartnersSection';
 import { BrandingSection } from './sections/BrandingSection';
-import { MarqueeSection } from './sections/MarqueeSection';
-import { FeaturesSection } from './sections/FeaturesSection';
 import { NavigationSection } from './sections/NavigationSection';
 import { FooterSection } from './sections/FooterSection';
 import { ReviewsSection } from './sections/ReviewsSection';
@@ -77,7 +72,6 @@ function WebsiteContentPageContent() {
   );
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [activeTab, setActiveTab] = useState('hero');
-  const [editingMessageIndex, setEditingMessageIndex] = useState<number | null>(null);
   const [editingNavItem, setEditingNavItem] = useState<{ section: string; index: number } | null>(null);
   const [uploadingAsset, setUploadingAsset] = useState<'logo' | 'favicon' | null>(null);
   
@@ -136,100 +130,14 @@ function WebsiteContentPageContent() {
         aboutPage: { ...defaultAboutPageContent, ...(content.aboutPage || {}) },
       });
     }
-    // Ensure features (whyChooseUs) content is initialized when switching to features tab
-    if (activeTab === 'features' && content && (!content.whyChooseUs || !content.whyChooseUs.features?.length)) {
-      const updatedWhyChooseUs = { 
-        ...defaultWhyChooseUsContent, 
-        ...(content.whyChooseUs || {}),
-        // Ensure nested objects are properly merged
-        label: { ...defaultWhyChooseUsContent.label, ...(content.whyChooseUs?.label || {}) },
-        title: { ...defaultWhyChooseUsContent.title, ...(content.whyChooseUs?.title || {}) },
-        titleColors: { ...defaultWhyChooseUsContent.titleColors, ...(content.whyChooseUs?.titleColors || {}) },
-        features: content.whyChooseUs?.features && content.whyChooseUs.features.length > 0 
-          ? content.whyChooseUs.features 
-          : [...defaultWhyChooseUsContent.features],
-      };
+    if (activeTab === 'instructors' && content && !content.homeInstructors?.sectionHeading) {
       setContent({
         ...content,
-        whyChooseUs: updatedWhyChooseUs
-      });
-    }
-    // Ensure statistics content is initialized when switching to statistics tab
-    if (activeTab === 'statistics' && content && (!content.statistics || !content.statistics.items || content.statistics.items.length === 0)) {
-      const updatedStatistics = { 
-        ...defaultStatisticsContent, 
-        ...(content.statistics || {}),
-      };
-      setContent({
-        ...content,
-        statistics: updatedStatistics
-      });
-    }
-    // Ensure statistics content is initialized when switching to statistics tab
-    if (activeTab === 'statistics' && content && (!content.statistics || !content.statistics.items || content.statistics.items.length === 0)) {
-      const updatedStatistics = { 
-        ...defaultStatisticsContent, 
-        ...(content.statistics || {}),
-      };
-      setContent({
-        ...content,
-        statistics: updatedStatistics
-      });
-    }
-    // Ensure services content is initialized when switching to services tab
-    if (
-      activeTab === 'services' &&
-      content &&
-      (
-        !content.services ||
-        !content.services.services ||
-        content.services.services.length === 0 ||
-        !content.services.batchSection
-      )
-    ) {
-      const defaultBatchSection = defaultServicesContent.batchSection || {
-        onlineButtonLabel: 'অনলাইন ব্যাচ',
-        offlineButtonLabel: 'অফলাইন ব্যাচ',
-        defaultActiveTab: 'online' as const,
-        onlineBackground: { from: '#063248', via: '#0B4B6A', to: '#063248' },
-        offlineBackground: { from: '#1E293B', via: '#334155', to: '#1E293B' },
-        onlineLevels: [],
-        offlineLevels: [],
-      };
-      const updatedServices = { 
-        ...defaultServicesContent, 
-        ...(content.services || {}),
-        // Ensure nested objects are properly merged
-        label: { ...defaultServicesContent.label, ...(content.services?.label || {}) },
-        title: { ...defaultServicesContent.title, ...(content.services?.title || {}) },
-        titleColors: { ...defaultServicesContent.titleColors, ...(content.services?.titleColors || {}) },
-        gradientColors: content.services?.gradientColors || defaultServicesContent.gradientColors,
-        batchSection: {
-          ...defaultBatchSection,
-          ...(content.services?.batchSection || {}),
-          onlineBackground: {
-            ...defaultBatchSection.onlineBackground,
-            ...(content.services?.batchSection?.onlineBackground || {}),
-          },
-          offlineBackground: {
-            ...defaultBatchSection.offlineBackground,
-            ...(content.services?.batchSection?.offlineBackground || {}),
-          },
-          onlineLevels:
-            content.services?.batchSection?.onlineLevels &&
-            content.services.batchSection.onlineLevels.length > 0
-              ? content.services.batchSection.onlineLevels
-              : [...defaultBatchSection.onlineLevels],
-          offlineLevels:
-            content.services?.batchSection?.offlineLevels &&
-            content.services.batchSection.offlineLevels.length > 0
-              ? content.services.batchSection.offlineLevels
-              : [...defaultBatchSection.offlineLevels],
+        homeInstructors: {
+          ...defaultHomeInstructorsContent,
+          ...(content.homeInstructors || {}),
+          instructorIds: content.homeInstructors?.instructorIds ?? [],
         },
-      };
-      setContent({
-        ...content,
-        services: updatedServices
       });
     }
     // Ensure certificates content is initialized when switching to certificates tab
@@ -276,25 +184,6 @@ function WebsiteContentPageContent() {
       setContent({
         ...content,
         photoGallery: updatedPhotoGallery
-      });
-    }
-    // Ensure blog content is initialized when switching to blog tab
-    if (activeTab === 'blog' && content && (!content.blog || !content.blog.posts || content.blog.posts.length === 0)) {
-      const updatedBlog = { 
-        ...defaultBlogContent, 
-        ...(content.blog || {}),
-        // Ensure nested objects are properly merged
-        label: { ...defaultBlogContent.label, ...(content.blog?.label || {}) },
-        title: { ...defaultBlogContent.title, ...(content.blog?.title || {}) },
-        titleColors: { ...defaultBlogContent.titleColors, ...(content.blog?.titleColors || {}) },
-        gradientColors: content.blog?.gradientColors || defaultBlogContent.gradientColors,
-        posts: content.blog?.posts && content.blog.posts.length > 0 
-          ? content.blog.posts 
-          : [...defaultBlogContent.posts],
-      };
-      setContent({
-        ...content,
-        blog: updatedBlog
       });
     }
     // Ensure promotional banner is initialized when switching to promoBanner tab
@@ -344,25 +233,6 @@ function WebsiteContentPageContent() {
         coursesByCategory: updatedCoursesByCategory
       });
     }
-    // Ensure downloadApp content is initialized when switching to downloadApp tab
-    if (activeTab === 'downloadApp' && content && (!content.downloadApp || !content.downloadApp.title || !content.downloadApp.description)) {
-      const updatedDownloadApp = { 
-        ...defaultDownloadAppContent, 
-        ...(content.downloadApp || {}),
-        // Ensure nested objects are properly merged
-        label: { ...defaultDownloadAppContent.label, ...(content.downloadApp?.label || {}) },
-        title: { ...defaultDownloadAppContent.title, ...(content.downloadApp?.title || {}) },
-        titleColors: { ...defaultDownloadAppContent.titleColors, ...(content.downloadApp?.titleColors || {}) },
-        buttons: {
-          googlePlay: { ...defaultDownloadAppContent.buttons.googlePlay, ...(content.downloadApp?.buttons?.googlePlay || {}) },
-          appStore: { ...defaultDownloadAppContent.buttons.appStore, ...(content.downloadApp?.buttons?.appStore || {}) },
-        },
-      };
-      setContent({
-        ...content,
-        downloadApp: updatedDownloadApp
-      });
-    }
     // Ensure footer content is initialized when switching to footer tab
     if (activeTab === 'footer' && content && (!content.footer || !content.footer.branding || !content.footer.companyLinks || content.footer.companyLinks.length === 0)) {
       const updatedFooter = { 
@@ -407,7 +277,9 @@ function WebsiteContentPageContent() {
       if (!response.ok) throw new Error('Failed to fetch content');
       const data = await response.json();
       // Ensure hero content uses defaultHeroContent if missing
-      const fetchedContent = data.data || {};
+      const fetchedContent = stripLegacyWebsiteContentKeys(
+        (data.data || {}) as Record<string, unknown>,
+      ) as unknown as WebsiteContent;
       // Merge with default hero content if hero is missing or incomplete
       if (!fetchedContent.hero || !fetchedContent.hero.subtitle) {
         fetchedContent.hero = { ...defaultHeroContent, ...(fetchedContent.hero || {}) };
@@ -475,16 +347,11 @@ function WebsiteContentPageContent() {
       if (!fetchedContent.metaTitle) {
         fetchedContent.metaTitle = 'CodeZyne - Online Learning Platform';
       }
-      fetchedContent.branding = {
-        logoText: 'à¦®à§à¦¨à¦¾à¦®à¦¤à¦¿ à¦¸à¦¾à¦°à§à¦­à§ à¦à§à¦à¦¨à¦¿à¦à§à¦¯à¦¾à¦² à¦à§à¦°à§à¦¨à¦¿à¦ à¦à¦¨à¦¸à§à¦à¦¿à¦à¦¿à¦à¦',
-        logoTextColor1: '#7B2CBF',
-        logoTextColor2: '#FF6B35',
-        logoIconColor1: '#FF6B35',
-        logoIconColor2: '#7B2CBF',
-        logoUrl: '',
-        faviconUrl: '',
-        ...(fetchedContent.branding || {}),
-      };
+      fetchedContent.branding = Object.assign(
+        {},
+        defaultWebsiteContent.branding,
+        fetchedContent.branding || {},
+      );
       // Ensure promotional banner has defaults
       if (!fetchedContent.promotionalBanner || fetchedContent.promotionalBanner.headline === undefined) {
         fetchedContent.promotionalBanner = { ...defaultPromoBannerContent, ...(fetchedContent.promotionalBanner || {}) };
@@ -522,39 +389,7 @@ function WebsiteContentPageContent() {
       console.error('Error fetching content:', error);
       setSaveStatus('error');
       // Initialize with default content on error
-      setContent({ 
-        metaTitle: 'CodeZyne - Online Learning Platform',
-        branding: {
-          logoText: 'à¦®à§à¦¨à¦¾à¦®à¦¤à¦¿ à¦¸à¦¾à¦°à§à¦­à§ à¦à§à¦à¦¨à¦¿à¦à§à¦¯à¦¾à¦² à¦à§à¦°à§à¦¨à¦¿à¦ à¦à¦¨à¦¸à§à¦à¦¿à¦à¦¿à¦à¦',
-          logoTextColor1: '#7B2CBF',
-          logoTextColor2: '#FF6B35',
-          logoIconColor1: '#FF6B35',
-          logoIconColor2: '#7B2CBF',
-          logoUrl: '',
-          faviconUrl: '',
-        },
-        hero: defaultHeroContent,
-        about: defaultAboutContent,
-        whyChooseUs: defaultWhyChooseUsContent,
-        statistics: defaultStatisticsContent,
-        services: defaultServicesContent,
-        certificates: defaultCertificatesContent,
-        photoGallery: defaultPhotoGalleryContent,
-        blog: defaultBlogContent,
-        downloadApp: defaultDownloadAppContent,
-        footer: defaultFooterContent,
-        courses: defaultCoursesContent,
-        homeInstructors: defaultHomeInstructorsContent,
-        coursesByCategory: defaultCoursesByCategoryContent,
-        promotionalBanner: defaultPromoBannerContent,
-        courseLessonBanner: defaultCourseLessonBannerContent,
-        sectionOrder: defaultSectionOrder,
-        contact: {
-          registrationNumber: 'বাংলাদেশ সরকার অনুমোদিত রেজিঃ নং- ৩১১০৫'
-        },
-        contactPage: defaultContactPageContent,
-        aboutPage: defaultAboutPageContent,
-      } as WebsiteContent);
+      setContent({ ...defaultWebsiteContent } as WebsiteContent);
     } finally {
       setIsLoading(false);
     }
@@ -802,7 +637,11 @@ function WebsiteContentPageContent() {
       const response = await fetch('/api/admin/website-content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ settings: content }),
+        body: JSON.stringify({
+          settings: sanitizeWebsiteContentForSave(
+            content as unknown as Record<string, unknown>,
+          ),
+        }),
       });
 
       if (!response.ok) throw new Error('Failed to save content');
@@ -948,19 +787,6 @@ function WebsiteContentPageContent() {
     }
   };
 
-  const addMarqueeMessage = () => {
-    if (!content) return;
-    const newMessages = [...content.marquee.messages, ''];
-    updateContent(['marquee', 'messages'], newMessages);
-    setEditingMessageIndex(newMessages.length - 1);
-  };
-
-  const removeMarqueeMessage = (index: number) => {
-    if (!content) return;
-    const newMessages = content.marquee.messages.filter((_, i) => i !== index);
-    updateContent(['marquee', 'messages'], newMessages);
-  };
-
   const addNavItem = (section: string) => {
     if (!content) return;
     const navSection = content.navigation[section as keyof typeof content.navigation];
@@ -986,19 +812,10 @@ function WebsiteContentPageContent() {
       return <HeroSection content={content} updateContent={updateContent} />;
     }
     if (activeTab === 'about') {
-      return (
-        <AboutSection
-          content={content}
-          updateContent={updateContent}
-          onNavigateToFeatures={() => setActiveTab('features')}
-        />
-      );
+      return <AboutSection content={content} updateContent={updateContent} />;
     }
     if (activeTab === 'contactPage') {
       return <ContactPageSection content={content} updateContent={updateContent} />;
-    }
-    if (activeTab === 'features') {
-      return <FeaturesSection content={content} updateContent={updateContent} />;
     }
     if (activeTab === 'instructors') {
       return (
@@ -1008,17 +825,6 @@ function WebsiteContentPageContent() {
           addFeaturedInstructor={addFeaturedInstructor}
           removeFeaturedInstructor={removeFeaturedInstructor}
           moveFeaturedInstructor={moveFeaturedInstructor}
-        />
-      );
-    }
-    if (activeTab === 'statistics') {
-      return (
-        <FutureSections
-          content={content}
-          updateContent={updateContent}
-          activeSubTab="statistics"
-          onSubTabChange={(tab) => setActiveTab(tab)}
-          hideSubNav
         />
       );
     }
@@ -1045,18 +851,6 @@ function WebsiteContentPageContent() {
           updateContent={updateContent}
           uploadingAsset={uploadingAsset}
           handleBrandingUpload={handleBrandingUpload}
-        />
-      );
-    }
-    if (activeTab === 'marquee') {
-      return (
-        <MarqueeSection
-          content={content}
-          updateContent={updateContent}
-          editingMessageIndex={editingMessageIndex}
-          setEditingMessageIndex={setEditingMessageIndex}
-          addMarqueeMessage={addMarqueeMessage}
-          removeMarqueeMessage={removeMarqueeMessage}
         />
       );
     }

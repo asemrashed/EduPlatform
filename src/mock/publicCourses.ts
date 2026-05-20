@@ -3,27 +3,12 @@
  * (see learning-project/src/app/api/public/courses/route.ts).
  * Phase 0: single sample course with fields aligned to API mapper output.
  */
-import type { Course } from "@/types/course";
+import type {
+  PublicCourseRow,
+  PublicCoursesSuccessBody,
+} from "@/types/public-course";
 
-export type PublicCoursesSuccessBody = {
-  success: true;
-  data: {
-    courses: PublicCourseRow[];
-    pagination: {
-      page: number;
-      limit: number;
-      total: number;
-      pages: number;
-      hasNext: boolean;
-      hasPrev: boolean;
-    };
-  };
-};
-
-/** Public API trims createdBy to { name, role } — not full CourseCreator. */
-export type PublicCourseRow = Omit<Course, "createdBy" | "instructor" | "instructorInfo"> & {
-  createdBy: { name: string; role: string };
-};
+export type { PublicCourseRow, PublicCoursesSuccessBody };
 
 const sampleCourse: PublicCourseRow = {
   _id: "507f1f77bcf86cd799439011",

@@ -14,10 +14,9 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { fetchPublicCourses, useAppDispatch, useAppSelector } from "@/store";
-import type { PublicCourseRow } from "@/mock/publicCourses";
+import type { PublicCourseRow } from "@/types/public-course";
 import {
   CATALOG_SIDEBAR,
-  STATIC_CATALOG_CARDS,
   type CatalogSidebarItem,
   type CatalogCategoryId,
 } from "@/data/allCoursePageContent";
@@ -108,10 +107,7 @@ function mapReduxToDisplay(c: PublicCourseRow): DisplayCard {
   return {
     key: `redux-${c._id}`,
     href: `/${c._id}`,
-    image:
-      c.thumbnailUrl ||
-      STATIC_CATALOG_CARDS[0]?.image ||
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAcBZqvF9S4XJxbHTkXmH3f9S2nguKoBLsh0WNiXpxEKcPtiqm2q7u33HtkChEiGO1yVUXV3YX74chjCSR7svAuh4oufS4xwpXvso6_X2WA4QfIZCHg3IgoM6bQ7P7QwRhnpibyqv9DP-VXOg7dVeSLbJfdwKBqCB1LwPVssAmyNDTKfvPg1e0WHUS7a3iJ-I5pKEvulcBVK9uwaJPTg1WCGxtjm12MTH5a2FG47aMxv3kE2g3CNHutYA6O-VeQg6x7EDTIoXnqfvI",
+    image: c.thumbnailUrl || "",
     imageAlt: c.title,
     badge,
     badgeClass: "bg-primary text-on-primary",
@@ -120,25 +116,6 @@ function mapReduxToDisplay(c: PublicCourseRow): DisplayCard {
     price: c.isPaid ? `${c.finalPrice ?? c.price ?? 0}` : "Free",
     lessons: `${c.lessonCount ?? 0}+ Lessons`,
     categoryId,
-  };
-}
-
-function mapStaticToDisplay(
-  s: (typeof STATIC_CATALOG_CARDS)[number],
-  i: number,
-): DisplayCard {
-  return {
-    key: `static-${i}-${s.title}`,
-    href: "/courses",
-    image: s.image,
-    imageAlt: s.imageAlt,
-    badge: s.badge,
-    badgeClass: "bg-primary text-on-primary",
-    title: s.title,
-    description: s.description,
-    price: s.price,
-    lessons: s.lessons,
-    categoryId: s.categoryId,
   };
 }
 
@@ -211,12 +188,7 @@ export function CoursesCatalogClient() {
     };
   }, []);
 
-  const merged = useMemo(() => {
-    const fromRedux = publicList.map(mapReduxToDisplay);
-    const need = Math.max(0, 6 - fromRedux.length);
-    const fromStatic = STATIC_CATALOG_CARDS.slice(0, need).map(mapStaticToDisplay);
-    return [...fromRedux, ...fromStatic];
-  }, [publicList]);
+  const merged = useMemo(() => publicList.map(mapReduxToDisplay), [publicList]);
 
   const filtered = useMemo(() => {
     if (category === "all") return merged;
@@ -401,7 +373,9 @@ export function CoursesCatalogClient() {
 
           {filtered.length === 0 ? (
             <p className="rounded-xl border border-dashed border-border p-12 text-center text-muted-foreground">
-              No courses in this category.
+              {publicList.length === 0
+                ? "No published courses available yet."
+                : "No courses in this category."}
             </p>
           ) : (
             <ul

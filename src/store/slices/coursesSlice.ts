@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import type { PublicCourseRow } from "@/mock/publicCourses";
+import type { PublicCourseRow } from "@/types/public-course";
 import type { PublicCoursesQuery } from "@/lib/api/types";
 import * as publicCoursesService from "@/services/publicCoursesService";
 

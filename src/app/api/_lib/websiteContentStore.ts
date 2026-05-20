@@ -1,18 +1,37 @@
 import connectDB from "@/lib/mongodb";
 import Settings from "@/models/Settings";
+import SiteContent from "@/models/SiteContent";
 import {
   WEBSITE_CONTENT_CATEGORY,
   defaultWebsiteContent,
+  stripLegacyWebsiteContentKeys,
 } from "@/lib/websiteContentDefaults";
+
+const SITE_CONTENT_KEY = WEBSITE_CONTENT_CATEGORY;
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return { ...(value as Record<string, unknown>) };
+  }
+  return null;
+}
+
+async function loadLegacySettingsContent() {
+  const legacyDoc = await Settings.findOne({ category: WEBSITE_CONTENT_CATEGORY }).lean();
+  return asRecord(legacyDoc?.settings);
+}
 
 export async function loadWebsiteContentSettings(): Promise<Record<string, unknown>> {
   await connectDB();
-  const doc = await Settings.findOne({ category: WEBSITE_CONTENT_CATEGORY }).lean();
-  const raw = doc?.settings;
-  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-    return { ...(raw as Record<string, unknown>) };
-  }
-  return { ...defaultWebsiteContent };
+
+  const siteContentDoc = await SiteContent.findOne({ key: SITE_CONTENT_KEY }).lean();
+  const siteContent = asRecord(siteContentDoc?.content);
+  if (siteContent) return stripLegacyWebsiteContentKeys(siteContent);
+
+  const legacyContent = await loadLegacySettingsContent();
+  if (legacyContent) return stripLegacyWebsiteContentKeys(legacyContent);
+
+  return stripLegacyWebsiteContentKeys({ ...defaultWebsiteContent });
 }
 
 export async function saveWebsiteContentSettings(
@@ -21,18 +40,23 @@ export async function saveWebsiteContentSettings(
 ) {
   await connectDB();
   const update: Record<string, unknown> = {
-    category: WEBSITE_CONTENT_CATEGORY,
-    settings,
+    key: SITE_CONTENT_KEY,
+    content: settings,
   };
   if (updatedBy) {
     update.updatedBy = updatedBy;
   }
-  const result = await Settings.findOneAndUpdate(
-    { category: WEBSITE_CONTENT_CATEGORY },
+
+  const result = await SiteContent.findOneAndUpdate(
+    { key: SITE_CONTENT_KEY },
     { $set: update },
     { upsert: true, new: true, setDefaultsOnInsert: true },
   );
-  return result?.settings && typeof result.settings === "object" && !Array.isArray(result.settings)
-    ? (result.settings as Record<string, unknown>)
-    : settings;
+
+  return asRecord(result?.content) ?? settings;
+}
+
+export async function hasWebsiteContentDocument() {
+  await connectDB();
+  return Boolean(await SiteContent.exists({ key: SITE_CONTENT_KEY }));
 }

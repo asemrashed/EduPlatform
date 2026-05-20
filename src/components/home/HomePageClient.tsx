@@ -20,19 +20,12 @@ import { useEffect, useMemo } from "react";
 import { cn } from "@/lib/cn";
 import banner from "@/public/banner.png";
 import { fetchPublicCourses, useAppDispatch, useAppSelector } from "@/store";
-import type { PublicCourseRow } from "@/mock/publicCourses";
+import type { PublicCourseRow } from "@/types/public-course";
 import type { WebsiteContent } from "@/lib/websiteContentDefaults";
-import { FEATURE_ICON_BY_TYPE } from "@/lib/featureIconMeta";
 import {
-  HOME_EXPERTS,
   HOME_FAQ,
-  HOME_FEATURES,
-  HOME_FEATURES_IMAGE,
-  HOME_FEATURED_COURSES,
   HOME_HERO,
   HOME_PARTNERS,
-  HOME_STATS,
-  HOME_TESTIMONIALS,
 } from "@/data/homePageContent";
 import CourseCard from "../CourseCard";
 import ExpertsCarousel from "../carousals/ExpertsCarousel";
@@ -44,18 +37,6 @@ import type { FeaturedInstructor } from "@/types/featured-instructor";
 
 function joinTitleParts(...parts: (string | undefined)[]) {
   return parts.filter(Boolean).join("");
-}
-
-function parseExpertAlt(alt: string) {
-  const separator = " — ";
-  const index = alt.indexOf(separator);
-  if (index === -1) {
-    return { name: alt, role: "" };
-  }
-  return {
-    name: alt.slice(0, index),
-    role: alt.slice(index + separator.length),
-  };
 }
 
 type HomePageClientProps = {
@@ -82,17 +63,6 @@ export function HomePageClient({
   const heroImage =
     hero?.carousel?.items?.[0]?.image || cmsData?.promotionalBanner?.imageUrl || banner.src;
 
-  const stats = useMemo(() => {
-    const items = cmsData?.statistics?.items;
-    if (items?.length) {
-      return items.map((item) => ({
-        value: `${item.number}${item.suffix}`,
-        label: item.label,
-      }));
-    }
-    return [...HOME_STATS];
-  }, [cmsData?.statistics?.items]);
-
   const promo = cmsData?.promotionalBanner;
   const coursesTitle = promo?.headline || "Courses Designed for Success";
   const coursesDescription =
@@ -101,74 +71,23 @@ export function HomePageClient({
   const coursesCtaLabel = promo?.ctaLabel || "View all";
   const coursesCtaHref = promo?.link || "/courses";
 
-  const featuresSection = cmsData?.whyChooseUs;
-  const featuresTitle =
-    featuresSection?.sectionHeading?.trim() ||
-    joinTitleParts(
-      featuresSection?.title?.part1,
-      featuresSection?.title?.part2,
-      featuresSection?.title?.part3,
-      featuresSection?.title?.part4,
-      featuresSection?.title?.part5,
-    ) ||
-    "Powerful Features for an Elite Experience";
-  const featuresDescription =
-    featuresSection?.sectionSubtitle?.trim() ||
-    featuresSection?.description ||
-    "Our platform isn't just about video lessons; it's a complete ecosystem designed to facilitate mastery and networking.";
-  const featuresImage = featuresSection?.image || HOME_FEATURES_IMAGE;
-  const features = useMemo(() => {
-    const cmsFeatures = featuresSection?.features;
-    if (cmsFeatures?.length) {
-      return cmsFeatures.map((feature, index) => {
-        const fallback = HOME_FEATURES[index % HOME_FEATURES.length];
-        const iconMeta = FEATURE_ICON_BY_TYPE[feature.iconType] ?? {
-          icon: fallback.icon,
-          iconBg: fallback.iconBg,
-        };
-        return {
-          icon: iconMeta.icon,
-          iconBg: iconMeta.iconBg,
-          title: feature.title,
-          body: feature.description,
-        };
-      });
-    }
-    return [...HOME_FEATURES];
-  }, [featuresSection?.features]);
-
   const instructorsSection = cmsData?.homeInstructors;
-  const experts = useMemo(() => {
-    if (featuredInstructors.length > 0) {
-      return featuredInstructors.map((i) => ({
+  const experts = useMemo(
+    () =>
+      featuredInstructors.map((i) => ({
         id: i.id,
         name: i.name,
         role: i.roleLine,
         image: i.image,
         experience: i.experience,
-      }));
-    }
-    const images = cmsData?.photoGallery?.images;
-    if (images?.length) {
-      return images.map((item) => {
-        const parsed = parseExpertAlt(item.alt);
-        return {
-          name: parsed.name,
-          role: parsed.role,
-          image: item.image,
-        };
-      });
-    }
-    return [...HOME_EXPERTS];
-  }, [featuredInstructors, cmsData?.photoGallery?.images]);
+      })),
+    [featuredInstructors],
+  );
 
-  const testimonials = useMemo(() => {
-    const fromReviews = mapFeaturedReviewsToTestimonials(featuredReviews);
-    if (fromReviews.length > 0) {
-      return fromReviews;
-    }
-    return [...HOME_TESTIMONIALS];
-  }, [featuredReviews]);
+  const testimonials = useMemo(
+    () => mapFeaturedReviewsToTestimonials(featuredReviews),
+    [featuredReviews],
+  );
 
   const partnersTitle =
     cmsData?.partners?.title?.trim() || "Our Trusted Partners & Integrations";
@@ -204,21 +123,28 @@ export function HomePageClient({
     dispatch(fetchPublicCourses(undefined));
   }, [dispatch]);
 
+  const featuredCourseIds = cmsData?.courses?.featuredCourseIds ?? [];
   const featuredCourses = useMemo(() => {
-    const fromApi = publicList.slice(0, 8).map((course: PublicCourseRow, i) => ({
+    const ordered =
+      featuredCourseIds.length > 0
+        ? featuredCourseIds
+            .map((id) => publicList.find((c) => c._id === id))
+            .filter((c): c is PublicCourseRow => Boolean(c))
+        : publicList.slice(0, 8);
+
+    return ordered.map((course) => ({
       href: `/${course._id}`,
-      image: course.thumbnailUrl || HOME_FEATURED_COURSES[i % HOME_FEATURED_COURSES.length]?.image,
+      image: course.thumbnailUrl || "",
       imageAlt: course.title,
       badge: course.tags?.[0] || (course.isPaid ? "Premium" : "Free"),
       badgeClass: "bg-primary text-on-primary",
       title: course.title,
-      description: course.shortDescription || course.description || "Explore this course.",
+      description:
+        course.shortDescription || course.description || "Explore this course.",
       price: course.isPaid ? `${course.finalPrice ?? course.price ?? 0}` : "Free",
       lessons: `${course.lessonCount ?? 0}+ Lessons`,
     }));
-
-    return fromApi.length > 0 ? fromApi : HOME_FEATURED_COURSES;
-  }, [publicList]);
+  }, [publicList, featuredCourseIds]);
 
   return (
     <div className="bg-background text-foreground">
@@ -267,26 +193,6 @@ export function HomePageClient({
   </div>
 </section>
 
-      {/* Stats */}
-      <section className="bg-surface-container-low py-16">
-        <div className="mx-auto max-w-screen-2xl px-8">
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            {stats.map((s, i) => (
-              <div
-                key={s.label}
-                className={cn(
-                  "text-center",
-                  i < 3 && "md:border-r md:border-outline-variant/30",
-                )}
-              >
-                <h3 className="mb-2 text-4xl font-black text-primary">{s.value}</h3>
-                <p className="font-semibold text-muted-foreground">{s.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Courses */}
       <section className="px-8 py-24">
         <div className="mx-auto max-w-screen-2xl">
@@ -307,74 +213,29 @@ export function HomePageClient({
               <span className="material-symbols-outlined">north_east</span>
             </Link>
           </div>
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {featuredCourses.map((c, i) => (
-              <CourseCard key={`${c.title}-${i}`} course={c as any} index={i} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section
-        id="features"
-        className="overflow-hidden bg-surface-container-low px-8 py-24"
-      >
-        <div className="mx-auto grid max-w-screen-2xl grid-cols-1 items-center gap-20 lg:grid-cols-2">
-          <div className="relative order-2 lg:order-1">
-            <div className="absolute -left-12 -top-12 h-64 w-64 rounded-full bg-blue-100 opacity-50 blur-3xl" />
-            <div className="relative overflow-hidden rounded-3xl border-8 border-white shadow-2xl">
-              <div className="relative aspect-square w-full">
-                <Image
-                  src={featuresImage}
-                  alt="Student Learning"
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                />
-              </div>
-            </div>
-          </div>
-          <div className="order-1 lg:order-2">
-            <h2 className="mb-8 font-[family-name:var(--font-headline)] text-5xl font-extrabold tracking-tight text-foreground">
-              {featuresTitle}
-            </h2>
-            <p className="mb-12 text-lg leading-relaxed text-muted-foreground">
-              {featuresDescription}
+          {featuredCourses.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-border p-12 text-center text-muted-foreground">
+              No courses to display yet. Check back soon or browse the full catalog.
             </p>
-            <div className="space-y-8">
-              {features.map((f) => (
-                <div key={f.title} className="flex gap-6">
-                  <div
-                    className={cn(
-                      "flex h-14 w-14 shrink-0 items-center justify-center rounded-xl",
-                      f.iconBg,
-                    )}
-                  >
-                    <span className="material-symbols-outlined text-3xl text-white">
-                      {f.icon}
-                    </span>
-                  </div>
-                  <div>
-                    <h4 className="mb-2 text-xl font-bold text-foreground">
-                      {f.title}
-                    </h4>
-                    <p className="text-muted-foreground">{f.body}</p>
-                  </div>
-                </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {featuredCourses.map((c, i) => (
+                <CourseCard key={`${c.title}-${i}`} course={c as any} index={i} />
               ))}
             </div>
-          </div>
+          )}
         </div>
       </section>
 
       {/* Experts */}
-      <ExpertsCarousel
-        experts={experts}
-        badgeLabel={instructorsSection?.badgeLabel}
-        sectionHeading={instructorsSection?.sectionHeading}
-        sectionSubtitle={instructorsSection?.sectionSubtitle}
-      />
+      {experts.length > 0 ? (
+        <ExpertsCarousel
+          experts={experts}
+          badgeLabel={instructorsSection?.badgeLabel}
+          sectionHeading={instructorsSection?.sectionHeading}
+          sectionSubtitle={instructorsSection?.sectionSubtitle}
+        />
+      ) : null}
 
       {/* Testimonials */}
       <Testimonials items={testimonials} />
