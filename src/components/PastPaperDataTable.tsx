@@ -1,17 +1,17 @@
 'use client';
 
-import { PassPaper } from '@/types/pass-paper';
+import { PastPaper } from '@/types/past-paper';
 import { Badge } from '@/components/ui/badge';
 import DataTable, { Column, Action } from '@/components/ui/data-table';
 import { LuPencil as Edit, LuTrash2 as Trash2, LuEye as Eye, LuFileText as LuFileText, LuDownload as Download, LuAward as Award, LuBookOpen as BookOpen } from 'react-icons/lu';;
 import { format } from 'date-fns';
 
-interface PassPaperDataTableProps {
-  passPapers: PassPaper[];
+interface PastPaperDataTableProps {
+  pastPapers: PastPaper[];
   loading: boolean;
-  onEdit: (paper: PassPaper) => void;
-  onDelete: (paper: PassPaper) => void;
-  onView?: (paper: PassPaper) => void;
+  onEdit: (paper: PastPaper) => void;
+  onDelete: (paper: PastPaper) => void;
+  onView?: (paper: PastPaper) => void;
   pagination: {
     page: number;
     limit: number;
@@ -22,8 +22,8 @@ interface PassPaperDataTableProps {
   variant?: 'table' | 'cards' | 'list';
 }
 
-export default function PassPaperDataTable({
-  passPapers,
+export default function PastPaperDataTable({
+  pastPapers,
   loading,
   onEdit,
   onDelete,
@@ -31,7 +31,7 @@ export default function PassPaperDataTable({
   pagination,
   onPageChange,
   variant = 'table'
-}: PassPaperDataTableProps) {
+}: PastPaperDataTableProps) {
   const getStatusBadge = (isActive: boolean | undefined) => {
     return (
       <Badge variant={isActive ? 'default' : 'secondary'}>
@@ -44,7 +44,7 @@ export default function PassPaperDataTable({
     return format(new Date(date), 'MMM dd, yyyy');
   };
 
-  const getPaperTypeBadges = (paper: PassPaper) => {
+  const getPaperTypeBadges = (paper: PastPaper) => {
     const badges = [];
     if (paper.questionPaperUrl) badges.push({ type: 'Question Paper', color: 'bg-purple-100 text-purple-800' });
     if (paper.marksPdfUrl) badges.push({ type: 'Marks PDF', color: 'bg-green-100 text-green-800' });
@@ -52,10 +52,10 @@ export default function PassPaperDataTable({
     return badges;
   };
 
-  const columns: Column<PassPaper>[] = [
+  const columns: Column<PastPaper>[] = [
     {
       key: 'paper',
-      label: 'Pass Paper',
+      label: 'Past Paper',
       width: 'w-1/3',
       render: (paper) => (
         <div className="flex items-center space-x-3">
@@ -118,7 +118,7 @@ export default function PassPaperDataTable({
     }
   ];
 
-  const actions: Action<PassPaper>[] = [
+  const actions: Action<PastPaper>[] = [
     ...(onView ? [{
       key: 'view',
       label: 'View Details',
@@ -128,14 +128,14 @@ export default function PassPaperDataTable({
     }] : []),
     {
       key: 'edit',
-      label: 'Edit Pass Paper',
+      label: 'Edit Past Paper',
       icon: <Edit className="w-4 h-4" />,
       onClick: onEdit,
       variant: 'default' as const
     },
     {
       key: 'delete',
-      label: 'Delete Pass Paper',
+      label: 'Delete Past Paper',
       icon: <Trash2 className="w-4 h-4" />,
       onClick: onDelete,
       variant: 'destructive' as const
@@ -143,8 +143,8 @@ export default function PassPaperDataTable({
   ];
 
   const emptyState = {
-    title: 'No pass papers found',
-    description: 'Get started by adding a new pass paper to the system.',
+    title: 'No past papers found',
+    description: 'Get started by adding a new past paper to the system.',
     icon: (
       <svg className="w-10 h-10" style={{ color: '#A855F7' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -154,7 +154,7 @@ export default function PassPaperDataTable({
 
   return (
     <DataTable
-      data={passPapers}
+      data={pastPapers}
       columns={columns}
       actions={actions}
       loading={loading}

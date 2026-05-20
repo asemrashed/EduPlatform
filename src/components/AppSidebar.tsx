@@ -9,7 +9,7 @@ import { useCourseCategories } from '@/hooks/useCourseCategories';
 import { useStudents } from '@/hooks/useStudents';
 import { useTeachers } from '@/hooks/useTeachers';
 import { useEnrollments } from '@/hooks/useEnrollments';
-import { usePassPapers } from '@/hooks/usePassPapers';
+import { usePastPapers } from '@/hooks/usePastPapers';
 import { useExams } from '@/hooks/useExams';
 import { useAssignments } from '@/hooks/useAssignments';
 import { useEffect, useState } from 'react';
@@ -47,7 +47,7 @@ const AppSidebar = () => {
   const { students } = useStudents();
   const { teachers } = useTeachers();
   const { enrollments } = useEnrollments();
-  const { passPapers } = usePassPapers();
+  const { pastPapers } = usePastPapers();
   const { exams } = useExams();
   const { assignments } = useAssignments();
 
@@ -58,13 +58,13 @@ const AppSidebar = () => {
     students: 0,
     teachers: 0,
     enrollments: 0,
-    passPapers: 0,
+    pastPapers: 0,
     exams: 0,
     assignments: 0,
   });
 
   // Check if any data is still loading
-  const isDataLoading = courses === undefined || categories === undefined || students === undefined || teachers === undefined || enrollments === undefined || passPapers === undefined || exams === undefined || assignments === undefined;
+  const isDataLoading = courses === undefined || categories === undefined || students === undefined || teachers === undefined || enrollments === undefined || pastPapers === undefined || exams === undefined || assignments === undefined;
 
   // Update badges when data changes
   useEffect(() => {
@@ -75,12 +75,12 @@ const AppSidebar = () => {
         students: students?.length || 0,
         teachers: teachers?.length || 0,
         enrollments: enrollments?.length || 0,
-        passPapers: passPapers?.length || 0,
+        pastPapers: pastPapers?.length || 0,
         exams: exams?.length || 0,
         assignments: assignments?.length || 0,
       });
     }
-  }, [courses, categories, students, teachers, enrollments, passPapers, exams, assignments, isDataLoading]);
+  }, [courses, categories, students, teachers, enrollments, pastPapers, exams, assignments, isDataLoading]);
 
   useEffect(() => {
     const fetchBranding = async () => {
@@ -179,10 +179,10 @@ const AppSidebar = () => {
         // },
         { 
           icon: LuBookmark, 
-          label: 'Pass Papers', 
-          href: '/admin/pass-papers',
+          label: 'Past Papers', 
+          href: '/admin/past-papers',
           description: 'Question papers & solutions',
-          badge: !isDataLoading && badges.passPapers > 0 ? badges.passPapers.toString() : null
+          badge: !isDataLoading && badges.pastPapers > 0 ? badges.pastPapers.toString() : null
         },
         { 
           icon: LuFileCheck, 

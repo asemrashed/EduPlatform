@@ -3,29 +3,29 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { AdminRoleShell } from '@/components/role-area/AdminRoleShell';
-import PassPaperDataTable from '@/components/PassPaperDataTable';
-import PassPaperStats from '@/components/PassPaperStats';
-import PassPaperModal from '@/components/PassPaperModal';
+import PastPaperDataTable from '@/components/PastPaperDataTable';
+import PastPaperStats from '@/components/PastPaperStats';
+import PastPaperModal from '@/components/PastPaperModal';
 import PageSection from '@/components/PageSection';
 import PageGrid from '@/components/PageGrid';
 import WelcomeSection from '@/components/WelcomeSection';
 import ConfirmModal from '@/components/ui/confirm-modal';
 import AdminPageWrapper from '@/components/AdminPageWrapper';
-import { PassPaper, PassPaperFilters as PassPaperFiltersType } from '@/types/pass-paper';
+import { PastPaper, PastPaperFilters as PastPaperFiltersType } from '@/types/past-paper';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LuPlus as Plus, LuSearch as Search, LuX as X, LuFileText as LuFileText } from 'react-icons/lu';;
 
-function PassPapersPageContent() {
+function PastPapersPageContent() {
   const { data: session } = useSession();
   
-  const [passPapers, setPassPapers] = useState<PassPaper[]>([]);
+  const [pastPapers, setPastPapers] = useState<PastPaper[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [editingPaper, setEditingPaper] = useState<PassPaper | null>(null);
+  const [editingPaper, setEditingPaper] = useState<PastPaper | null>(null);
   const [search, setSearch] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [paperToDelete, setPaperToDelete] = useState<PassPaper | null>(null);
+  const [paperToDelete, setPaperToDelete] = useState<PastPaper | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [filters, setFilters] = useState({
     search: '',
@@ -40,10 +40,10 @@ function PassPapersPageContent() {
   });
 
   useEffect(() => {
-    fetchPassPapers();
+    fetchPastPapers();
   }, [filters.page, filters.limit, filters.search]);
 
-  const fetchPassPapers = async () => {
+  const fetchPastPapers = async () => {
     try {
       setLoading(true);
       const queryParams = new URLSearchParams({
@@ -52,24 +52,24 @@ function PassPapersPageContent() {
         ...(filters.search && { search: filters.search })
       });
 
-      const response = await fetch(`/api/pass-papers?${queryParams}`);
+      const response = await fetch(`/api/past-papers?${queryParams}`);
       const data = await response.json();
 
       if (response.ok) {
-        const passPapersData = data?.data?.passPapers ?? data?.passPapers ?? [];
+        const pastPapersData = data?.data?.pastPapers ?? data?.pastPapers ?? [];
         const paginationData = data?.pagination ?? {
           page: filters.page,
           limit: filters.limit,
-          total: Array.isArray(passPapersData) ? passPapersData.length : 0,
+          total: Array.isArray(pastPapersData) ? pastPapersData.length : 0,
           pages: 1,
         };
-        setPassPapers(Array.isArray(passPapersData) ? passPapersData : []);
+        setPastPapers(Array.isArray(pastPapersData) ? pastPapersData : []);
         setPagination(paginationData);
       } else {
-        console.error('Failed to fetch pass papers:', data.error);
+        console.error('Failed to fetch past papers:', data.error);
       }
     } catch (error) {
-      console.error('Error fetching pass papers:', error);
+      console.error('Error fetching past papers:', error);
     } finally {
       setLoading(false);
     }
@@ -84,20 +84,20 @@ function PassPapersPageContent() {
     setFilters(prev => ({ ...prev, page }));
   };
 
-  const handleAddPassPaper = () => {
+  const handleAddPastPaper = () => {
     setEditingPaper(null);
     setShowForm(true);
   };
 
   const handleQuickSearch = () => {
     // Focus on the search input in the filters section
-    const searchInput = document.querySelector('input[placeholder*="Search pass papers"]') as HTMLInputElement;
+    const searchInput = document.querySelector('input[placeholder*="Search past papers"]') as HTMLInputElement;
     if (searchInput) {
       searchInput.focus();
     }
   };
 
-  const handleEditPassPaper = (paper: PassPaper) => {
+  const handleEditPastPaper = (paper: PastPaper) => {
     setEditingPaper(paper);
     setShowForm(true);
   };
@@ -110,41 +110,41 @@ function PassPapersPageContent() {
   const handleFormSuccess = () => {
     setShowForm(false);
     setEditingPaper(null);
-    fetchPassPapers();
+    fetchPastPapers();
   };
 
-  const handleDeletePassPaper = (paper: PassPaper) => {
+  const handleDeletePastPaper = (paper: PastPaper) => {
     setPaperToDelete(paper);
     setShowDeleteModal(true);
   };
 
-  const confirmDeletePassPaper = async () => {
+  const confirmDeletePastPaper = async () => {
     if (!paperToDelete) return;
 
     setDeleting(true);
     try {
-      const response = await fetch(`/api/pass-papers/${paperToDelete._id}`, {
+      const response = await fetch(`/api/past-papers/${paperToDelete._id}`, {
         method: 'DELETE',
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        console.log('Pass paper deleted successfully');
-        fetchPassPapers();
+        console.log('Past paper deleted successfully');
+        fetchPastPapers();
         setShowDeleteModal(false);
         setPaperToDelete(null);
       } else {
-        console.error('Failed to delete pass paper:', data.error);
+        console.error('Failed to delete past paper:', data.error);
       }
     } catch (error) {
-      console.error('Error deleting pass paper:', error);
+      console.error('Error deleting past paper:', error);
     } finally {
       setDeleting(false);
     }
   };
 
-  const cancelDeletePassPaper = () => {
+  const cancelDeletePastPaper = () => {
     setShowDeleteModal(false);
     setPaperToDelete(null);
   };
@@ -155,29 +155,29 @@ function PassPapersPageContent() {
       <main className="relative z-10 p-2 sm:p-4">
         {/* Welcome Section */}
         <WelcomeSection 
-          title="Pass Papers Management"
+          title="Past Papers Management"
           description="Manage question papers, marks PDFs, and work solutions"
         />
 
-        {/* Pass Paper Statistics */}
+        {/* Past Paper Statistics */}
         <PageSection 
-          title="Pass Paper Statistics"
+          title="Past Paper Statistics"
           className="mb-2 sm:mb-4"
         >
-          <PassPaperStats passPapers={passPapers} loading={loading} />
+          <PastPaperStats pastPapers={pastPapers} loading={loading} />
         </PageSection>
 
-        {/* Pass Papers Table */}
+        {/* Past Papers Table */}
         <PageSection 
-          title="Pass Papers"
-          description="Complete list of all pass papers in the system"
+          title="Past Papers"
+          description="Complete list of all past papers in the system"
           className="mb-2 sm:mb-4"
           actions={
             <div className="flex flex-col sm:flex-row gap-2 w-full">
               <div className="relative flex-1 min-w-0">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
-                  placeholder="Search pass papers..."
+                  placeholder="Search past papers..."
                   value={search}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-10 pr-10 w-full sm:w-64"
@@ -193,7 +193,7 @@ function PassPapersPageContent() {
                 )}
               </div>
               <Button 
-                onClick={handleAddPassPaper}
+                onClick={handleAddPastPaper}
                 className="flex items-center gap-2 text-white w-full sm:w-auto transition-all duration-200"
                 style={{
                   background: "linear-gradient(135deg, #EC4899 0%, #A855F7 100%)",
@@ -209,18 +209,18 @@ function PassPapersPageContent() {
                 }}
               >
                 <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Add Pass Paper</span>
+                <span className="hidden sm:inline">Add Past Paper</span>
                 <span className="sm:hidden">Add</span>
               </Button>
             </div>
           }
         >
           <div className="w-full overflow-hidden">
-            <PassPaperDataTable
-              passPapers={passPapers}
+            <PastPaperDataTable
+              pastPapers={pastPapers}
               loading={loading}
-              onEdit={handleEditPassPaper}
-              onDelete={handleDeletePassPaper}
+              onEdit={handleEditPastPaper}
+              onDelete={handleDeletePastPaper}
               pagination={pagination}
               onPageChange={handlePageChange}
               variant="table"
@@ -231,7 +231,7 @@ function PassPapersPageContent() {
         {/* Floating Action Button for Mobile */}
         <div className="fixed bottom-6 right-6 z-40 sm:hidden">
           <Button
-            onClick={handleAddPassPaper}
+            onClick={handleAddPastPaper}
             size="lg"
             className="rounded-full w-14 h-14 text-white shadow-lg hover:shadow-xl transition-all duration-200"
             style={{
@@ -251,10 +251,10 @@ function PassPapersPageContent() {
           </Button>
         </div>
 
-        {/* Pass Paper Modal */}
-        <PassPaperModal
+        {/* Past Paper Modal */}
+        <PastPaperModal
           open={showForm}
-          passPaper={editingPaper}
+          pastPaper={editingPaper}
           onClose={handleFormClose}
           onSuccess={handleFormSuccess}
         />
@@ -262,11 +262,11 @@ function PassPapersPageContent() {
         {/* Delete Confirmation Modal */}
         <ConfirmModal
           open={showDeleteModal}
-          onClose={cancelDeletePassPaper}
-          onConfirm={confirmDeletePassPaper}
-          title="Delete Pass Paper"
+          onClose={cancelDeletePastPaper}
+          onConfirm={confirmDeletePastPaper}
+          title="Delete Past Paper"
           description={`Are you sure you want to delete "${paperToDelete?.sessionName} - ${paperToDelete?.subject}"? This action cannot be undone.`}
-          confirmText="Delete Pass Paper"
+          confirmText="Delete Past Paper"
           cancelText="Cancel"
           variant="danger"
           loading={deleting}
@@ -276,10 +276,10 @@ function PassPapersPageContent() {
   );
 }
 
-export default function PassPapersPage() {
+export default function PastPapersPage() {
   return (
     <AdminPageWrapper>
-      <PassPapersPageContent />
+      <PastPapersPageContent />
     </AdminPageWrapper>
   );
 }

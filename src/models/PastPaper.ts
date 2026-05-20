@@ -1,6 +1,6 @@
 import mongoose, { Schema, type Document } from "mongoose";
 
-export interface IPassPaper extends Document {
+export interface IPastPaper extends Document {
   course: mongoose.Types.ObjectId;
   sessionName: string;
   year: number;
@@ -12,11 +12,12 @@ export interface IPassPaper extends Document {
   description?: string;
   tags?: string;
   isActive?: boolean;
+  uploadedBy?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const PassPaperSchema = new Schema<IPassPaper>(
+const PastPaperSchema = new Schema<IPastPaper>(
   {
     course: {
       type: Schema.Types.ObjectId,
@@ -78,18 +79,24 @@ const PassPaperSchema = new Schema<IPassPaper>(
       default: true,
       index: true,
     },
+    uploadedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      index: true,
+    },
   },
   {
     timestamps: true,
+    collection: "passpapers",
   },
 );
 
-PassPaperSchema.index(
+PastPaperSchema.index(
   { course: 1, sessionName: 1, year: 1, subject: 1, examType: 1 },
   { unique: true },
 );
-PassPaperSchema.index({ createdAt: -1 });
-PassPaperSchema.index({
+PastPaperSchema.index({ createdAt: -1 });
+PastPaperSchema.index({
   sessionName: "text",
   subject: "text",
   examType: "text",
@@ -97,8 +104,8 @@ PassPaperSchema.index({
   tags: "text",
 });
 
-const PassPaper =
-  mongoose.models.PassPaper ||
-  mongoose.model<IPassPaper>("PassPaper", PassPaperSchema);
+const PastPaper =
+  mongoose.models.PastPaper ||
+  mongoose.model<IPastPaper>("PastPaper", PastPaperSchema);
 
-export default PassPaper;
+export default PastPaper;

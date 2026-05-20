@@ -10,7 +10,6 @@ import {
   SEED_USERS,
   buildEnrollmentsForStudent,
   defaultPagination,
-  getPassPapersBody,
   getSeedChapters,
   getSeedLessons,
   MOCK_USER_ID,
@@ -654,17 +653,6 @@ export async function handleMockApi(req: NextRequest, segments: string[]) {
 
   if (segments[0] === "teachers" && segments[1] && method === "DELETE") {
     return json({ success: true });
-  }
-
-  // --- Pass papers ---
-  if (pathKey.startsWith("pass-papers")) {
-    const pp = getPassPapersBody();
-    if (method === "GET") {
-      return json(pp);
-    }
-    if (method === "DELETE") {
-      return json({ success: true });
-    }
   }
 
   // --- Reviews ---

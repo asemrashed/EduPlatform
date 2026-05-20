@@ -4,7 +4,7 @@ import cartReducer from "./slices/cartSlice";
 import courseDetailReducer from "./slices/courseDetailSlice";
 import coursesReducer from "./slices/coursesSlice";
 import dashboardReducer from "./slices/dashboardSlice";
-import studentPassPapersReducer from "./slices/studentPassPapersSlice";
+import studentPastPapersReducer from "./slices/studentPastPapersSlice";
 import roleAreaReducer from "./slices/roleAreaSlice";
 import uiReducer from "./slices/uiSlice";
 
@@ -17,7 +17,7 @@ export const store = configureStore({
     courseDetail: courseDetailReducer,
     cart: cartReducer,
     dashboard: dashboardReducer,
-    studentPassPapers: studentPassPapersReducer,
+    studentPastPapers: studentPastPapersReducer,
   },
 });
 

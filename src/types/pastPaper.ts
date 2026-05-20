@@ -1,5 +1,5 @@
-/** Row from `GET /api/pass-papers` — aligned with learning-project PassPaper lean docs. */
-export interface PassPaperRow {
+/** Row from `GET /api/past-papers` — aligned with PastPaper lean docs. */
+export interface PastPaperRow {
   _id: string;
   course?: { _id: string; title?: string } | string;
   sessionName: string;
@@ -13,14 +13,19 @@ export interface PassPaperRow {
   createdAt: string;
 }
 
-export interface PassPapersPagination {
+export interface PastPapersPagination {
   page: number;
   limit: number;
   total: number;
   pages: number;
 }
 
-export interface PassPapersListBody {
-  passPapers: PassPaperRow[];
-  pagination: PassPapersPagination;
+export interface PastPapersListBody {
+  pastPapers: PastPaperRow[];
+  pagination: PastPapersPagination;
 }
+
+export type PastPaperFileType =
+  | "question_paper"
+  | "marks_pdf"
+  | "work_solution";

@@ -1,10 +1,10 @@
-import type { PassPapersListBody } from "@/types/passPaper";
+import type { PastPapersListBody } from "@/types/pastPaper";
 
 const iso = (s: string) => new Date(s).toISOString();
 
-/** Mock `GET /api/pass-papers` — includes papers for enrolled course IDs from enrollments mock. */
-export function getMockPassPapersList(): PassPapersListBody {
-  const passPapers = [
+/** Mock `GET /api/past-papers` — includes papers for enrolled course IDs from enrollments mock. */
+export function getMockPastPapersList(): PastPapersListBody {
+  const pastPapers = [
     {
       _id: "pp_1",
       course: {
@@ -50,11 +50,11 @@ export function getMockPassPapersList(): PassPapersListBody {
   ];
 
   return {
-    passPapers,
+    pastPapers,
     pagination: {
       page: 1,
       limit: 100,
-      total: passPapers.length,
+      total: pastPapers.length,
       pages: 1,
     },
   };

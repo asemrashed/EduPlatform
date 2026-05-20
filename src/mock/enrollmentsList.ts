@@ -1,6 +1,6 @@
 import type { EnrollmentListSuccessBody } from "@/types/enrollmentList";
 
-/** Mock `GET /api/enrollments` — course IDs align with `studentComposite` + pass-paper fixtures. */
+/** Mock `GET /api/enrollments` — course IDs align with `studentComposite` + past-paper fixtures. */
 export function getMockEnrollmentListActive(): EnrollmentListSuccessBody {
   const enrollments = [
     {

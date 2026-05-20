@@ -15,5 +15,5 @@ export const API_ENDPOINTS = {
   INSTRUCTOR_DASHBOARD: "/api/instructor/dashboard",
   ADMIN_DASHBOARD: "/api/admin/dashboard",
   ENROLLMENTS: "/api/enrollments",
-  PASS_PAPERS: "/api/pass-papers",
+  PAST_PAPERS: "/api/past-papers",
 } as const;

@@ -10,20 +10,20 @@ import CustomEditor from '@/components/custom-editor';
 import { Badge } from '@/components/ui/badge';
 import PDFUpload from '@/components/PDFUpload';
 import { LuFileText as LuFileText, LuCalendar as Calendar, LuBookOpen as BookOpen, LuAward as Award, LuUsers as Users, LuTag as Tag, LuTriangleAlert as AlertCircle, LuCheck as CheckCircle, LuX as X } from 'react-icons/lu';;
-import { PassPaper, CreatePassPaperDto, UpdatePassPaperDto } from '@/types/pass-paper';
+import { PastPaper, CreatePastPaperDto, UpdatePastPaperDto } from '@/types/past-paper';
 
-interface PassPaperModalProps {
+interface PastPaperModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  passPaper?: PassPaper | null;
+  pastPaper?: PastPaper | null;
 }
 
-export default function PassPaperModal({ open, onClose, onSuccess, passPaper }: PassPaperModalProps) {
-  const isEdit = !!passPaper;
+export default function PastPaperModal({ open, onClose, onSuccess, pastPaper }: PastPaperModalProps) {
+  const isEdit = !!pastPaper;
   
   // Form data state
-  const [formData, setFormData] = useState<CreatePassPaperDto>({
+  const [formData, setFormData] = useState<CreatePastPaperDto>({
     course: 'none',
     sessionName: '',
     year: new Date().getFullYear(),
@@ -58,19 +58,19 @@ export default function PassPaperModal({ open, onClose, onSuccess, passPaper }: 
 
   // Initialize form data
   useEffect(() => {
-    if (isEdit && passPaper) {
+    if (isEdit && pastPaper) {
       setFormData({
-        course: (passPaper as any).course?._id || (passPaper as any).course || 'none',
-        sessionName: passPaper.sessionName,
-        year: passPaper.year,
-        subject: passPaper.subject,
-        examType: passPaper.examType,
-        questionPaperUrl: passPaper.questionPaperUrl || '',
-        marksPdfUrl: passPaper.marksPdfUrl || '',
-        workSolutionUrl: passPaper.workSolutionUrl || '',
-        description: passPaper.description || '',
-        tags: passPaper.tags || '',
-        isActive: passPaper.isActive ?? true
+        course: (pastPaper as any).course?._id || (pastPaper as any).course || 'none',
+        sessionName: pastPaper.sessionName,
+        year: pastPaper.year,
+        subject: pastPaper.subject,
+        examType: pastPaper.examType,
+        questionPaperUrl: pastPaper.questionPaperUrl || '',
+        marksPdfUrl: pastPaper.marksPdfUrl || '',
+        workSolutionUrl: pastPaper.workSolutionUrl || '',
+        description: pastPaper.description || '',
+        tags: pastPaper.tags || '',
+        isActive: pastPaper.isActive ?? true
       });
     } else {
       setFormData({
@@ -87,7 +87,7 @@ export default function PassPaperModal({ open, onClose, onSuccess, passPaper }: 
         isActive: true
       });
     }
-  }, [isEdit, passPaper]);
+  }, [isEdit, pastPaper]);
 
   // Fetch courses when modal opens
   useEffect(() => {
@@ -147,7 +147,7 @@ export default function PassPaperModal({ open, onClose, onSuccess, passPaper }: 
   }, [open]);
 
   // Handle input changes
-  const handleInputChange = (field: keyof CreatePassPaperDto, value: any) => {
+  const handleInputChange = (field: keyof CreatePastPaperDto, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
@@ -162,7 +162,7 @@ export default function PassPaperModal({ open, onClose, onSuccess, passPaper }: 
       
       const uploadFormData = new FormData();
       uploadFormData.append('file', file);
-      uploadFormData.append('folder', `lms/pass-papers/${type.replace(/([A-Z])/g, '-$1').toLowerCase()}`);
+      uploadFormData.append('folder', `lms/past-papers/${type.replace(/([A-Z])/g, '-$1').toLowerCase()}`);
       uploadFormData.append('description', `${type} - ${formData.sessionName} ${formData.year} ${formData.subject}`);
 
       const response = await fetch('/api/upload/pdf', {
@@ -173,7 +173,7 @@ export default function PassPaperModal({ open, onClose, onSuccess, passPaper }: 
       const result = await response.json();
 
       if (result.success && result.pdf) {
-        const urlField = `${type}Url` as keyof CreatePassPaperDto;
+        const urlField = `${type}Url` as keyof CreatePastPaperDto;
         handleInputChange(urlField, result.pdf.url);
         setUploadStatus(prev => ({ ...prev, [type]: 'success' }));
       } else {
@@ -245,10 +245,10 @@ export default function PassPaperModal({ open, onClose, onSuccess, passPaper }: 
     try {
       setLoading(true);
 
-      const url = isEdit ? `/api/pass-papers/${passPaper._id}` : '/api/pass-papers';
+      const url = isEdit ? `/api/past-papers/${pastPaper._id}` : '/api/past-papers';
       const method = isEdit ? 'PUT' : 'POST';
 
-      console.log('Submitting pass paper:', formData);
+      console.log('Submitting past paper:', formData);
 
       // Convert 'none' to undefined for API
       const payload = { ...formData, course: formData.course === 'none' ? undefined : formData.course } as any;
@@ -263,7 +263,7 @@ export default function PassPaperModal({ open, onClose, onSuccess, passPaper }: 
 
       if (!response.ok) {
         const errorText = await response.text();
-        let errorMessage = 'Failed to save pass paper';
+        let errorMessage = 'Failed to save past paper';
         
         try {
           const errorData = JSON.parse(errorText);
@@ -276,11 +276,11 @@ export default function PassPaperModal({ open, onClose, onSuccess, passPaper }: 
       }
 
       const result = await response.json();
-      console.log('Pass paper saved successfully:', result);
+      console.log('Past paper saved successfully:', result);
       onSuccess();
     } catch (error) {
-      console.error('Error saving pass paper:', error);
-      setErrors({ submit: error instanceof Error ? error.message : 'Failed to save pass paper' });
+      console.error('Error saving past paper:', error);
+      setErrors({ submit: error instanceof Error ? error.message : 'Failed to save past paper' });
     } finally {
       setLoading(false);
     }
@@ -305,13 +305,13 @@ export default function PassPaperModal({ open, onClose, onSuccess, passPaper }: 
     <FormModal
       open={open}
       onClose={onClose}
-      title={isEdit ? 'Edit Pass Paper' : 'Add New Pass Paper'}
-      description={isEdit ? 'Update pass paper information and files' : 'Create a new pass paper with question papers, marks PDFs, and work solutions'}
+      title={isEdit ? 'Edit Past Paper' : 'Add New Past Paper'}
+      description={isEdit ? 'Update past paper information and files' : 'Create a new past paper with question papers, marks PDFs, and work solutions'}
       onSubmit={handleSubmit}
       loading={loading}
       size="lg"
-      formId="pass-paper-form"
-      submitText={isEdit ? 'Update Pass Paper' : 'Create Pass Paper'}
+      formId="past-paper-form"
+      submitText={isEdit ? 'Update Past Paper' : 'Create Past Paper'}
     >
       <div className="space-y-6 max-h-96 overflow-y-auto">
         {/* Basic LuInformation */}
@@ -416,7 +416,7 @@ export default function PassPaperModal({ open, onClose, onSuccess, passPaper }: 
                 onPDFRemove={() => handleInputChange('questionPaperUrl', '')}
                 onError={(error) => setErrors(prev => ({ ...prev, questionPaper: error }))}
                 size="sm"
-                folder="lms/pass-papers/question-papers"
+                folder="lms/past-papers/question-papers"
                 description={`Question paper - ${formData.sessionName} ${formData.year} ${formData.subject}`}
               />
               {errors.questionPaper && (
@@ -440,7 +440,7 @@ export default function PassPaperModal({ open, onClose, onSuccess, passPaper }: 
                 onPDFRemove={() => handleInputChange('marksPdfUrl', '')}
                 onError={(error) => setErrors(prev => ({ ...prev, marksPdf: error }))}
                 size="sm"
-                folder="lms/pass-papers/marks-pdfs"
+                folder="lms/past-papers/marks-pdfs"
                 description={`Marks PDF - ${formData.sessionName} ${formData.year} ${formData.subject}`}
               />
               {errors.marksPdf && (
@@ -464,7 +464,7 @@ export default function PassPaperModal({ open, onClose, onSuccess, passPaper }: 
                 onPDFRemove={() => handleInputChange('workSolutionUrl', '')}
                 onError={(error) => setErrors(prev => ({ ...prev, workSolution: error }))}
                 size="sm"
-                folder="lms/pass-papers/work-solutions"
+                folder="lms/past-papers/work-solutions"
                 description={`Work solution - ${formData.sessionName} ${formData.year} ${formData.subject}`}
               />
               {errors.workSolution && (
@@ -497,7 +497,7 @@ export default function PassPaperModal({ open, onClose, onSuccess, passPaper }: 
               <CustomEditor
                 value={formData.description}
                 onChange={(data) => handleInputChange('description', data)}
-                placeholder="Additional details about this pass paper..."
+                placeholder="Additional details about this past paper..."
               />
             </div>
 

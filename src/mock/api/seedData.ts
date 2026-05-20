@@ -1,5 +1,5 @@
 import { getMockChaptersForCourse, getMockLessonsForCourse } from "@/mock/publicCourseDetail";
-import { getMockPassPapersList } from "@/mock/passPapersList";
+import { getMockPastPapersList } from "@/mock/pastPapersList";
 
 export const MOCK_USER_ID = "mock-user-id";
 
@@ -190,8 +190,8 @@ export function getSeedLessons(courseId: string) {
   return getMockLessonsForCourse(courseId);
 }
 
-export function getPassPapersBody() {
-  return getMockPassPapersList();
+export function getPastPapersBody() {
+  return getMockPastPapersList();
 }
 
 export const MOCK_ASSIGNMENT = {

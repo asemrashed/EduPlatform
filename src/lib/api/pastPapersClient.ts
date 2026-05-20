@@ -1,23 +1,23 @@
 import { API_ENDPOINTS } from "./endpoints";
-import type { PassPapersListBody } from "@/types/passPaper";
+import type { PastPapersListBody } from "@/types/pastPaper";
 
-export type PassPapersQuery = {
+export type PastPapersQuery = {
   page?: number;
   limit?: number;
   search?: string;
 };
 
-export async function getPassPapers(
-  query: PassPapersQuery = {},
-): Promise<PassPapersListBody> {
+export async function getPastPapers(
+  query: PastPapersQuery = {},
+): Promise<PastPapersListBody> {
   const searchParams = new URLSearchParams();
   if (query.page != null) searchParams.set("page", String(query.page));
   if (query.limit != null) searchParams.set("limit", String(query.limit));
   if (query.search) searchParams.set("search", query.search);
 
   const url = searchParams.toString()
-    ? `${API_ENDPOINTS.PASS_PAPERS}?${searchParams.toString()}`
-    : API_ENDPOINTS.PASS_PAPERS;
+    ? `${API_ENDPOINTS.PAST_PAPERS}?${searchParams.toString()}`
+    : API_ENDPOINTS.PAST_PAPERS;
 
   const response = await fetch(url, {
     method: "GET",
@@ -28,24 +28,24 @@ export async function getPassPapers(
 
   const json = (await response.json()) as {
     success?: boolean;
-    data?: { passPapers?: PassPapersListBody["passPapers"] };
+    data?: { pastPapers?: PastPapersListBody["pastPapers"] };
     error?: string;
   };
 
   if (!response.ok || json?.success !== true) {
-    throw new Error(json?.error || "Failed to load pass papers");
+    throw new Error(json?.error || "Failed to load past papers");
   }
 
-  const passPapers = Array.isArray(json?.data?.passPapers)
-    ? json.data.passPapers
+  const pastPapers = Array.isArray(json?.data?.pastPapers)
+    ? json.data.pastPapers
     : [];
 
   const page = query.page ?? 1;
   const limit = query.limit ?? 10;
-  const total = passPapers.length;
+  const total = pastPapers.length;
 
   return {
-    passPapers,
+    pastPapers,
     pagination: {
       page,
       limit,

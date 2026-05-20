@@ -132,8 +132,8 @@ const StudentSidebar = () => {
         },
         { 
           icon: LuBookmark, 
-          label: 'Pass Papers', 
-          href: '/student/pass-papers',
+          label: 'Past Papers', 
+          href: '/student/past-papers',
           description: 'Question papers',
           badge: null
         },

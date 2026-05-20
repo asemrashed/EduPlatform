@@ -1,13 +1,13 @@
 export enum PaperType {
-  QUESTION_PAPER = 'question_paper',
-  MARKS_PDF = 'marks_pdf',
-  WORK_SOLUTION = 'work_solution',
+  QUESTION_PAPER = "question_paper",
+  MARKS_PDF = "marks_pdf",
+  WORK_SOLUTION = "work_solution",
 }
 
-export interface IPassPaper {
+export interface IPastPaper {
   _id: string;
   id?: string;
-  course?: string; // ObjectId as string
+  course?: string | { _id: string; title?: string };
   sessionName: string;
   year: number;
   subject: string;
@@ -23,11 +23,11 @@ export interface IPassPaper {
   updatedAt: Date;
 }
 
-// For API responses
-export type PassPaper = IPassPaper;
+export type PastPaper = IPastPaper;
 
-export interface CreatePassPaperDto {
+export interface CreatePastPaperDto {
   course?: string;
+  courseId?: string;
   sessionName: string;
   year: number;
   subject: string;
@@ -38,11 +38,9 @@ export interface CreatePassPaperDto {
   description?: string;
   tags?: string;
   isActive?: boolean;
-  uploadedBy?: string;
 }
 
-export interface UpdatePassPaperDto {
-  course?: string;
+export interface UpdatePastPaperDto {
   sessionName?: string;
   year?: number;
   subject?: string;
@@ -53,26 +51,24 @@ export interface UpdatePassPaperDto {
   description?: string;
   tags?: string;
   isActive?: boolean;
-  uploadedBy?: string;
 }
 
-export interface PassPaperFilters {
+export interface PastPaperFilters {
   sessionName?: string;
   year?: number;
   subject?: string;
   examType?: string;
   paperType?: PaperType;
   isActive?: boolean;
-  uploadedBy?: string;
   search?: string;
   page?: number;
   limit?: number;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
 }
 
-export interface PassPaperResponse {
-  passPapers: PassPaper[];
+export interface PastPaperResponse {
+  pastPapers: PastPaper[];
   pagination: {
     page: number;
     limit: number;
@@ -81,7 +77,7 @@ export interface PassPaperResponse {
   };
 }
 
-export interface PassPaperStats {
+export interface PastPaperStats {
   totalPapers: number;
   activePapers: number;
   inactivePapers: number;
@@ -92,12 +88,12 @@ export interface PassPaperStats {
   };
   papersBySubject: Record<string, number>;
   papersByYear: Record<number, number>;
-  recentUploads: PassPaper[];
+  recentUploads: PastPaper[];
 }
 
-export interface PassPaperUploadResult {
+export interface PastPaperUploadResult {
   success: boolean;
-  passPaper?: PassPaper;
+  pastPaper?: PastPaper;
   error?: string;
   uploadResults?: {
     questionPaper?: {
