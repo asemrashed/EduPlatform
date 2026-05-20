@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/cn';
 import Image from 'next/image';
+import Link from 'next/link';
 import PrimaryActionBtn from './ui/buttons/PrimaryActionBtn';
 import { useRouter } from 'next/navigation';
 
@@ -27,7 +28,8 @@ export default function CourseCard({
           : "/courses";
 
   return (
-    <div
+    <Link
+      href={targetHref}
       key={index}
       className={cn(
         "group flex gap-4 md:gap-6 rounded-lg bg-surface-container p-4 transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-primary/40",
@@ -81,11 +83,14 @@ export default function CourseCard({
 
         <div className={cn("mt-2", list ? "w-fit px-2" : "w-full")}>
           <PrimaryActionBtn 
-            handleBtn={() => router.push(targetHref)} 
+            handleBtn={(e: React.MouseEvent<HTMLButtonElement>) => {
+              e.preventDefault(); // Prevent default link behavior if clicking the button specifically
+              router.push(targetHref);
+            }} 
             value="Enroll Course" 
           />
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

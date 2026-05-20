@@ -1,6 +1,6 @@
 import React from 'react'
 
-function PrimaryActionBtn({handleBtn, value, disabled = false}: {handleBtn: () => void, value: string, disabled?: boolean}) {
+function PrimaryActionBtn({handleBtn, value, disabled = false}: {handleBtn: (e: React.MouseEvent<HTMLButtonElement>) => void, value: string, disabled?: boolean}) {
   return (
     <button
         type="button"

@@ -6,13 +6,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AttractiveInput } from '@/components/ui/attractive-input';
 import { CmsImageField } from './CmsImageField';
 import { LuInfo as Info } from 'react-icons/lu';
+import { Button } from '@/components/ui/button';
 
 interface AboutSectionProps {
   content: WebsiteContent;
   updateContent: (path: string[], value: unknown) => void;
+  onManageFeatures?: () => void;
 }
 
-export function AboutSection({ content, updateContent }: AboutSectionProps) {
+export function AboutSection({
+  content,
+  updateContent,
+  onManageFeatures,
+}: AboutSectionProps) {
   const page = {
     ...defaultAboutPageContent,
     ...(content.aboutPage ?? {}),
@@ -62,6 +68,24 @@ export function AboutSection({ content, updateContent }: AboutSectionProps) {
           onChange={(url) => updateContent(['aboutPage', 'imageUrl'], url)}
           previewAlt="About page"
         />
+
+        <div className="rounded-lg border border-dashed border-[#7B2CBF]/30 bg-[#7B2CBF]/5 p-4">
+          <p className="text-sm text-gray-700">
+            The features grid on the public about page uses the same content as the home
+            features section. Edit headings, icons, and feature cards in the Features tab.
+          </p>
+          {onManageFeatures ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              onClick={onManageFeatures}
+            >
+              Open Features tab
+            </Button>
+          ) : null}
+        </div>
       </CardContent>
     </Card>
   );

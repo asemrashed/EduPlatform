@@ -35,6 +35,7 @@ import CourseFAQ from "./CourseFAQ";
 import PrimaryActionBtn from "@/components/ui/buttons/PrimaryActionBtn";
 import PrimaryOutLineBtn from "@/components/ui/buttons/PrimaryOutLineBtn";
 import { useCheckout } from "@/hooks/useCheckout";
+import GlobalLoading from "@/components/GlobalLoading";
 
 const SECTIONS = ["about", "instructor", "curriculum", "faq"] as const;
 
@@ -56,7 +57,15 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
 
   const instructor = useMemo(() => {
     if (!course) return null;
-    return (course.instructor || course.createdBy) as any;
+    if (course.instructor?._id) return course.instructor;
+    const fallback = course.createdBy;
+    if (!fallback?._id) return null;
+    return {
+      _id: fallback._id,
+      name: fallback.name,
+      role: fallback.role,
+      email: fallback.email,
+    };
   }, [course]);
 
   useEffect(() => {
@@ -197,13 +206,7 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
   };
 
   if (status === "loading" || status === "idle") {
-    return (
-      <div className="space-y-6" role="status" aria-busy="true">
-        <p className="sr-only">Loading course</p>
-        <div className="h-12 max-w-md animate-pulse rounded-lg bg-muted" />
-        <div className="h-64 animate-pulse rounded-xl bg-muted" />
-      </div>
-    );
+    return <GlobalLoading />;
   }
 
   if (status === "failed") {

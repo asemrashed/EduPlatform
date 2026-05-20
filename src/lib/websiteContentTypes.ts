@@ -105,6 +105,9 @@ export interface WhyChooseUsContent {
   features: WhyChooseUsFeature[];
 }
 
+/** Home & About platform features (CMS key: `features`). */
+export type FeaturesContent = WhyChooseUsContent;
+
 export interface StatisticsItem {
   id: number;
   number: string;

@@ -35,6 +35,7 @@ import {
   defaultSectionOrder,
   defaultContactPageContent,
   defaultAboutPageContent,
+  defaultFeaturesContent,
   defaultPartnersContent,
   defaultWebsiteContent,
   stripLegacyWebsiteContentKeys,
@@ -46,6 +47,7 @@ import { CmsSectionsLayout } from './CmsSectionsLayout';
 import { ContactPageSection } from './sections/ContactPageSection';
 import { HeroSection } from './sections/HeroSection';
 import { AboutSection } from './sections/AboutSection';
+import { FeaturesSection } from './sections/FeaturesSection';
 import { FAQSection } from './sections/FAQSection';
 import { PartnersSection } from './sections/PartnersSection';
 import { BrandingSection } from './sections/BrandingSection';
@@ -128,6 +130,19 @@ function WebsiteContentPageContent() {
       setContent({
         ...content,
         aboutPage: { ...defaultAboutPageContent, ...(content.aboutPage || {}) },
+      });
+    }
+    if (activeTab === 'features' && content && !content.features?.sectionHeading) {
+      setContent({
+        ...content,
+        features: {
+          ...defaultFeaturesContent,
+          ...(content.features || {}),
+          features:
+            content.features?.features?.length
+              ? content.features.features
+              : defaultFeaturesContent.features,
+        },
       });
     }
     if (activeTab === 'instructors' && content && !content.homeInstructors?.sectionHeading) {
@@ -334,6 +349,16 @@ function WebsiteContentPageContent() {
         fetchedContent.aboutPage = {
           ...defaultAboutPageContent,
           ...(fetchedContent.aboutPage || {}),
+        };
+      }
+      if (!fetchedContent.features?.sectionHeading) {
+        fetchedContent.features = {
+          ...defaultFeaturesContent,
+          ...(fetchedContent.features || {}),
+          features:
+            fetchedContent.features?.features?.length
+              ? fetchedContent.features.features
+              : defaultFeaturesContent.features,
         };
       }
       if (!fetchedContent.homeInstructors?.sectionHeading) {
@@ -812,7 +837,16 @@ function WebsiteContentPageContent() {
       return <HeroSection content={content} updateContent={updateContent} />;
     }
     if (activeTab === 'about') {
-      return <AboutSection content={content} updateContent={updateContent} />;
+      return (
+        <AboutSection
+          content={content}
+          updateContent={updateContent}
+          onManageFeatures={() => setActiveTab('features')}
+        />
+      );
+    }
+    if (activeTab === 'features') {
+      return <FeaturesSection content={content} updateContent={updateContent} />;
     }
     if (activeTab === 'contactPage') {
       return <ContactPageSection content={content} updateContent={updateContent} />;

@@ -7,6 +7,7 @@ import type {
   CoursesByCategoryContent,
   CoursesContent,
   HomeInstructorsContent,
+  FeaturesContent,
   FAQContent,
   FooterContent,
   HeroContent,
@@ -86,6 +87,9 @@ export function stripLegacyWebsiteContentKeys<T extends Record<string, unknown>>
   raw: T,
 ): T {
   const out = { ...raw } as Record<string, unknown>;
+  if (!out.features && out.whyChooseUs && typeof out.whyChooseUs === "object") {
+    out.features = out.whyChooseUs;
+  }
   for (const key of REMOVED_WEBSITE_CONTENT_KEYS) {
     delete out[key];
   }
@@ -186,11 +190,41 @@ export interface WebsiteContent {
   courses: CoursesContent;
   coursesByCategory: CoursesByCategoryContent;
   homeInstructors: HomeInstructorsContent;
+  features: FeaturesContent;
   sectionOrder: SectionConfig[];
   faq: FAQContent;
   promotionalBanner: PromoBannerContent;
   courseLessonBanner: CourseLessonBannerContent;
 }
+
+const HOME_FEATURE_ICON_TYPES: Array<
+  import("@/lib/websiteContentTypes").WhyChooseUsFeature["iconType"]
+> = ["flexible", "instructor", "money", "community"];
+
+export const defaultFeaturesContent: FeaturesContent = {
+  sectionHeading: "Powerful Features for an Elite Experience",
+  sectionSubtitle:
+    "Our platform isn't just about video lessons; it's a complete ecosystem designed to facilitate mastery and networking.",
+  label: { text: "Features", backgroundColor: PRIMARY_COLOR },
+  title: { part1: "", part2: "", part3: "", part4: "", part5: "" },
+  titleColors: {
+    part1: PRIMARY_COLOR,
+    part2: SECONDARY_COLOR,
+    part3: PRIMARY_COLOR,
+    part4: PRIMARY_COLOR,
+    part5: PRIMARY_COLOR,
+  },
+  description: "",
+  image: HOME_FEATURES_IMAGE,
+  features: HOME_FEATURES.map((item, index) => ({
+    id: index + 1,
+    title: item.title,
+    titleBn: item.title,
+    description: item.body,
+    descriptionBn: item.body,
+    iconType: HOME_FEATURE_ICON_TYPES[index] ?? "flexible",
+  })),
+};
 
 const ABOUT_HERO_IMAGE =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuA49z5j8dNSWa9xyciQauqnApJ20f5WiqAAFt1WC0qJnfhMUz2PJC4u1-22QUWy7ne00W-7hNpWway3iinbaoTxzGVBdugweY_nGDoBhF9xnkL1QPXKw4AlJGLV35u6rQx1eW8GM9DaUFs5Zbl81chOkgg2lD0Fbct348O1Tyr3jCw1xpW7NDWRVmnI2cxsDNVGAeYALh7qYZ3FGBDKOoso9_EjggIWuvXSzy2uRtrm3XaWNlqGjaMQvFd3YkTCU4iLY_xewch068Y";
@@ -535,6 +569,7 @@ export const defaultWebsiteContent: WebsiteContent = {
       "Learn from the best in the industry—our mentors bring years of experience, knowledge, and passion to guide you.",
     instructorIds: [],
   },
+  features: defaultFeaturesContent,
   coursesByCategory: {
     label: {
       text: "Categories",

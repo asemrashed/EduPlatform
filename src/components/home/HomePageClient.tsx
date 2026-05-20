@@ -34,6 +34,8 @@ import FAQ from "./FAQ";
 import type { CourseReview } from "@/types/course-review";
 import { mapFeaturedReviewsToTestimonials } from "@/lib/mapFeaturedReviewsToTestimonials";
 import type { FeaturedInstructor } from "@/types/featured-instructor";
+import { HomeFeaturesSection } from "@/components/features/HomeFeaturesSection";
+import { resolveFeaturesContent } from "@/lib/resolveFeaturesContent";
 
 function joinTitleParts(...parts: (string | undefined)[]) {
   return parts.filter(Boolean).join("");
@@ -107,6 +109,11 @@ export function HomePageClient({
     }
     return HOME_PARTNERS.map((name) => ({ name, imageUrl: "", href: "" }));
   }, [cmsData?.partners?.items, cmsData?.footer?.paymentGateway?.methods]);
+
+  const featuresContent = useMemo(
+    () => resolveFeaturesContent(cmsData),
+    [cmsData],
+  );
 
   const faqItems = useMemo(() => {
     const faqs = cmsData?.faq?.faqs;
@@ -226,6 +233,8 @@ export function HomePageClient({
           )}
         </div>
       </section>
+
+      <HomeFeaturesSection content={featuresContent} />
 
       {/* Experts */}
       {experts.length > 0 ? (

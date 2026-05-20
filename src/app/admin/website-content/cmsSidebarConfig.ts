@@ -48,6 +48,7 @@ export const CMS_SIDEBAR_GROUPS: CmsSidebarGroup[] = [
     label: 'Home Page',
     items: [
       { id: 'hero', label: 'Hero', icon: Sparkles },
+      { id: 'features', label: 'Features', icon: Layers },
       { id: 'instructors', label: 'Instructors', icon: Users },
       { id: 'faq', label: 'FAQ', icon: MessageSquare },
       { id: 'partners', label: 'Partners', icon: Briefcase },
@@ -117,6 +118,7 @@ export function getCmsTabLabel(tabId: string): string {
   if (tabId === 'buttons') return 'Buttons';
   if (tabId === 'partners') return 'Partners';
   if (tabId === 'contactPage') return 'Contact Page';
+  if (tabId === 'features') return 'Features';
   if (tabId === 'instructors') return 'Instructors';
   if (tabId === 'certificates') return 'Certificates';
   if (tabId === 'photoGallery') return 'Photo Gallery';

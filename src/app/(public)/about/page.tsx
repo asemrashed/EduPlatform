@@ -4,10 +4,12 @@ import Image from "next/image";
 import { loadWebsiteContentSettings } from "@/app/api/_lib/websiteContentStore";
 import {
   defaultAboutPageContent,
+  defaultWebsiteContent,
   type WebsiteContent,
 } from "@/lib/websiteContentDefaults";
 import { SiteSocialLinks } from "@/components/layout/SiteSocialLinks";
-import { defaultWebsiteContent } from "@/lib/websiteContentDefaults";
+import { AboutFeaturesCards } from "@/components/features/AboutFeaturesCards";
+import { resolveFeaturesContent } from "@/lib/resolveFeaturesContent";
 
 export const metadata: Metadata = {
   title: "About",
@@ -32,6 +34,7 @@ export default async function AboutPage() {
   const aboutContent =
     aboutPage.aboutContent?.trim() || defaultAboutPageContent.aboutContent;
   const imageUrl = aboutPage.imageUrl?.trim() || defaultAboutPageContent.imageUrl;
+  const featuresContent = resolveFeaturesContent(cmsData);
 
   return (
     <div className="mx-auto max-w-screen-2xl pb-5 md:pb-10">
@@ -66,6 +69,8 @@ export default async function AboutPage() {
           />
         </div>
       </section>
+
+      <AboutFeaturesCards content={featuresContent} />
     </div>
   );
 }
