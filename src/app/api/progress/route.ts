@@ -9,6 +9,9 @@ import Lesson from "@/models/Lesson";
 import CourseProgress, {
   type ILessonProgressEntry,
 } from "@/models/CourseProgress";
+import { ensureStudentCourseAccess } from "@/app/api/_lib/studentEnrollment";
+import { toObjectId } from "@/app/api/_lib/lessonQuiz";
+import { issueEnrollmentCertificateIfNotIssued } from "@/lib/enrollment-certificate";
 
 const COURSE_SELECT =
   "title shortDescription thumbnailUrl category isPaid price status";
@@ -205,21 +208,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const enrollment = await Enrollment.findOne({
-      student: userId,
-      course: courseId,
-      status: { $in: ["enrolled", "in_progress", "completed"] },
-    })
-      .select("_id")
-      .lean();
-    
-
-    if (!enrollment) {
+    const access = await ensureStudentCourseAccess(userId, courseId);
+    if (!access.ok) {
       return NextResponse.json(
-        { success: false, error: "Enrollment required for this course" },
-        { status: 403 },
+        { success: false, error: access.error },
+        { status: access.status },
       );
     }
+
+    const studentOid = toObjectId(userId)!;
+    const courseOid = toObjectId(courseId)!;
 
     const totalLessons = await Lesson.countDocuments({
       course: courseId,
@@ -231,8 +229,8 @@ export async function POST(request: NextRequest) {
     try {
       doc = await CourseProgress.findOneAndUpdate(
         {
-          student: userId,
-          course: courseId,
+          student: studentOid,
+          course: courseOid,
         },
         {
           $setOnInsert: {
@@ -260,8 +258,8 @@ export async function POST(request: NextRequest) {
           { userId, courseId }
         );
         doc = await CourseProgress.findOne({
-          student: userId,
-          course: courseId,
+          student: studentOid,
+          course: courseOid,
         });
         
         if (!doc) {
@@ -365,11 +363,26 @@ export async function POST(request: NextRequest) {
       { new: true }
     );
 
-    await Enrollment.findOneAndUpdate(
-      { student: userId, course: courseId },
-      { progress: doc.progressPercentage },
-      { new: true }
+    const enrollmentUpdate: Record<string, unknown> = {
+      progress: doc.progressPercentage,
+    };
+    if (status === "completed") {
+      enrollmentUpdate.status = "completed";
+    }
+
+    const enrollmentDoc = await Enrollment.findOneAndUpdate(
+      { student: studentOid, course: courseOid },
+      { $set: enrollmentUpdate },
+      { new: true },
     );
+
+    if (status === "completed" && enrollmentDoc) {
+      try {
+        await issueEnrollmentCertificateIfNotIssued(String(enrollmentDoc._id));
+      } catch (certError) {
+        console.error("Auto certificate issue failed:", certError);
+      }
+    }
 
     const populated = await CourseProgress.findById(doc._id)
       .populate({ path: "course", select: COURSE_SELECT })

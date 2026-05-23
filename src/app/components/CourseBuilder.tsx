@@ -22,6 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { AttractiveInput } from '@/components/ui/attractive-input';
 import { AttractiveTextarea } from '@/components/ui/attractive-textarea';
 import { AttractiveSelect } from '@/components/ui/attractive-select';
@@ -80,6 +81,8 @@ function buildCourseUpdatePayload(
     thumbnailUrl: string;
     isPaid: boolean;
     instructor?: string;
+    certificateEnabled: boolean;
+    certificateOutcomes: string[];
   },
   options?: { includeInstructor?: boolean }
 ) {
@@ -91,6 +94,10 @@ function buildCourseUpdatePayload(
     isPaid: form.isPaid,
     price: form.isPaid ? Number(form.price || 0) : 0,
     salePrice: form.isPaid ? Number(form.discountedPrice || 0) : 0,
+    certificateEnabled: form.certificateEnabled,
+    certificateOutcomes: form.certificateEnabled
+      ? form.certificateOutcomes.map((line) => line.trim()).filter(Boolean)
+      : [],
   };
 
   if (options?.includeInstructor) {
@@ -376,6 +383,8 @@ function UnifiedCourseBuilderContent({ role }: UnifiedCourseBuilderProps) {
     thumbnailUrl: string;
     isPaid: boolean;
     instructor?: string;
+    certificateEnabled: boolean;
+    certificateOutcomes: string[];
   }>({
     title: '',
     description: '',
@@ -385,6 +394,8 @@ function UnifiedCourseBuilderContent({ role }: UnifiedCourseBuilderProps) {
     thumbnailUrl: '',
     isPaid: false,
     instructor: isAdmin ? undefined : user?.id,
+    certificateEnabled: false,
+    certificateOutcomes: [],
   });
 
   const formInitialised = useRef(false);
@@ -425,6 +436,8 @@ function UnifiedCourseBuilderContent({ role }: UnifiedCourseBuilderProps) {
       const found = courses.find((c) => c._id === courseId);
       if (found) {
         setCourse(found);
+        const certEnabled = Boolean((found as { certificateEnabled?: boolean }).certificateEnabled);
+        const certOutcomes = (found as { certificateOutcomes?: string[] }).certificateOutcomes;
         const init = {
           title: found.title,
           description: found.description || '',
@@ -436,6 +449,13 @@ function UnifiedCourseBuilderContent({ role }: UnifiedCourseBuilderProps) {
           instructor: isAdmin 
             ? (typeof found.instructor === 'string' ? found.instructor : found.instructor?._id)
             : user?.id,
+          certificateEnabled: certEnabled,
+          certificateOutcomes:
+            certEnabled && Array.isArray(certOutcomes) && certOutcomes.length > 0
+              ? [...certOutcomes]
+              : certEnabled
+                ? ['']
+                : [],
         };
         setCourseForm(init);
         lastSaved.current = JSON.stringify(init);
@@ -453,6 +473,7 @@ function UnifiedCourseBuilderContent({ role }: UnifiedCourseBuilderProps) {
           const data = await res.json();
           if (res.ok && data.data) {
             setCourse(data.data);
+            const certEnabled = Boolean(data.data.certificateEnabled);
             const init = {
               title: data.data.title,
               description: data.data.description || '',
@@ -464,6 +485,15 @@ function UnifiedCourseBuilderContent({ role }: UnifiedCourseBuilderProps) {
               instructor: isAdmin
                 ? (typeof data.data.instructor === 'string' ? data.data.instructor : data.data.instructor?._id)
                 : user?.id,
+              certificateEnabled: certEnabled,
+              certificateOutcomes:
+                certEnabled &&
+                Array.isArray(data.data.certificateOutcomes) &&
+                data.data.certificateOutcomes.length > 0
+                  ? [...data.data.certificateOutcomes]
+                  : certEnabled
+                    ? ['']
+                    : [],
             };
             setCourseForm(init);
             lastSaved.current = JSON.stringify(init);
@@ -582,7 +612,11 @@ function UnifiedCourseBuilderContent({ role }: UnifiedCourseBuilderProps) {
       courseForm.price !== (course.price || 0) ||
       courseForm.discountedPrice !== ((course as any).discountedPrice || (course as any).salePrice || 0) ||
       courseForm.thumbnailUrl !== (course.thumbnailUrl || '') ||
-      courseForm.isPaid !== course.isPaid;
+      courseForm.isPaid !== course.isPaid ||
+      courseForm.certificateEnabled !==
+        Boolean((course as { certificateEnabled?: boolean }).certificateEnabled) ||
+      JSON.stringify(courseForm.certificateOutcomes) !==
+        JSON.stringify((course as { certificateOutcomes?: string[] }).certificateOutcomes || []);
 
     if (!hasChanges) return;
 
@@ -985,6 +1019,88 @@ function UnifiedCourseBuilderContent({ role }: UnifiedCourseBuilderProps) {
                 onDiscountedPriceChange={(v) => setCourseForm((p) => ({ ...p, discountedPrice: v }))}
                 showDiscountedPrice
               />
+
+              <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-4 space-y-4 md:col-span-2">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">Enable completion certificate</p>
+                    <p className="text-xs text-gray-500 mt-0.5 max-w-xl">
+                      When enabled, students who finish all lessons receive a downloadable PDF automatically.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={courseForm.certificateEnabled}
+                    onCheckedChange={(checked) => {
+                      setCourseForm((prev) => ({
+                        ...prev,
+                        certificateEnabled: checked,
+                        certificateOutcomes: checked
+                          ? prev.certificateOutcomes.length
+                            ? prev.certificateOutcomes
+                            : ['']
+                          : [],
+                      }));
+                      if (isAdmin) handleCourseUpdateOnBlur();
+                    }}
+                  />
+                </div>
+                {courseForm.certificateEnabled && (
+                  <div className="space-y-3">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Learner outcomes (shown on the certificate)
+                    </label>
+                    <div className="space-y-2">
+                      {courseForm.certificateOutcomes.map((line, idx) => (
+                        <div key={idx} className="flex gap-2 items-center">
+                          <Input
+                            value={line}
+                            onChange={(e) => {
+                              const copy = [...courseForm.certificateOutcomes];
+                              copy[idx] = e.target.value;
+                              setCourseForm((prev) => ({ ...prev, certificateOutcomes: copy }));
+                            }}
+                            onBlur={isAdmin ? handleCourseUpdateOnBlur : undefined}
+                            placeholder="e.g. Completed all assessments with distinction"
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="shrink-0"
+                            onClick={() => {
+                              const filtered = courseForm.certificateOutcomes.filter((_, i) => i !== idx);
+                              setCourseForm((prev) => ({
+                                ...prev,
+                                certificateOutcomes: filtered.length ? filtered : [''],
+                              }));
+                              if (isAdmin) handleCourseUpdateOnBlur();
+                            }}
+                            aria-label="Remove outcome line"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => {
+                        setCourseForm((prev) => ({
+                          ...prev,
+                          certificateOutcomes: [...prev.certificateOutcomes, ''],
+                        }));
+                      }}
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add outcome line
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Right Column - Thumbnail */}

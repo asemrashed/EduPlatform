@@ -67,6 +67,10 @@ function mapCourse(course: any) {
     enrollmentCount:
       typeof course.enrollmentCount === "number" ? course.enrollmentCount : 0,
     tags: Array.isArray(course.tags) ? course.tags : [],
+    certificateEnabled: Boolean(course.certificateEnabled),
+    certificateOutcomes: Array.isArray(course.certificateOutcomes)
+      ? course.certificateOutcomes
+      : [],
     createdBy: course.createdBy
       ? {
           _id: String(course.createdBy._id || ""),
@@ -318,6 +322,16 @@ export async function POST(request: NextRequest) {
           ? Number(body.salePrice)
           : undefined;
 
+    const certificateEnabled = body.certificateEnabled === true;
+    const certificateOutcomes = certificateEnabled
+      ? (Array.isArray(body.certificateOutcomes)
+          ? body.certificateOutcomes
+          : []
+        )
+          .map((line) => String(line).trim())
+          .filter((line) => line.length > 0)
+      : [];
+
     const course = await Course.create({
       title,
       shortDescription: String(body.shortDescription || "").trim() || undefined,
@@ -338,6 +352,8 @@ export async function POST(request: NextRequest) {
           : undefined,
       createdBy,
       instructor,
+      certificateEnabled,
+      certificateOutcomes,
     });
 
     const populated = await Course.findById(course._id)

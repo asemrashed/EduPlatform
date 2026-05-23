@@ -1,66 +1,70 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState } from "react";
+import {
+  bulkSaveLessonQuizQuestions,
+  deleteLessonQuizQuestion,
+  getLessonQuizQuestions,
+  type LessonQuizQuestion,
+} from "@/lib/api/lessonQuizClient";
 
-export interface LessonQuizQuestionInput {
+export type LessonQuizQuestionInput = {
   question: string;
   options: string[];
   correctOptionIndex: number;
   explanation?: string;
   isActive?: boolean;
-}
+};
 
-export interface LessonQuizQuestionView {
-  _id: string;
-  lesson: string;
-  course: string;
-  question: string;
-  options: string[];
-  explanation?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+export type { LessonQuizQuestion as LessonQuizQuestionView };
 
 export function useLessonQuiz() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchQuestions = useCallback(async (lessonId: string): Promise<LessonQuizQuestionView[]> => {
+  const fetchQuestions = useCallback(async (lessonId: string): Promise<LessonQuizQuestion[]> => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/lessons/${lessonId}/quiz`, { cache: 'no-store' });
-      const data = await res.json();
-      if (!res.ok || !data?.success) throw new Error(data?.error || 'Failed to load questions');
-      return data.data as LessonQuizQuestionView[];
-    } catch (e: any) {
-      setError(e.message || 'Failed to load questions');
+      return await getLessonQuizQuestions(lessonId);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Failed to load questions";
+      setError(message);
       return [];
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const bulkCreate = useCallback(async (lessonId: string, questions: LessonQuizQuestionInput[]) => {
+  const bulkCreate = useCallback(
+    async (lessonId: string, questions: LessonQuizQuestionInput[]) => {
+      setLoading(true);
+      setError(null);
+      try {
+        return await bulkSaveLessonQuizQuestions(lessonId, questions);
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : "Failed to create questions";
+        setError(message);
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  const removeQuestion = useCallback(async (questionId: string): Promise<boolean> => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/lessons/${lessonId}/quiz/bulk`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questions }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data?.success) throw new Error(data?.error || 'Failed to create questions');
-      return data.data as LessonQuizQuestionView[];
-    } catch (e: any) {
-      setError(e.message || 'Failed to create questions');
-      return null;
+      await deleteLessonQuizQuestion(questionId);
+      return true;
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Failed to delete question";
+      setError(message);
+      return false;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  return { loading, error, fetchQuestions, bulkCreate };
+  return { loading, error, fetchQuestions, bulkCreate, removeQuestion };
 }
-
-

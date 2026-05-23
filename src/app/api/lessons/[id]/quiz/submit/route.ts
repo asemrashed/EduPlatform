@@ -5,7 +5,7 @@ import connectDB from "@/lib/mongodb";
 import { authOptions } from "@/lib/auth";
 import Lesson from "@/models/Lesson";
 import Question from "@/models/Question";
-import Enrollment from "@/models/Enrollment";
+import { ensureStudentCourseAccess } from "@/app/api/_lib/studentEnrollment";
 import LessonQuizResult from "@/models/LessonQuizResult";
 
 interface RouteParams {
@@ -53,18 +53,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const enrollment = await Enrollment.findOne({
-      student: userId,
-      course: lesson.course,
-      status: { $in: ["enrolled", "in_progress", "completed"] },
-    })
-      .select("_id")
-      .lean();
-
-    if (!enrollment) {
+    const access = await ensureStudentCourseAccess(userId, String(lesson.course));
+    if (!access.ok) {
       return NextResponse.json(
-        { success: false, error: "Active enrollment required" },
-        { status: 403 },
+        { success: false, error: access.error },
+        { status: access.status },
       );
     }
 

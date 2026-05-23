@@ -268,31 +268,6 @@ export async function handleMockApi(req: NextRequest, segments: string[]) {
     });
   }
 
-  if (segments[0] === "lessons" && segments[1] === "quiz-availability" && method === "GET") {
-    return json({ success: true, data: { available: true } });
-  }
-
-  if (segments[0] === "lessons" && segments[2] === "quiz") {
-    if (segments[3] === "result-details" && method === "GET") {
-      return json({
-        success: true,
-        data: { scorePercentage: 80, passed: true },
-      });
-    }
-    if (segments[3] === "history" && method === "GET") {
-      return json({ success: true, data: { attempts: [] } });
-    }
-    if (method === "GET") {
-      return json({
-        success: true,
-        data: {
-          required: false,
-          questions: [],
-        },
-      });
-    }
-  }
-
   if (segments[0] === "lessons" && segments.length === 1 && method === "GET") {
     const course = sp.get("course") ?? "";
     return json({
@@ -311,10 +286,6 @@ export async function handleMockApi(req: NextRequest, segments: string[]) {
 
   if (pathKey === "progress/completion" && method === "POST") {
     return json({ success: true });
-  }
-
-  if (segments[0] === "student" && segments[1] === "quiz" && segments[2] === "completion" && method === "GET") {
-    return json({ success: true, data: { completed: false } });
   }
 
   // --- Student exams & attempts ---

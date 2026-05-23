@@ -49,6 +49,10 @@ function mapCourse(course: any) {
     enrollmentCount:
       typeof course.enrollmentCount === "number" ? course.enrollmentCount : 0,
     tags: Array.isArray(course.tags) ? course.tags : [],
+    certificateEnabled: Boolean(course.certificateEnabled),
+    certificateOutcomes: Array.isArray(course.certificateOutcomes)
+      ? course.certificateOutcomes
+      : [],
     createdBy: course.createdBy
       ? {
           _id: String(course.createdBy._id || ""),
@@ -229,6 +233,21 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (updateData.isPaid === false) {
       updateData.price = undefined;
       updateData.salePrice = undefined;
+    }
+
+    if (typeof body.certificateEnabled === "boolean") {
+      updateData.certificateEnabled = body.certificateEnabled;
+    }
+    if (body.certificateOutcomes !== undefined) {
+      const normalized = (
+        Array.isArray(body.certificateOutcomes) ? body.certificateOutcomes : []
+      )
+        .map((line) => String(line).trim())
+        .filter((line) => line.length > 0);
+      updateData.certificateOutcomes = normalized;
+    }
+    if (body.certificateEnabled === false) {
+      updateData.certificateOutcomes = [];
     }
 
     const updated = await Course.findByIdAndUpdate(

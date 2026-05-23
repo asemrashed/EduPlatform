@@ -273,7 +273,6 @@ const EnrollmentModal: React.FC<EnrollmentModalProps> = ({
         headers: { 'Content-Type': 'application/json' },
       });
       const data = await response.json();
-      console.log("data",data);
 
       if (!response.ok || !data?.success) {
         throw new Error(data?.error || 'Failed to generate certificate');

@@ -36,6 +36,8 @@ export interface Course {
   lessonCount?: number;
   enrollmentCount?: number;
   tags?: string[];
+  certificateEnabled?: boolean;
+  certificateOutcomes?: string[];
   createdBy?: CourseCreator;
   instructor?: string | CourseCreator;
   instructorInfo?: CourseCreator;
@@ -55,6 +57,8 @@ export interface CreateCourseRequest {
   price?: number;
   salePrice?: number;
   instructor?: string;
+  certificateEnabled?: boolean;
+  certificateOutcomes?: string[];
 }
 
 export interface UpdateCourseRequest {
@@ -69,6 +73,8 @@ export interface UpdateCourseRequest {
   price?: number;
   salePrice?: number;
   instructor?: string;
+  certificateEnabled?: boolean;
+  certificateOutcomes?: string[];
 }
 
 export interface CourseFilters {

@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth";
 import Lesson from "@/models/Lesson";
 import Course from "@/models/Course";
 import Question from "@/models/Question";
-import Enrollment from "@/models/Enrollment";
+import { ensureStudentCourseAccess } from "@/app/api/_lib/studentEnrollment";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -123,15 +123,12 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
         return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
       }
     } else if (role === "student") {
-      const active = await Enrollment.findOne({
-        student: userId,
-        course: lesson.course,
-        status: { $in: ["enrolled", "in_progress", "completed"] },
-      })
-        .select("_id")
-        .lean();
-      if (!active) {
-        return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+      const access = await ensureStudentCourseAccess(userId, courseIdStr);
+      if (!access.ok) {
+        return NextResponse.json(
+          { success: false, error: access.error },
+          { status: access.status },
+        );
       }
       if (!lesson.isPublished) {
         return NextResponse.json(

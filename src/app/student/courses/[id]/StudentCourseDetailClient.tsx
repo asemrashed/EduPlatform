@@ -14,6 +14,15 @@ import confetti from 'canvas-confetti';
 import { htmlToPlainText } from '@/lib/utils';
 import { studentLearningService } from '@/services/studentLearningService';
 import { fetchAccountProfile } from '@/lib/accountClient';
+import { createEnrollment } from '@/lib/api/enrollmentClient';
+import {
+  getLessonQuizCountsByCourse,
+  getLessonQuizHistory,
+  getLessonQuizQuestions,
+  getLessonQuizResultDetails,
+  getSubmittedQuizLessonIds,
+  submitLessonQuiz,
+} from '@/lib/api/lessonQuizClient';
 
 const DEFAULT_LESSON_BANNER_TITLE = 'Student Dashboard';
 const QUIZ_KEEP_PRACTICING_THRESHOLD = 60;
@@ -277,7 +286,7 @@ export default function StudentCourseLearningPage() {
       fetchSubmissionHistory(selectedLesson._id);
       checkLessonCompletion(selectedLesson._id);
       checkQuizSubmissionStatus(selectedLesson._id);
-      checkQuizAvailability(selectedLesson._id);
+      syncQuizAvailabilityFromCounts(selectedLesson._id);
 
       if (shouldAutoOpenQuiz) {
         void startQuizForLesson(selectedLesson._id);
@@ -300,15 +309,8 @@ export default function StudentCourseLearningPage() {
       }
 
       try {
-        const res = await fetch(`/api/lessons/quiz-availability?course=${courseId}`, {
-          cache: 'no-store',
-        });
-        const data = await res.json();
-        if (res.ok && data?.success) {
-          setLessonQuizCounts(data.data?.countsByLesson || {});
-        } else {
-          setLessonQuizCounts({});
-        }
+        const counts = await getLessonQuizCountsByCourse(courseId);
+        setLessonQuizCounts(counts);
       } catch (error) {
         console.error('Failed to load lesson quiz availability:', error);
         setLessonQuizCounts({});
@@ -317,6 +319,36 @@ export default function StudentCourseLearningPage() {
 
     loadLessonQuizCounts();
   }, [courseId, lessons.length]);
+
+  // Sync per-lesson quiz badge once course-wide counts are loaded.
+  useEffect(() => {
+    if (!selectedLessonId) return;
+    syncQuizAvailabilityFromCounts(selectedLessonId);
+  }, [selectedLessonId, lessonQuizCounts]);
+
+  // Ensure enrollment for free courses (server also auto-enrolls on progress/quiz).
+  useEffect(() => {
+    if (!courseId || !session?.user?.id || !course?._id) return;
+    if (course.isPaid) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const enrollment = await studentLearningService.getCourseEnrollment(courseId);
+        if (cancelled || enrollment) return;
+        await createEnrollment(courseId);
+      } catch (e) {
+        const message = e instanceof Error ? e.message : '';
+        if (!cancelled && message && !message.includes('already enrolled')) {
+          console.error('Failed to ensure free course enrollment:', e);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [courseId, session?.user?.id, course?._id, course?.isPaid]);
 
   // Load non-practice quiz completion per lesson (used for next-lesson unlock rules).
   useEffect(() => {
@@ -327,18 +359,10 @@ export default function StudentCourseLearningPage() {
       }
 
       try {
-        const res = await fetch(`/api/student/quiz/completion?course=${courseId}`, {
-          cache: 'no-store',
-        });
-        const data = await res.json();
-        if (res.ok && data?.success) {
-          const lessonIds: string[] = Array.isArray(data?.data?.lessonIds) ? data.data.lessonIds : [];
-          const map: Record<string, boolean> = {};
-          for (const lessonId of lessonIds) map[lessonId] = true;
-          setSubmittedQuizByLesson(map);
-        } else {
-          setSubmittedQuizByLesson({});
-        }
+        const lessonIds = await getSubmittedQuizLessonIds(courseId);
+        const map: Record<string, boolean> = {};
+        for (const lessonId of lessonIds) map[lessonId] = true;
+        setSubmittedQuizByLesson(map);
       } catch (error) {
         console.error('Failed to load submitted quiz map:', error);
         setSubmittedQuizByLesson({});
@@ -580,20 +604,22 @@ export default function StudentCourseLearningPage() {
     };
   }, [selectedLesson?.youtubeVideoId, hideVideo, studentWatermarkText, playerReloadKey, courseId, selectedLessonId]);
 
-  // Check if quiz exists for the lesson
-  const checkQuizAvailability = async (lessonId: string) => {
+  const refreshSubmittedQuizMap = async () => {
+    if (!courseId) return;
     try {
-      const quizRes = await fetch(`/api/lessons/${lessonId}/quiz`);
-      const quizData = await quizRes.json();
-      if (quizRes.ok && quizData?.success) {
-        const hasQuestions = quizData.data && quizData.data.length > 0;
-        setHasQuiz(hasQuestions);
-      } else {
-        setHasQuiz(false);
-      }
+      const lessonIds = await getSubmittedQuizLessonIds(courseId);
+      const map: Record<string, boolean> = {};
+      for (const id of lessonIds) map[id] = true;
+      setSubmittedQuizByLesson(map);
     } catch (e) {
-      console.error('Failed to check quiz availability', e);
-      setHasQuiz(false);
+      console.error('Failed to refresh quiz completion map:', e);
+    }
+  };
+
+  const syncQuizAvailabilityFromCounts = (lessonId: string) => {
+    const cachedCount = lessonQuizCounts[lessonId];
+    if (cachedCount !== undefined) {
+      setHasQuiz(cachedCount > 0);
     }
   };
 
@@ -839,22 +865,19 @@ export default function StudentCourseLearningPage() {
       // Check if quiz has already been submitted
       await checkQuizSubmissionStatus(selectedLesson._id);
       
-      // Check quiz availability
-      await checkQuizAvailability(selectedLesson._id);
+      syncQuizAvailabilityFromCounts(selectedLesson._id);
       
       // Only show quiz if it hasn't been submitted yet
       if (!quizAlreadySubmitted) {
-        // Check if there's a quiz for this lesson
-        const quizRes = await fetch(`/api/lessons/${selectedLesson._id}/quiz`);
-        const quizData = await quizRes.json();
-        if (quizRes.ok && quizData?.success && quizData.data?.length > 0) {
+        const questions = await getLessonQuizQuestions(selectedLesson._id);
+        if (questions.length > 0) {
           setQuizMeta({
             required: true,
-            questionsCount: quizData.data.length,
+            questionsCount: questions.length,
             fetchUrl: `/api/lessons/${selectedLesson._id}/quiz`,
-            submitUrl: `/api/lessons/${selectedLesson._id}/quiz/submit`
+            submitUrl: `/api/lessons/${selectedLesson._id}/quiz/submit`,
           });
-          setQuizQuestions(quizData.data);
+          setQuizQuestions(questions);
           setQuizAnswers({});
           setQuizStartedAt(new Date());
         }
@@ -878,22 +901,15 @@ export default function StudentCourseLearningPage() {
 
       const fetchUrl = `/api/lessons/${lessonId}/quiz`;
       const submitUrl = `/api/lessons/${lessonId}/quiz/submit`;
-      const qRes = await fetch(fetchUrl);
-      const qData = await qRes.json();
-      if (qRes.ok && qData?.success) {
-        const questions = qData.data || [];
-        if (questions.length === 0) {
-          setQuizMeta({ required: false, questionsCount: 0, fetchUrl, submitUrl });
-          setQuizQuestions([]);
-        } else {
-          setQuizQuestions(questions);
-          setQuizAnswers({});
-          setQuizStartedAt(new Date());
-          setQuizMeta({ required: true, questionsCount: questions.length, fetchUrl, submitUrl });
-        }
-      } else {
+      const questions = await getLessonQuizQuestions(lessonId);
+      if (questions.length === 0) {
         setQuizMeta({ required: false, questionsCount: 0, fetchUrl, submitUrl });
         setQuizQuestions([]);
+      } else {
+        setQuizQuestions(questions);
+        setQuizAnswers({});
+        setQuizStartedAt(new Date());
+        setQuizMeta({ required: true, questionsCount: questions.length, fetchUrl, submitUrl });
       }
     } catch (e) {
       console.error('Failed to start quiz', e);
@@ -986,13 +1002,8 @@ export default function StudentCourseLearningPage() {
       setQuizResultDetailsError(null);
       setShowQuizResultModal(true);
 
-      const res = await fetch(`/api/lessons/${selectedLesson._id}/quiz/result-details`, { cache: 'no-store' });
-      const data = await res.json();
-      if (!res.ok || !data?.success) {
-        throw new Error(data?.error || 'Failed to load quiz result details');
-      }
-
-      setQuizResultDetails(data.data || null);
+      const details = await getLessonQuizResultDetails(selectedLesson._id);
+      setQuizResultDetails(details);
     } catch (e: any) {
       setQuizResultDetails(null);
       setQuizResultDetailsError(e?.message || 'Failed to load quiz result details');
@@ -1023,53 +1034,49 @@ export default function StudentCourseLearningPage() {
     if (!quizMeta || !quizQuestions || quizAlreadySubmitted) return;
     try {
       setQuizSubmitting(true);
-      const answers = quizQuestions.map((q: any) => ({ questionId: q._id, selectedIndex: quizAnswers[q._id] ?? -1 }));
-      const res = await fetch(quizMeta.submitUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          startedAt: quizStartedAt?.toISOString() || new Date().toISOString(), 
-          answers,
-          isPracticeMode: false
-        }),
+      const lessonId = selectedLesson?._id;
+      if (!lessonId) return;
+
+      const answers = quizQuestions.map((q: any) => ({
+        questionId: q._id,
+        selectedIndex: quizAnswers[q._id] ?? -1,
+      }));
+      const data = await submitLessonQuiz(lessonId, {
+        startedAt: quizStartedAt?.toISOString() || new Date().toISOString(),
+        answers,
+        isPracticeMode: false,
       });
-      const data = await res.json();
-      if (res.ok && data?.success) {
-        if (isValidQuizSubmission(data.data)) {
-          setQuizResult({
-            scorePercentage: data.data.scorePercentage,
-            correctAnswers: data.data.correctAnswers,
-            totalQuestions: data.data.totalQuestions
-          });
-          window.dispatchEvent(new CustomEvent('quiz-mark-updated', {
+
+      if (isValidQuizSubmission(data)) {
+        setQuizResult({
+          scorePercentage: data.scorePercentage,
+          correctAnswers: data.correctAnswers,
+          totalQuestions: data.totalQuestions,
+        });
+        window.dispatchEvent(
+          new CustomEvent('quiz-mark-updated', {
             detail: {
-              scorePercentage: data.data.scorePercentage,
-              correctAnswers: data.data.correctAnswers,
-              totalQuestions: data.data.totalQuestions,
+              scorePercentage: data.scorePercentage,
+              correctAnswers: data.correctAnswers,
+              totalQuestions: data.totalQuestions,
             },
-          }));
-        } else {
-          setQuizResult(null);
-        }
-        
-        setQuizAlreadySubmitted(true);
-        if (selectedLesson?._id) {
-          setSubmittedQuizByLesson(prev => ({ ...prev, [selectedLesson._id]: true }));
-        }
-        // Clear questions to prevent re-submission, keep meta so result stays visible in video area.
-        setQuizQuestions(null);
-        
-        // Trigger confetti for 100% score
-        if (data.data.scorePercentage === 100) {
-          triggerConfetti();
-        }
-        
-        // Refresh submission history after successful submission
-        if (selectedLesson) {
-          fetchSubmissionHistory(selectedLesson._id);
-          checkQuizSubmissionStatus(selectedLesson._id);
-        }
+          }),
+        );
+      } else {
+        setQuizResult(null);
       }
+
+      setQuizAlreadySubmitted(true);
+      setSubmittedQuizByLesson((prev) => ({ ...prev, [lessonId]: true }));
+      setQuizQuestions(null);
+
+      if (data.scorePercentage === 100) {
+        triggerConfetti();
+      }
+
+      await refreshSubmittedQuizMap();
+      fetchSubmissionHistory(lessonId);
+      checkQuizSubmissionStatus(lessonId);
     } catch (e) {
       console.error('Failed to submit quiz', e);
     } finally {
@@ -1080,15 +1087,11 @@ export default function StudentCourseLearningPage() {
   const fetchSubmissionHistory = async (lessonId: string) => {
     try {
       setLoadingHistory(true);
-      const res = await fetch(`/api/lessons/${lessonId}/quiz/history`);
-      const data = await res.json();
-      if (res.ok && data?.success) {
-        const history = Array.isArray(data.data) ? data.data : [];
-        const validHistory = history.filter(isValidQuizSubmission);
-        setSubmissionHistory(validHistory);
-      }
+      const history = await getLessonQuizHistory(lessonId);
+      setSubmissionHistory(history.filter(isValidQuizSubmission));
     } catch (e) {
       console.error('Failed to fetch submission history', e);
+      setSubmissionHistory([]);
     } finally {
       setLoadingHistory(false);
     }
@@ -1097,35 +1100,31 @@ export default function StudentCourseLearningPage() {
   // Check if quiz has already been submitted (non-practice mode)
   const checkQuizSubmissionStatus = async (lessonId: string) => {
     try {
-      const res = await fetch(`/api/lessons/${lessonId}/quiz/history`);
-      const data = await res.json();
-      if (res.ok && data?.success) {
-        const history = (Array.isArray(data.data) ? data.data : []).filter(isValidQuizSubmission);
-        // Check if there's any non-practice submission (isPracticeMode === false or undefined/null for old records)
-        const hasRealSubmission = history.some((submission: any) => 
-          submission.isPracticeMode === false || 
-          (submission.isPracticeMode !== true && submission.isPracticeMode !== false) // Handle undefined/null
-        );
-        setQuizAlreadySubmitted(hasRealSubmission);
-        
-        // If there's a real submission, show the latest result
-        if (hasRealSubmission) {
-          const latestSubmission = history.find((sub: any) => 
-            sub.isPracticeMode === false || 
-            (sub.isPracticeMode !== true && sub.isPracticeMode !== false)
+      const history = (await getLessonQuizHistory(lessonId)).filter(isValidQuizSubmission);
+      const hasRealSubmission = history.some(
+        (submission) =>
+          submission.isPracticeMode === false ||
+          (submission.isPracticeMode !== true && submission.isPracticeMode !== false),
+      );
+      setQuizAlreadySubmitted(hasRealSubmission);
+
+      if (hasRealSubmission) {
+        const latestSubmission =
+          history.find(
+            (sub) =>
+              sub.isPracticeMode === false ||
+              (sub.isPracticeMode !== true && sub.isPracticeMode !== false),
           ) || history[0];
-          if (latestSubmission) {
-            setQuizResult({
-              scorePercentage: latestSubmission.scorePercentage,
-              correctAnswers: latestSubmission.correctAnswers,
-              totalQuestions: latestSubmission.totalQuestions
-            });
-          }
+        if (latestSubmission) {
+          setQuizResult({
+            scorePercentage: latestSubmission.scorePercentage,
+            correctAnswers: latestSubmission.correctAnswers,
+            totalQuestions: latestSubmission.totalQuestions,
+          });
         }
       }
     } catch (e) {
       console.error('Failed to check quiz submission status', e);
-      // On error, don't change the state
     }
   };
 

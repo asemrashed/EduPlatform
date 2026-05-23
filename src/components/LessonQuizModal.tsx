@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { AttractiveInput } from '@/components/ui/attractive-input';
 import { AttractiveTextarea } from '@/components/ui/attractive-textarea';
-import { LuPlus as Plus, LuSave as Save, LuLoader as Loader2, LuTriangleAlert as AlertCircle } from 'react-icons/lu';;
+import { LuPlus as Plus, LuSave as Save, LuLoader as Loader2, LuTriangleAlert as AlertCircle, LuTrash2 as Trash2 } from 'react-icons/lu';;
 import { useLessonQuiz, LessonQuizQuestionInput, LessonQuizQuestionView } from '@/hooks/useLessonQuiz';
 import FormModal from '@/components/ui/form-modal';
 
@@ -15,7 +15,7 @@ interface LessonQuizModalProps {
 }
 
 export default function LessonQuizModal({ open, onClose, lessonId }: LessonQuizModalProps) {
-  const { loading, error, fetchQuestions, bulkCreate } = useLessonQuiz();
+  const { loading, error, fetchQuestions, bulkCreate, removeQuestion } = useLessonQuiz();
   const [existing, setExisting] = useState<LessonQuizQuestionView[]>([]);
   const [pending, setPending] = useState<LessonQuizQuestionInput[]>([
     { question: '', options: ['', ''], correctOptionIndex: 0 },
@@ -173,7 +173,25 @@ export default function LessonQuizModal({ open, onClose, lessonId }: LessonQuizM
             <ul className="space-y-3">
               {existing.map((q) => (
                 <li key={q._id} className="border rounded p-3 border-blue-300 hover:border-blue-400">
-                  <div className="font-medium mb-1">{q.question}</div>
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <div className="font-medium flex-1">{q.question}</div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 shrink-0"
+                      disabled={loading || saving}
+                      onClick={async () => {
+                        if (!window.confirm('Delete this question?')) return;
+                        const ok = await removeQuestion(q._id);
+                        if (ok) {
+                          setExisting((prev) => prev.filter((item) => item._id !== q._id));
+                        }
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                   <ul className="list-disc pl-5 text-sm text-gray-600">
                     {q.options.map((o, i) => (
                       <li key={i}>{o}</li>

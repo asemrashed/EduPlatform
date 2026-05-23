@@ -39,7 +39,6 @@ export const studentLearningService = {
           progress: typeof progressPercentage === "number" ? progressPercentage : Number(enrollment.progress || 0),
         };
       });
-      console.log('filtered', filtered);
     const safeLimit = Math.max(1, limit);
     const safePage = Math.max(1, page);
     const total = filtered.length;

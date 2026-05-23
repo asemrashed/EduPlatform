@@ -95,7 +95,6 @@ export async function markLessonComplete(
     cache: "no-store",
   });
   const body = await parseJsonSafe(response);
-  console.log('body', body);
   if (!response.ok) {
     throw new Error(errorFromBody(response.status, body));
   }

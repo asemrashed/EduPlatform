@@ -20,6 +20,8 @@ export interface ICourse extends Document {
   lessonCount?: number;
   enrollmentCount?: number;
   tags?: string[];
+  certificateEnabled?: boolean;
+  certificateOutcomes?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -100,6 +102,14 @@ const CourseSchema = new Schema<ICourse>(
       default: 0,
     },
     tags: {
+      type: [String],
+      default: [],
+    },
+    certificateEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    certificateOutcomes: {
       type: [String],
       default: [],
     },

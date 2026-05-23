@@ -16,4 +16,12 @@ export const API_ENDPOINTS = {
   ADMIN_DASHBOARD: "/api/admin/dashboard",
   ENROLLMENTS: "/api/enrollments",
   PAST_PAPERS: "/api/past-papers",
+  LESSON_QUIZ_AVAILABILITY: "/api/lessons/quiz-availability",
+  STUDENT_QUIZ_COMPLETION: "/api/student/quiz/completion",
+  STUDENT_QUIZ_LATEST: "/api/student/quiz/latest",
+  lessonQuiz: (lessonId: string) => `/api/lessons/${lessonId}/quiz`,
+  lessonQuizSubmit: (lessonId: string) => `/api/lessons/${lessonId}/quiz/submit`,
+  lessonQuizHistory: (lessonId: string) => `/api/lessons/${lessonId}/quiz/history`,
+  lessonQuizResultDetails: (lessonId: string) =>
+    `/api/lessons/${lessonId}/quiz/result-details`,
 } as const;
