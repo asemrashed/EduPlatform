@@ -3,9 +3,19 @@
 import type { ReactNode } from "react";
 
 /** From `DashboardLayout` inner scroll area (learning-project admin). */
-export function AdminRoleShell({ children }: { children: ReactNode }) {
+export function AdminRoleShell({
+  children,
+  scroll = true,
+}: {
+  children: ReactNode;
+  scroll?: boolean;
+}) {
   return (
-    <div className="relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+    <div
+      className={`relative min-h-0 flex-1 overflow-x-hidden ${
+        scroll ? "overflow-y-auto" : "flex flex-col overflow-hidden"
+      }`}
+    >
       <div className="pointer-events-none absolute inset-0 opacity-10">
         <div className="absolute left-0 top-0 h-full w-full">
           <div className="absolute right-20 top-20 flex h-8 w-8 items-center justify-center">

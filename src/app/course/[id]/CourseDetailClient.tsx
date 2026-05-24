@@ -15,6 +15,7 @@ import {
   LuCirclePlay,
   LuLayers,
   LuLanguages,
+  LuAward,
   LuCircleCheck,
   LuLock,
   LuChevronDown,
@@ -36,8 +37,9 @@ import PrimaryActionBtn from "@/components/ui/buttons/PrimaryActionBtn";
 import PrimaryOutLineBtn from "@/components/ui/buttons/PrimaryOutLineBtn";
 import { useCheckout } from "@/hooks/useCheckout";
 import { CourseDetailSkeleton } from "@/components/skeletons/CourseDetailSkeleton";
+import { CourseCertificateShowcase } from "@/components/course/CourseCertificateShowcase";
 
-const SECTIONS = ["about", "instructor", "curriculum", "faq"] as const;
+const BASE_SECTIONS = ["about", "instructor", "curriculum", "faq"] as const;
 
 export function CourseDetailClient({ courseId }: { courseId: string }) {
   const router = useRouter();
@@ -53,6 +55,22 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
   const [selectedLesson, setSelectedLesson] = useState<any | null>(null);
   const [isFullscreenVideo, setIsFullscreenVideo] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
+
+  const certificateEnabled = Boolean(course?.certificateEnabled);
+  const certificateOutcomes = course?.certificateOutcomes ?? [];
+
+  const navSections = useMemo(() => {
+    const sections: string[] = [...BASE_SECTIONS];
+    if (certificateEnabled) {
+      const faqIndex = sections.indexOf("faq");
+      if (faqIndex === -1) {
+        sections.push("certificate");
+      } else {
+        sections.splice(faqIndex, 0, "certificate");
+      }
+    }
+    return sections;
+  }, [certificateEnabled]);
 
   const instructor = useMemo(() => {
     if (!course) return null;
@@ -153,8 +171,8 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
       // Using an offset for sticky headers (approx 160px)
       const scrollPosition = window.scrollY + 170;
 
-      let currentSection = "about";
-      for (const sectionId of SECTIONS) {
+      let currentSection = navSections[0] ?? "about";
+      for (const sectionId of navSections) {
         const el = document.getElementById(sectionId);
         if (el) {
           const top = el.offsetTop;
@@ -171,7 +189,7 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
     handleScroll();
 
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [navSections]);
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
@@ -274,8 +292,13 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
         {/* Sticky Mini-Navbar */}
         <div className="sticky top-[76px] md:top-[92px] z-40 my-6 border-b border-border/60 bg-background/95 pt-4 py-1 rounded-sm shadow-sm backdrop-blur-md">
           <nav className="flex justify-around items-center gap-8 overflow-x-auto scrollbar-hide">
-            {SECTIONS.map((sectionId) => {
-              const label = sectionId === "faq" ? "FAQ" : sectionId.charAt(0).toUpperCase() + sectionId.slice(1);
+            {navSections.map((sectionId) => {
+              const label =
+                sectionId === "faq"
+                  ? "FAQ"
+                  : sectionId === "certificate"
+                    ? "Certificate"
+                    : sectionId.charAt(0).toUpperCase() + sectionId.slice(1);
               const active = activeSection === sectionId;
               return (
                 <button
@@ -583,6 +606,13 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
           )}
         </section>
 
+        {certificateEnabled && (
+          <CourseCertificateShowcase
+            courseTitle={course.title}
+            outcomes={certificateOutcomes}
+          />
+        )}
+
         {/* FAQ Section Wrapper */}
         <section id="faq" className="scroll-mt-[140px] md:scroll-mt-[160px] mt-16">
           {faqs.length > 0 && (
@@ -616,6 +646,12 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
               </span>
             ) : null}
           </div>
+          {certificateEnabled && (
+            <div className="mt-4 flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm font-medium text-primary">
+              <LuAward className="h-4 w-4 shrink-0" aria-hidden />
+              <span>Certificate of completion included</span>
+            </div>
+          )}
           <PrimaryOutLineBtn value={isPending ? "Loading..." : "Enroll Now"} handleBtn={() => handleCheckout(course._id)} disabled={isPending} />
           {course.isPaid && <PrimaryActionBtn value={isPending ? "Loading..." : "Add to Cart"} handleBtn={handleAddToCart} disabled={isPending} />}
         </div>

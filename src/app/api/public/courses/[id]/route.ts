@@ -84,6 +84,15 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
           role: "instructor",
         };
 
+    const certificateEnabled = Boolean(courseData.certificateEnabled);
+    const certificateOutcomes = certificateEnabled
+      ? Array.isArray(courseData.certificateOutcomes)
+        ? (courseData.certificateOutcomes as string[]).filter(
+            (item) => typeof item === "string" && item.trim().length > 0,
+          )
+        : []
+      : [];
+
     return NextResponse.json({
       success: true,
       data: {
@@ -96,6 +105,8 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
           typeof courseData.enrollmentCount === "number"
             ? courseData.enrollmentCount
             : 0,
+        certificateEnabled,
+        certificateOutcomes,
         createdBy,
         instructor,
       },

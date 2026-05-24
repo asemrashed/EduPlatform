@@ -24,6 +24,8 @@ export interface PublicCourseDetailData {
   lessonCount?: number;
   enrollmentCount: number;
   tags?: string[];
+  certificateEnabled?: boolean;
+  certificateOutcomes?: string[];
   createdBy: {
     _id: string;
     name: string;

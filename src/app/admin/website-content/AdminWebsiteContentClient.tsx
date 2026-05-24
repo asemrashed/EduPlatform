@@ -36,6 +36,7 @@ import {
   defaultContactPageContent,
   defaultAboutPageContent,
   defaultFeaturesContent,
+  defaultStatisticsContent,
   defaultPartnersContent,
   defaultWebsiteContent,
   stripLegacyWebsiteContentKeys,
@@ -48,6 +49,7 @@ import { ContactPageSection } from './sections/ContactPageSection';
 import { HeroSection } from './sections/HeroSection';
 import { AboutSection } from './sections/AboutSection';
 import { FeaturesSection } from './sections/FeaturesSection';
+import { StatisticsSection } from './sections/StatisticsSection';
 import { FAQSection } from './sections/FAQSection';
 import { PartnersSection } from './sections/PartnersSection';
 import { BrandingSection } from './sections/BrandingSection';
@@ -142,6 +144,19 @@ function WebsiteContentPageContent() {
             content.features?.features?.length
               ? content.features.features
               : defaultFeaturesContent.features,
+        },
+      });
+    }
+    if (activeTab === 'statistics' && content && !content.statistics?.items?.length) {
+      setContent({
+        ...content,
+        statistics: {
+          ...defaultStatisticsContent,
+          ...(content.statistics || {}),
+          items:
+            content.statistics?.items?.length
+              ? content.statistics.items
+              : defaultStatisticsContent.items,
         },
       });
     }
@@ -848,6 +863,9 @@ function WebsiteContentPageContent() {
     if (activeTab === 'features') {
       return <FeaturesSection content={content} updateContent={updateContent} />;
     }
+    if (activeTab === 'statistics') {
+      return <StatisticsSection content={content} updateContent={updateContent} />;
+    }
     if (activeTab === 'contactPage') {
       return <ContactPageSection content={content} updateContent={updateContent} />;
     }
@@ -945,6 +963,18 @@ function WebsiteContentPageContent() {
     if (activeTab === 'partners') {
       return <PartnersSection content={content} updateContent={updateContent} />;
     }
+    if (activeTab === 'certificates') {
+      return (
+        <FutureSections
+          content={content}
+          updateContent={updateContent}
+          activeSubTab="certificates"
+          onSubTabChange={() => {}}
+          subTabs={['certificates']}
+          hideSubNav
+        />
+      );
+    }
     if (activeTab === 'footer') {
       return <FooterSection content={content} updateContent={updateContent} />;
     }
@@ -1009,9 +1039,10 @@ function WebsiteContentPageContent() {
   }
 
   return (
-    <AdminRoleShell>
-      <main className="relative z-10 p-2 sm:p-4">
+    <AdminRoleShell scroll={false}>
+      <main className="relative z-10 flex min-h-0 flex-1 flex-col p-2 sm:p-4 md:min-h-[calc(100svh-5rem)]">
         {/* Welcome Section */}
+        <div className="shrink-0">
         <WelcomeSection 
           title="Website Content Management"
           description="Manage header content, navigation, branding, and more"
@@ -1081,10 +1112,12 @@ function WebsiteContentPageContent() {
             Update website header content, navigation menus, branding, and contact information.
           </div>
         </PageSection>
+        </div>
         <CmsSectionsLayout
           groups={CMS_SIDEBAR_GROUPS}
           activeTab={activeTab}
           onSelectTab={setActiveTab}
+          className="min-h-0 flex-1 overflow-hidden"
         >
           <PageSection
             title={tabLabel}

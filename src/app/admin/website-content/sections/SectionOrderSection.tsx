@@ -5,7 +5,10 @@ import { DndContext, closestCenter, DragEndEvent, useSensors, useSensor, Pointer
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { SectionConfig } from '@/lib/websiteContentDefaults';
-import { defaultSectionOrder } from '@/lib/websiteContentDefaults';
+import {
+  DEFAULT_HOME_SECTION_ORDER,
+  resolveAdminHomeSectionOrder,
+} from '@/lib/homeSectionOrder';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -74,14 +77,13 @@ export function SectionOrderSection({ content, updateContent, sensors }: Section
                     <Settings className="w-5 h-5" />
                     Section Order Management
                   </CardTitle>
-                  <CardDescription>Drag and drop to reorder sections, or use checkboxes to enable/disable them</CardDescription>
+                  <CardDescription>
+                    Drag and drop to reorder home page sections (hero → FAQ), or use checkboxes to show/hide them
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {(() => {
-                    const sections = (content.sectionOrder && content.sectionOrder.length > 0 
-                      ? content.sectionOrder 
-                      : defaultSectionOrder)
-                      .sort((a, b) => a.order - b.order);
+                    const sections = resolveAdminHomeSectionOrder(content.sectionOrder);
 
                     const handleDragEnd = (event: DragEndEvent) => {
                       const { active, over } = event;
@@ -118,10 +120,17 @@ export function SectionOrderSection({ content, updateContent, sensors }: Section
                                 key={section.id}
                                 section={section}
                                 onToggle={(enabled) => {
-                                  const updatedOrder = [...(content.sectionOrder || defaultSectionOrder)];
-                                  const sectionIndex = updatedOrder.findIndex(s => s.id === section.id);
+                                  const updatedOrder = resolveAdminHomeSectionOrder(
+                                    content.sectionOrder,
+                                  );
+                                  const sectionIndex = updatedOrder.findIndex(
+                                    (s) => s.id === section.id,
+                                  );
                                   if (sectionIndex !== -1) {
-                                    updatedOrder[sectionIndex] = { ...updatedOrder[sectionIndex], enabled };
+                                    updatedOrder[sectionIndex] = {
+                                      ...updatedOrder[sectionIndex],
+                                      enabled,
+                                    };
                                     updateContent(['sectionOrder'], updatedOrder);
                                   }
                                 }}
@@ -137,9 +146,9 @@ export function SectionOrderSection({ content, updateContent, sensors }: Section
                       variant="outline"
                       onClick={() => {
                         // Reset to default order
-                        const resetOrder = defaultSectionOrder.map((section, index) => ({
+                        const resetOrder = DEFAULT_HOME_SECTION_ORDER.map((section, index) => ({
                           ...section,
-                          order: index
+                          order: index,
                         }));
                         updateContent(['sectionOrder'], resetOrder);
                       }}

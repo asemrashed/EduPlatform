@@ -1,17 +1,8 @@
 "use client";
 
 /**
- * HomePage.html — sections in order (main only; global header/footer in layout):
- * 1. Hero
- * 2. Stats
- * 3. Courses Designed for Success (6 cards)
- * 4. Features ("Powerful Features…")
- * 5. Meet Our Expert Mentors (4)
- * 6. Testimonials
- * 7. Partners
- * 8. FAQ
- *
- * Static copy + images from Frontend-design/HomePage.html (no API / no Redux).
+ * Home page sections (hero → FAQ) ordered by CMS `sectionOrder`.
+ * Header/footer are in the public layout — not controlled here.
  */
 
 import Image from "next/image";
@@ -35,8 +26,11 @@ import type { CourseReview } from "@/types/course-review";
 import { mapFeaturedReviewsToTestimonials } from "@/lib/mapFeaturedReviewsToTestimonials";
 import type { FeaturedInstructor } from "@/types/featured-instructor";
 import { HomeFeaturesSection } from "@/components/features/HomeFeaturesSection";
+import { HomeStatisticsSection } from "@/components/home/HomeStatisticsSection";
 import { resolveFeaturesContent } from "@/lib/resolveFeaturesContent";
 import { HomePageSkeleton } from "@/components/skeletons/HomePageSkeleton";
+import { resolveHomeSectionOrder } from "@/lib/homeSectionOrder";
+import type { SectionId } from "@/lib/websiteContentTypes";
 
 function joinTitleParts(...parts: (string | undefined)[]) {
   return parts.filter(Boolean).join("");
@@ -138,12 +132,30 @@ export function HomePageClient({
 
   const featuredCourseIds = cmsData?.courses?.featuredCourseIds ?? [];
   const featuredCourses = useMemo(() => {
-    const ordered =
-      featuredCourseIds.length > 0
-        ? featuredCourseIds
-            .map((id) => publicList.find((c) => c._id === id))
-            .filter((c): c is PublicCourseRow => Boolean(c))
-        : publicList.slice(0, 8);
+    const maxCards = 4;
+    const byId = new Map(publicList.map((c) => [String(c._id), c]));
+    const pickedIds = new Set<string>();
+    const ordered: PublicCourseRow[] = [];
+
+    if (featuredCourseIds.length > 0) {
+      for (const id of featuredCourseIds) {
+        const course = byId.get(String(id));
+        if (course && !pickedIds.has(String(course._id))) {
+          pickedIds.add(String(course._id));
+          ordered.push(course);
+        }
+      }
+      for (const course of publicList) {
+        if (ordered.length >= maxCards) break;
+        const courseId = String(course._id);
+        if (!pickedIds.has(courseId)) {
+          pickedIds.add(courseId);
+          ordered.push(course);
+        }
+      }
+    } else {
+      ordered.push(...publicList.slice(0, maxCards));
+    }
 
     return ordered.map((course) => ({
       href: `/course/${course._id}`,
@@ -159,164 +171,171 @@ export function HomePageClient({
     }));
   }, [publicList, featuredCourseIds]);
 
+  const enabledSections = useMemo(
+    () =>
+      resolveHomeSectionOrder(cmsData?.sectionOrder).filter(
+        (section) => section.enabled,
+      ),
+    [cmsData?.sectionOrder],
+  );
+
+  const renderSection = (sectionId: SectionId) => {
+    switch (sectionId) {
+      case "hero":
+        return (
+          <section
+            key="hero"
+            className="relative overflow-hidden bg-gradient-to-br from-secondary-container to-primary-container px-6 py-20 md:px-12 lg:px-20"
+          >
+            <div className="mx-auto flex max-w-7xl flex-col items-center gap-12 lg:flex-row lg:justify-between">
+              <div className="max-w-xl text-center lg:text-left">
+                <h1 className="mb-6 text-4xl font-extrabold leading-tight text-white md:text-6xl">
+                  {heroTitleBefore}{" "}
+                  <span className="text-primary">{heroTitleAccent}</span> <br />
+                </h1>
+                <p className="mb-8 text-lg text-white/80">{heroDescription}</p>
+                <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
+                  <button
+                    type="button"
+                    className="rounded-lg bg-primary px-6 py-3 font-semibold text-on-primary shadow-lg transition hover:scale-105"
+                  >
+                    {heroCtaText}
+                  </button>
+                </div>
+              </div>
+              <div className="relative min-w-sm w-full max-w-2xl flex-1 rounded-xl">
+                <div className="relative w-full overflow-hidden rounded-3xl p-6 backdrop-blur-xl">
+                  <img
+                    src={heroImage}
+                    alt="Hero"
+                    className="w-full rounded-xl object-contain"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+        );
+      case "statistics":
+        return (
+          <HomeStatisticsSection
+            key="statistics"
+            content={cmsData?.statistics}
+          />
+        );
+      case "courses":
+        return (
+          <section key="courses" className="px-8 py-24">
+            <div className="mx-auto max-w-screen-2xl">
+              <div className="mb-16 flex flex-col items-end justify-between gap-8 md:flex-row">
+                <div className="max-w-2xl">
+                  <h2 className="mb-4 font-[family-name:var(--font-headline)] text-5xl font-extrabold tracking-tight text-foreground">
+                    {coursesTitle}
+                  </h2>
+                  <p className="text-lg leading-relaxed text-muted-foreground">
+                    {coursesDescription}
+                  </p>
+                </div>
+                <Link
+                  href={coursesCtaHref}
+                  className="flex items-center gap-2 font-bold text-primary hover:underline hover:underline-offset-8"
+                >
+                  {coursesCtaLabel}
+                  <span className="material-symbols-outlined">north_east</span>
+                </Link>
+              </div>
+              {featuredCourses.length === 0 ? (
+                coursesStatus === "failed" ? (
+                  <p className="rounded-xl border border-dashed border-destructive/40 p-12 text-center text-muted-foreground">
+                    Could not load courses. Please refresh the page.
+                  </p>
+                ) : (
+                  <p className="rounded-xl border border-dashed border-border p-12 text-center text-muted-foreground">
+                    No courses to display yet. Check back soon or browse the full catalog.
+                  </p>
+                )
+              ) : (
+                <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                  {featuredCourses.map((c, i) => (
+                    <CourseCard key={`${c.title}-${i}`} course={c as any} index={i} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        );
+      case "features":
+        return <HomeFeaturesSection key="features" content={featuresContent} />;
+      case "instructors":
+        return experts.length > 0 ? (
+          <ExpertsCarousel
+            key="instructors"
+            experts={experts}
+            badgeLabel={instructorsSection?.badgeLabel}
+            sectionHeading={instructorsSection?.sectionHeading}
+            sectionSubtitle={instructorsSection?.sectionSubtitle}
+          />
+        ) : null;
+      case "testimonials":
+        return <Testimonials key="testimonials" items={testimonials} />;
+      case "partners":
+        return (
+          <section key="partners" className="bg-surface px-8 py-20">
+            <div className="mx-auto mb-12 max-w-screen-2xl text-center">
+              <p className="text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                {partnersTitle}
+              </p>
+            </div>
+            <div className="mx-auto flex max-w-screen-2xl flex-wrap items-center justify-center gap-10 transition-all md:gap-20">
+              {partners.map((p) => {
+                const inner = p.imageUrl ? (
+                  <Image src={p.imageUrl} alt={p.name} width={150} height={70} />
+                ) : (
+                  <span
+                    className={cn(
+                      "text-3xl font-black text-foreground",
+                      p.name === "Zoom" && "italic",
+                    )}
+                  >
+                    {p.name}
+                  </span>
+                );
+                const key = `${p.name}-${p.imageUrl}-${p.href}`;
+                if (p.href) {
+                  return (
+                    <Link
+                      key={key}
+                      href={p.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex"
+                    >
+                      {inner}
+                    </Link>
+                  );
+                }
+                return (
+                  <span key={key} className="inline-flex">
+                    {inner}
+                  </span>
+                );
+              })}
+            </div>
+          </section>
+        );
+      case "faq":
+        return <FAQ key="faq" items={faqItems} />;
+      default:
+        return null;
+    }
+  };
+
   if (isCatalogInitialLoad) {
     return <HomePageSkeleton />;
   }
 
   return (
     <div className="bg-background text-foreground">
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-secondary-container to-primary-container px-6 py-20 md:px-12 lg:px-20">
-
-  <div className="mx-auto flex max-w-7xl flex-col items-center gap-12 lg:flex-row lg:justify-between">
-
-    {/* LEFT CONTENT */}
-    <div className="max-w-xl text-center lg:text-left">
-      
-      <h1 className="mb-6 text-4xl font-extrabold leading-tight text-white md:text-6xl">
-        {heroTitleBefore} 
-        {" "}
-        <span className="text-primary">
-          {heroTitleAccent}
-        </span>{" "}
-        <br />
-      </h1>
-
-      <p className="mb-8 text-lg text-white/80">
-        {heroDescription}
-      </p>
-
-      <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
-        <button className="rounded-lg bg-primary px-6 py-3 font-semibold text-on-primary shadow-lg hover:scale-105 transition">
-          {heroCtaText}
-        </button>
-      </div>
-    </div>
-
-    {/* RIGHT IMAGE */}
-    <div className="flex-1 relative w-full min-w-sm max-w-2xl rounded-xl">
-
-      <div className="relative w-full overflow-hidden rounded-3xl p-6 backdrop-blur-xl">
-
-        <img
-          src={heroImage}
-          alt="Hero"
-          className="w-full object-contain rounded-xl"
-        />
-
-      </div>
-    </div>
-
-  </div>
-</section>
-
-      {/* Courses */}
-      <section className="px-8 py-24">
-        <div className="mx-auto max-w-screen-2xl">
-          <div className="mb-16 flex flex-col items-end justify-between gap-8 md:flex-row">
-            <div className="max-w-2xl">
-              <h2 className="mb-4 font-[family-name:var(--font-headline)] text-5xl font-extrabold tracking-tight text-foreground">
-                {coursesTitle}
-              </h2>
-              <p className="text-lg leading-relaxed text-muted-foreground">
-                {coursesDescription}
-              </p>
-            </div>
-            <Link
-              href={coursesCtaHref}
-              className="flex items-center gap-2 font-bold text-primary hover:underline hover:underline-offset-8"
-            >
-              {coursesCtaLabel}
-              <span className="material-symbols-outlined">north_east</span>
-            </Link>
-          </div>
-          {featuredCourses.length === 0 ? (
-            coursesStatus === "failed" ? (
-              <p className="rounded-xl border border-dashed border-destructive/40 p-12 text-center text-muted-foreground">
-                Could not load courses. Please refresh the page.
-              </p>
-            ) : (
-              <p className="rounded-xl border border-dashed border-border p-12 text-center text-muted-foreground">
-                No courses to display yet. Check back soon or browse the full catalog.
-              </p>
-            )
-          ) : (
-            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {featuredCourses.map((c, i) => (
-                <CourseCard key={`${c.title}-${i}`} course={c as any} index={i} />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      <HomeFeaturesSection content={featuresContent} />
-
-      {/* Experts */}
-      {experts.length > 0 ? (
-        <ExpertsCarousel
-          experts={experts}
-          badgeLabel={instructorsSection?.badgeLabel}
-          sectionHeading={instructorsSection?.sectionHeading}
-          sectionSubtitle={instructorsSection?.sectionSubtitle}
-        />
-      ) : null}
-
-      {/* Testimonials */}
-      <Testimonials items={testimonials} />
-
-      {/* Partners */}
-      <section className="bg-surface px-8 py-20">
-        <div className="mx-auto mb-12 max-w-screen-2xl text-center">
-          <p className="text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground">
-            {partnersTitle}
-          </p>
-        </div>
-        <div className="mx-auto flex max-w-screen-2xl flex-wrap items-center justify-center gap-10 transition-all md:gap-20">
-          {partners.map((p) => {
-            const inner = p.imageUrl ? (
-              <Image
-                src={p.imageUrl}
-                alt={p.name}
-                width={150}
-                height={70}
-              />
-            ) : (
-              <span
-                className={cn(
-                  "text-3xl font-black text-foreground",
-                  p.name === "Zoom" && "italic",
-                )}
-              >
-                {p.name}
-              </span>
-            );
-            const key = `${p.name}-${p.imageUrl}-${p.href}`;
-            if (p.href) {
-              return (
-                <Link
-                  key={key}
-                  href={p.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex"
-                >
-                  {inner}
-                </Link>
-              );
-            }
-            return (
-              <span key={key} className="inline-flex">
-                {inner}
-              </span>
-            );
-          })}
-        </div>
-      </section>
-
-  {/* FAQ */}
-      <FAQ items={faqItems} />
-      
+      {enabledSections.map((section) => renderSection(section.id))}
     </div>
   );
 }

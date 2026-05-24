@@ -15,6 +15,7 @@ import type {
   PhotoGalleryContent,
   PromoBannerContent,
   SectionConfig,
+  StatisticsContent,
 } from "@/lib/websiteContentTypes";
 
 export type {
@@ -40,26 +41,29 @@ export type {
 } from "@/lib/websiteContentTypes";
 
 const DEFAULT_SECTION_ORDER: SectionConfig[] = [
-  { id: "header", label: "Header", enabled: true, order: 0 },
-  { id: "hero", label: "Hero", enabled: true, order: 1 },
-  { id: "about", label: "About", enabled: true, order: 2 },
-  { id: "courses", label: "Courses", enabled: true, order: 3 },
+  { id: "hero", label: "Hero", enabled: true, order: 0 },
+  { id: "statistics", label: "Statistics", enabled: true, order: 1 },
+  { id: "courses", label: "Featured Courses", enabled: true, order: 2 },
+  { id: "instructors", label: "Instructors", enabled: true, order: 3 },
   { id: "testimonials", label: "Testimonials", enabled: true, order: 4 },
-  { id: "footer", label: "Footer", enabled: true, order: 5 },
+  { id: "features", label: "Features", enabled: true, order: 5 },
+  { id: "partners", label: "Partners", enabled: true, order: 6 },
+  { id: "faq", label: "FAQ", enabled: true, order: 7 },
 ];
 /** CMS keys removed in phase 13.4.15 — stripped on save/load. */
 export const REMOVED_WEBSITE_CONTENT_KEYS = [
   "marquee",
   "whyChooseUs",
-  "statistics",
   "services",
   "blog",
   "downloadApp",
 ] as const;
 
 const REMOVED_SECTION_ORDER_IDS = new Set([
+  "header",
+  "footer",
+  "about",
   "whyChooseUs",
-  "statistics",
   "services",
   "blog",
   "downloadApp",
@@ -191,6 +195,7 @@ export interface WebsiteContent {
   coursesByCategory: CoursesByCategoryContent;
   homeInstructors: HomeInstructorsContent;
   features: FeaturesContent;
+  statistics: StatisticsContent;
   sectionOrder: SectionConfig[];
   faq: FAQContent;
   promotionalBanner: PromoBannerContent;
@@ -224,6 +229,43 @@ export const defaultFeaturesContent: FeaturesContent = {
     descriptionBn: item.body,
     iconType: HOME_FEATURE_ICON_TYPES[index] ?? "flexible",
   })),
+};
+
+export const defaultStatisticsContent: StatisticsContent = {
+  items: [
+    {
+      id: 1,
+      number: "150",
+      suffix: "k",
+      label: "Students Enrolled",
+      labelBengali: "",
+      iconType: "students",
+    },
+    {
+      id: 2,
+      number: "25",
+      suffix: "K",
+      label: "Total Courses",
+      labelBengali: "",
+      iconType: "courses",
+    },
+    {
+      id: 3,
+      number: "120",
+      suffix: "+",
+      label: "Expert Tutors",
+      labelBengali: "",
+      iconType: "tutors",
+    },
+    {
+      id: 4,
+      number: "50",
+      suffix: "+",
+      label: "Win Awards",
+      labelBengali: "",
+      iconType: "awards",
+    },
+  ],
 };
 
 const ABOUT_HERO_IMAGE =
@@ -570,6 +612,7 @@ export const defaultWebsiteContent: WebsiteContent = {
     instructorIds: [],
   },
   features: defaultFeaturesContent,
+  statistics: defaultStatisticsContent,
   coursesByCategory: {
     label: {
       text: "Categories",
