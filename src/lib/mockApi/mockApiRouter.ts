@@ -688,17 +688,5 @@ export async function handleMockApi(req: NextRequest, segments: string[]) {
     return json({ success: true, message: "ok" });
   }
 
-  // --- Generic OK for unmapped mutation ---
-  if (method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE") {
-    return json({ success: true, data: body });
-  }
-
-  return json({
-    success: true,
-    data: {
-      message: "mock",
-      path: pathKey,
-      hint: "Unmapped GET; returning empty envelope.",
-    },
-  });
+  return json({ success: false, error: "Not found", path: pathKey }, 404);
 }

@@ -10,9 +10,10 @@ import type {
   InstructorDashboardApiPayload,
 } from "@/types/dashboard";
 import type { StudentDashboardComposite } from "@/types/studentDashboard";
+import { isMockApiEnabled } from "@/lib/mockApi/isMockApiEnabled";
 
 function isMockFallbackEnabled(): boolean {
-  return process.env.NEXT_PUBLIC_USE_MOCK_API === "true";
+  return isMockApiEnabled();
 }
 
 /** Mock-only dashboard reads — no `fetch` (Phase 4). */

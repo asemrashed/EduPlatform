@@ -11,6 +11,7 @@ import type {
   PublicLessonsResponse,
 } from "./courseResponses";
 import type { PublicCoursesQuery } from "./types";
+import { isMockApiEnabled } from "@/lib/mockApi/isMockApiEnabled";
 
 /**
  * `GET /api/public/courses` — referenced for documentation and Phase 9 HTTP wiring.
@@ -28,10 +29,7 @@ export function readMockEmptyCatalog(): boolean {
 
 /** Mock catalog only in local dev — never substitute fake courses in production. */
 function isMockFallbackEnabled(): boolean {
-  return (
-    process.env.NODE_ENV === "development" &&
-    process.env.NEXT_PUBLIC_USE_MOCK_API === "true"
-  );
+  return process.env.NODE_ENV === "development" && isMockApiEnabled();
 }
 
 async function fetchJsonOrThrow<T>(url: string): Promise<T> {
