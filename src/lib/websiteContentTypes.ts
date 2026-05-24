@@ -41,6 +41,15 @@ export interface HeroContent {
     students: { enabled: boolean; count: string; avatars: string[] };
     courses: { enabled: boolean; count: string };
   };
+  /** Editorial home hero (NASMATICS-style layout) */
+  tagline?: string;
+  brandDisplayName?: string;
+  badge?: string;
+  introParagraphs?: string[];
+  bioColumns?: { left: string[]; right: string[] };
+  portraitImage?: string;
+  navItems?: Array<{ label: string; href: string }>;
+  highlightStat?: { value: string; label: string };
 }
 
 export interface AboutContent {

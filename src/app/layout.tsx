@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Manrope } from "next/font/google";
+import { DM_Serif_Display, Inter, Manrope } from "next/font/google";
 import Providers from "@/components/Providers";
 import { loadWebsiteContentSettings } from "@/app/api/_lib/websiteContentStore";
 import type { WebsiteContent } from "@/lib/websiteContentDefaults";
@@ -16,6 +16,14 @@ const inter = Inter({
   variable: "--font-body",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
+  display: "swap",
+});
+
+const dmSerifDisplay = DM_Serif_Display({
+  variable: "--font-serif-display",
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
   display: "swap",
 });
 
@@ -70,7 +78,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${manrope.variable} ${inter.variable}`}>
+    <html
+      lang="en"
+      className={`${manrope.variable} ${inter.variable} ${dmSerifDisplay.variable}`}
+    >
       <head>
         <link
           rel="stylesheet"

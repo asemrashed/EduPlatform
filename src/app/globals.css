@@ -109,10 +109,16 @@
   /* Fonts (CSS variables set by next/font on <html>) */
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   --font-headline: var(--font-headline), ui-sans-serif, system-ui, sans-serif;
+  --font-serif-display: var(--font-serif-display), "DM Serif Display", ui-serif, Georgia,
+    serif;
 }
 
 @utility shadow-editorial {
   box-shadow: var(--shadow-editorial);
+}
+
+.font-serif-display {
+  font-family: var(--font-serif-display), "DM Serif Display", ui-serif, Georgia, serif;
 }
 
 body {

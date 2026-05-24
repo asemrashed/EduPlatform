@@ -9,15 +9,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo } from "react";
 import { cn } from "@/lib/cn";
-import banner from "@/public/banner.png";
 import { fetchPublicCourses, useAppDispatch, useAppSelector } from "@/store";
 import type { PublicCourseRow } from "@/types/public-course";
 import type { WebsiteContent } from "@/lib/websiteContentDefaults";
-import {
-  HOME_FAQ,
-  HOME_HERO,
-  HOME_PARTNERS,
-} from "@/data/homePageContent";
+import { HOME_FAQ, HOME_PARTNERS } from "@/data/homePageContent";
+import { resolveHomeHeroContent } from "@/lib/resolveHomeHeroContent";
+import { HomeHeroSection } from "@/components/home/HomeHeroSection";
 import CourseCard from "../CourseCard";
 import ExpertsCarousel from "../carousals/ExpertsCarousel";
 import Testimonials from "./Testimonials";
@@ -31,10 +28,6 @@ import { resolveFeaturesContent } from "@/lib/resolveFeaturesContent";
 import { HomePageSkeleton } from "@/components/skeletons/HomePageSkeleton";
 import { resolveHomeSectionOrder } from "@/lib/homeSectionOrder";
 import type { SectionId } from "@/lib/websiteContentTypes";
-
-function joinTitleParts(...parts: (string | undefined)[]) {
-  return parts.filter(Boolean).join("");
-}
 
 type HomePageClientProps = {
   cmsData: WebsiteContent | null;
@@ -53,15 +46,10 @@ export function HomePageClient({
     (coursesStatus === "idle" || coursesStatus === "loading") &&
     publicList.length === 0;
 
-  const hero = cmsData?.hero;
-  const heroTitleBefore = hero?.title?.part1 || HOME_HERO.titleBefore;
-  const heroTitleAccent =
-    joinTitleParts(hero?.title?.part2, hero?.title?.part3, hero?.title?.part4, hero?.title?.part5) ||
-    HOME_HERO.titleAccent;
-  const heroDescription = hero?.description || HOME_HERO.description;
-  const heroCtaText = hero?.buttons?.primary?.text || "Join Now";
-  const heroImage =
-    hero?.carousel?.items?.[0]?.image || cmsData?.promotionalBanner?.imageUrl || banner.src;
+  const heroContent = useMemo(
+    () => resolveHomeHeroContent(cmsData),
+    [cmsData],
+  );
 
   const promo = cmsData?.promotionalBanner;
   const coursesTitle = promo?.headline || "Courses Designed for Success";
@@ -182,39 +170,7 @@ export function HomePageClient({
   const renderSection = (sectionId: SectionId) => {
     switch (sectionId) {
       case "hero":
-        return (
-          <section
-            key="hero"
-            className="relative overflow-hidden bg-gradient-to-br from-secondary-container to-primary-container px-6 py-20 md:px-12 lg:px-20"
-          >
-            <div className="mx-auto flex max-w-7xl flex-col items-center gap-12 lg:flex-row lg:justify-between">
-              <div className="max-w-xl text-center lg:text-left">
-                <h1 className="mb-6 text-4xl font-extrabold leading-tight text-white md:text-6xl">
-                  {heroTitleBefore}{" "}
-                  <span className="text-primary">{heroTitleAccent}</span> <br />
-                </h1>
-                <p className="mb-8 text-lg text-white/80">{heroDescription}</p>
-                <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
-                  <button
-                    type="button"
-                    className="rounded-lg bg-primary px-6 py-3 font-semibold text-on-primary shadow-lg transition hover:scale-105"
-                  >
-                    {heroCtaText}
-                  </button>
-                </div>
-              </div>
-              <div className="relative min-w-sm w-full max-w-2xl flex-1 rounded-xl">
-                <div className="relative w-full overflow-hidden rounded-3xl p-6 backdrop-blur-xl">
-                  <img
-                    src={heroImage}
-                    alt="Hero"
-                    className="w-full rounded-xl object-contain"
-                  />
-                </div>
-              </div>
-            </div>
-          </section>
-        );
+        return <HomeHeroSection key="hero" content={heroContent} />;
       case "statistics":
         return (
           <HomeStatisticsSection

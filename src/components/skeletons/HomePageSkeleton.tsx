@@ -9,16 +9,29 @@ export function HomePageSkeleton() {
       <p className="sr-only">Loading homepage</p>
 
       {/* Hero */}
-      <section className="animate-pulse bg-gradient-to-br from-secondary-container/80 to-primary-container/80 px-6 py-20 md:px-12 lg:px-20">
-        <div className="mx-auto flex max-w-7xl flex-col items-center gap-12 lg:flex-row lg:justify-between">
-          <div className="w-full max-w-xl space-y-6 text-center lg:text-left">
-            <div className="mx-auto h-12 w-full max-w-lg rounded-lg bg-white/20 lg:mx-0" />
-            <div className="mx-auto h-12 w-4/5 max-w-md rounded-lg bg-white/15 lg:mx-0" />
-            <div className="mx-auto h-5 w-full max-w-sm rounded-md bg-white/10 lg:mx-0" />
-            <div className="mx-auto h-5 w-5/6 max-w-md rounded-md bg-white/10 lg:mx-0" />
-            <div className="mx-auto h-12 w-32 rounded-lg bg-white/25 lg:mx-0" />
+      <section className="animate-pulse bg-white">
+        <div className="mx-auto grid max-w-7xl gap-12 px-6 py-14 lg:grid-cols-2">
+          <div className="max-w-xl space-y-4">
+            <div className="h-4 w-48 rounded bg-muted" />
+            <div className="h-20 w-full max-w-sm rounded-lg bg-muted/80" />
+            <div className="h-8 w-56 rounded-full bg-muted" />
+            <div className="h-14 w-full rounded-lg bg-muted/80" />
+            <div className="h-4 w-full rounded bg-muted/60" />
+            <div className="h-4 w-5/6 rounded bg-muted/60" />
           </div>
-          <div className="h-64 w-full max-w-2xl rounded-3xl bg-white/15 lg:h-80" />
+          <div className="mx-auto h-80 w-full max-w-lg rounded-lg bg-muted/40" />
+        </div>
+        <div className="border-t border-outline-variant/20 bg-[#f0ebe3] px-6 py-16">
+          <div className="mx-auto grid max-w-7xl gap-8 md:grid-cols-2">
+            <div className="space-y-4">
+              <div className="h-4 w-full rounded bg-muted/60" />
+              <div className="h-4 w-5/6 rounded bg-muted/60" />
+            </div>
+            <div className="space-y-4">
+              <div className="h-4 w-full rounded bg-muted/60" />
+              <div className="h-4 w-5/6 rounded bg-muted/60" />
+            </div>
+          </div>
         </div>
       </section>
 

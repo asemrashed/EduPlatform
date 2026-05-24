@@ -3,13 +3,35 @@
  */
 
 export const HOME_HERO = {
+  tagline: "Premier Digital Learning",
+  badge: "Cambridge IGCSE Add Maths · 0606",
+  headlineBefore: "Helping students see Mathematics in ",
+  headlineAccent: "the real world.",
+  introParagraphs: [
+    "With over 7 years of experience and a 90% A & A* rate, I'm passionate about making Add Maths click — not just on paper, but in everyday life.",
+    "As a Mechanical Engineer from Dhaka, I know firsthand how powerful mathematics becomes when you understand *why* it works, not just how.",
+  ],
+  bioLeft: [
+    "Too many students can solve an equation but freeze when the world asks them to use it. That gap — between knowing maths and *living* it — is exactly what Nasmatics was built to close.",
+    "Growing up and studying engineering in Dhaka, I kept meeting brilliant people who asked the same question: *'Where will I ever use this?'* That question inspired everything I do.",
+  ],
+  bioRight: [
+    "Through years of teaching, I've discovered that students don't struggle with maths because they're not smart — they struggle because no one connected it to something real. My resources are built to fix that.",
+    "Whether you're pushing for an A* or just trying to make sense of functions and calculus, I'm here to make the journey feel worth it.",
+  ],
+  heroImage: "/images/nasmatic.png",
+  statValue: "90%",
+  statLabel: "A & A* RATE",
   eyebrow: "Premier Digital Learning",
-  titleBefore: "Shape Your Future with the ",
-  titleAccent: "Right Knowledge",
+  navItems: [
+    { label: "Resources", href: "/courses" },
+    { label: "Video", href: "/courses" },
+    { label: "Live Classes", href: "/courses" },
+  ],
+  titleBefore: "Helping students see Mathematics in ",
+  titleAccent: "the real world.",
   description:
-    "Join 20,000+ students mastering the world's most in-demand skills through high-end editorial learning experiences curated by industry leaders.",
-  heroImage:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuA31RkH7_XZz2aDd0xstgLrl32VX8pLZAQTNxwSHRJFvS3r1qNkqaaHKjlWsCA7C18zyIMAzL_qw0Iw53YXshQoVyfPVsvWDnx0Ec3LB8Lz1wOJLvuwyafkrSneNnPDwi0hbJ9OArzRXv761Zw_KRWYbcBBpZw8Kd6D3Io25YHaVIlJqc_JqMnzIpDlzD-f8RRkrJ1qTLI1phSD-P9S5kqyBNVMMcm_xucMHgGI6PoQx5U0XwHz331jra4z9cH3w8XWs60md6N9ZSw",
+    "With over 7 years of experience and a 90% A & A* rate, I'm passionate about making Add Maths click — not just on paper, but in everyday life.",
 };
 
 export const HOME_FEATURES_IMAGE =

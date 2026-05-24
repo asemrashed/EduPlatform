@@ -308,7 +308,7 @@ export const defaultWebsiteContent: WebsiteContent = {
     youtube: "",
   },
   branding: {
-    logoText: "EduPlatform",
+    logoText: "NASMATICS",
     logoTextColor1: PRIMARY_COLOR,
     logoTextColor2: SECONDARY_COLOR,
     logoIconColor1: SECONDARY_COLOR,
@@ -379,17 +379,20 @@ export const defaultWebsiteContent: WebsiteContent = {
     })),
   },
   hero: {
-    subtitle: HOME_HERO.eyebrow,
+    subtitle: HOME_HERO.tagline,
+    tagline: HOME_HERO.tagline,
+    brandDisplayName: "NASMATICS",
+    badge: HOME_HERO.badge,
     title: {
-      part1: "Shape Your Future with the ",
-      part2: "Right Knowledge",
+      part1: HOME_HERO.headlineBefore,
+      part2: HOME_HERO.headlineAccent,
       part3: "",
       part4: "",
       part5: "",
     },
     titleColors: {
       part1: PRIMARY_COLOR,
-      part2: SECONDARY_COLOR,
+      part2: PRIMARY_COLOR,
       part3: PRIMARY_COLOR,
       part4: PRIMARY_COLOR,
       part5: PRIMARY_COLOR,
@@ -398,7 +401,17 @@ export const defaultWebsiteContent: WebsiteContent = {
       from: PRIMARY_COLOR,
       to: SECONDARY_COLOR,
     },
-    description: HOME_HERO.description,
+    description: HOME_HERO.introParagraphs.join("\n\n"),
+    introParagraphs: [...HOME_HERO.introParagraphs],
+    bioColumns: {
+      left: [...HOME_HERO.bioLeft],
+      right: [...HOME_HERO.bioRight],
+    },
+    portraitImage: HOME_HERO.heroImage,
+    highlightStat: {
+      value: HOME_HERO.statValue,
+      label: HOME_HERO.statLabel,
+    },
     buttons: {
       primary: {
         text: "Join Now",
@@ -410,15 +423,15 @@ export const defaultWebsiteContent: WebsiteContent = {
       },
     },
     carousel: {
-      enabled: true,
-      autoPlay: true,
+      enabled: false,
+      autoPlay: false,
       autoPlayInterval: 3000,
       items: [],
     },
     stats: {
       students: {
         enabled: true,
-        count: "20,000+",
+        count: HOME_HERO.statValue,
         avatars: [],
       },
       courses: {

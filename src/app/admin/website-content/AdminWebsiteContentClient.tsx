@@ -29,7 +29,7 @@ import {
   defaultHomeInstructorsContent,
   defaultFAQContent,
   defaultFooterContent,
-  defaultHeroContent,
+  defaultWebsiteContent,
   defaultPhotoGalleryContent,
   defaultPromoBannerContent,
   defaultSectionOrder,
@@ -38,10 +38,10 @@ import {
   defaultFeaturesContent,
   defaultStatisticsContent,
   defaultPartnersContent,
-  defaultWebsiteContent,
   stripLegacyWebsiteContentKeys,
   sanitizeWebsiteContentForSave,
 } from '@/lib/websiteContentDefaults';
+import { mergeEditorialHeroContent } from '@/lib/mergeHeroContent';
 import type { WebsiteContent } from './sections/types';
 import { CMS_SIDEBAR_GROUPS, getCmsTabLabel, isMoreTab, MORE_TAB_IDS } from './cmsSidebarConfig';
 import { CmsSectionsLayout } from './CmsSectionsLayout';
@@ -306,18 +306,10 @@ function WebsiteContentPageContent() {
       });
       if (!response.ok) throw new Error('Failed to fetch content');
       const data = await response.json();
-      // Ensure hero content uses defaultHeroContent if missing
       const fetchedContent = stripLegacyWebsiteContentKeys(
         (data.data || {}) as Record<string, unknown>,
       ) as unknown as WebsiteContent;
-      // Merge with default hero content if hero is missing or incomplete
-      if (!fetchedContent.hero || !fetchedContent.hero.subtitle) {
-        fetchedContent.hero = { ...defaultHeroContent, ...(fetchedContent.hero || {}) };
-      }
-      // Ensure gradientColors exists if part2 or part3 is gradient
-      if ((fetchedContent.hero?.titleColors?.part2 === 'gradient' || fetchedContent.hero?.titleColors?.part3 === 'gradient') && !fetchedContent.hero.gradientColors) {
-        fetchedContent.hero.gradientColors = defaultHeroContent.gradientColors;
-      }
+      fetchedContent.hero = mergeEditorialHeroContent(fetchedContent.hero);
       // Ensure about content uses defaultAboutContent if missing or incomplete
       if (!fetchedContent.about || !fetchedContent.about.label || !fetchedContent.about.title || !fetchedContent.about.description) {
         fetchedContent.about = { 

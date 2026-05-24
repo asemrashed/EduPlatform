@@ -4,8 +4,10 @@ import SiteContent from "@/models/SiteContent";
 import {
   WEBSITE_CONTENT_CATEGORY,
   defaultWebsiteContent,
+  sanitizeWebsiteContentForSave,
   stripLegacyWebsiteContentKeys,
 } from "@/lib/websiteContentDefaults";
+import { mergeEditorialHeroIntoSettings } from "@/lib/mergeHeroContent";
 
 const SITE_CONTENT_KEY = WEBSITE_CONTENT_CATEGORY;
 
@@ -59,4 +61,14 @@ export async function saveWebsiteContentSettings(
 export async function hasWebsiteContentDocument() {
   await connectDB();
   return Boolean(await SiteContent.exists({ key: SITE_CONTENT_KEY }));
+}
+
+/** Merge editorial NASMATICS hero fields into persisted CMS content. */
+export async function migrateEditorialHeroContent(updatedBy?: string) {
+  const current = await loadWebsiteContentSettings();
+  const merged = mergeEditorialHeroIntoSettings(current);
+  return saveWebsiteContentSettings(
+    sanitizeWebsiteContentForSave(merged),
+    updatedBy,
+  );
 }
