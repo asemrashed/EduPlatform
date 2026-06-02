@@ -16,11 +16,82 @@ function isMockFallbackEnabled(): boolean {
   return isMockApiEnabled();
 }
 
-/** Mock-only dashboard reads — no `fetch` (Phase 4). */
+function normalizeStudentDashboard(
+  raw: Partial<StudentDashboardComposite>,
+): StudentDashboardComposite {
+  return {
+    enrollments: Array.isArray(raw.enrollments)
+      ? raw.enrollments.map((item) => ({
+          _id: item._id ?? "",
+          course: {
+            _id: item.course?._id ?? "",
+            title: item.course?.title ?? "",
+            description: item.course?.description ?? "",
+            thumbnailUrl: item.course?.thumbnailUrl,
+            price: item.course?.price ?? 0,
+            isPaid: item.course?.isPaid ?? false,
+            category: {
+              _id: item.course?.category?._id ?? "general",
+              name: item.course?.category?.name ?? "General",
+            },
+            instructor: {
+              _id: item.course?.instructor?._id ?? "",
+              firstName: item.course?.instructor?.firstName ?? "",
+              lastName: item.course?.instructor?.lastName ?? "",
+            },
+            createdAt: item.course?.createdAt ?? "",
+            updatedAt: item.course?.updatedAt ?? "",
+          },
+          enrolledAt: item.enrolledAt ?? "",
+          status: item.status ?? "enrolled",
+          progress: item.progress ?? 0,
+          lastAccessedAt: item.lastAccessedAt ?? "",
+          paymentStatus: item.paymentStatus ?? "pending",
+        }))
+      : [],
+    courseProgress: Array.isArray(raw.courseProgress)
+      ? raw.courseProgress.map((item) => ({
+          _id: item._id ?? "",
+          course: item.course ?? "",
+          isCompleted: item.isCompleted ?? false,
+          completedAt: item.completedAt,
+          progressPercentage: item.progressPercentage ?? 0,
+          totalLessons: item.totalLessons ?? 0,
+          completedLessons: item.completedLessons ?? 0,
+          totalTimeSpent: item.totalTimeSpent ?? 0,
+          lastAccessedAt: item.lastAccessedAt ?? "",
+          startedAt: item.startedAt ?? "",
+        }))
+      : [],
+  };
+}
+
 export async function getStudentDashboard(): Promise<StudentDashboardComposite> {
-  await Promise.resolve();
-  // No dedicated `/api/student/dashboard` route in moynamoti-main.
-  return getMockStudentDashboardComposite();
+  if (isMockApiEnabled()) {
+    await Promise.resolve();
+    return getMockStudentDashboardComposite();
+  }
+
+  const response = await fetch(API_ENDPOINTS.STUDENT_DASHBOARD, {
+    method: "GET",
+    credentials: "include",
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+  });
+  const body = await parseJsonSafe(response);
+  if (!response.ok) {
+    throw new Error("Failed to load student dashboard");
+  }
+  const data =
+    body && typeof body === "object"
+      ? (body as { success?: unknown; data?: unknown }).success === true
+        ? (body as { data?: unknown }).data
+        : body
+      : null;
+  if (!data || typeof data !== "object") {
+    throw new Error("Invalid student dashboard response");
+  }
+  return normalizeStudentDashboard(data as Partial<StudentDashboardComposite>);
 }
 
 async function parseJsonSafe(response: Response): Promise<unknown> {

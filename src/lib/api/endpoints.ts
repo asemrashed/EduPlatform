@@ -14,6 +14,7 @@ export const API_ENDPOINTS = {
   PROGRESS: "/api/progress",
   INSTRUCTOR_DASHBOARD: "/api/instructor/dashboard",
   ADMIN_DASHBOARD: "/api/admin/dashboard",
+  STUDENT_DASHBOARD: "/api/student/dashboard",
   ENROLLMENTS: "/api/enrollments",
   PAST_PAPERS: "/api/past-papers",
   LESSON_QUIZ_AVAILABILITY: "/api/lessons/quiz-availability",
