@@ -11,6 +11,7 @@ import InstructorPageWrapper from '@/components/InstructorPageWrapper';
 import { Button } from '@/components/ui/button';
 import { AttractiveSelect } from '@/components/ui/attractive-select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
+import { examsStaffService } from '@/services/examsStaffService';
 import { LuArrowLeft as ArrowLeft, LuX as X, LuSettings as Settings } from 'react-icons/lu';
 
 interface ExamBrief {
@@ -41,7 +42,7 @@ function InstructorExamAttemptsPageContent() {
   const [stats, setStats] = useState<Record<string, number> | null>(null);
 
   const fetchExam = async () => {
-    const res = await fetch(`/api/instructor/exams/${examId}`, { credentials: 'include' });
+    const res = await examsStaffService.getInstructorExam(examId);
     const data = await res.json();
     if (res.ok) {
       const e = data.data?.exam || data.exam;
@@ -59,7 +60,7 @@ function InstructorExamAttemptsPageContent() {
         sortBy: filters.sortBy === 'submittedAt' ? 'submittedAt' : filters.sortBy,
         sortOrder: filters.sortOrder,
       });
-      const res = await fetch(`/api/instructor/exams/${examId}/attempts?${q}`, { credentials: 'include' });
+      const res = await examsStaffService.listInstructorExamAttempts(examId, q.toString());
       const data = await res.json();
       if (res.ok) {
         setAttempts(data.data?.attempts || []);

@@ -16,6 +16,8 @@ import { Input } from '@/components/ui/input';
 import { AttractiveInput } from '@/components/ui/attractive-input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { LuPlus as Plus, LuSearch as Search, LuX as X, LuBookOpen as BookOpen, LuFilter as Filter, LuTag as Tag, LuClock as Clock, LuCalendar as Calendar, LuArrowUpDown as ArrowUpDown, LuSettings as Settings, LuUser as User, LuTarget as Target } from 'react-icons/lu';;
+import { examsStaffService } from '@/services/examsStaffService';
+import { coursesStaffService } from '@/services/coursesStaffService';
 import { useRouter } from 'next/navigation';
 
 function ExamsPageContent() {
@@ -73,12 +75,7 @@ function ExamsPageContent() {
         ...(filters.sortOrder && { sortOrder: filters.sortOrder }),
       });
 
-      const response = await fetch(`/api/exams?${queryParams}`, {
-        credentials: 'include', // Ensure cookies are sent
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
+      const response = await examsStaffService.listAdminExams(queryParams.toString());
       const data = await response.json();
       
       console.log('Exams API Response:', {
@@ -130,7 +127,7 @@ function ExamsPageContent() {
 
   const fetchCourses = async () => {
     try {
-      const response = await fetch('/api/courses');
+      const response = await coursesStaffService.listCourses("limit=500");
       const data = await response.json();
       if (response.ok) {
         // Handle different possible response structures
@@ -148,7 +145,7 @@ function ExamsPageContent() {
 
   const fetchCreators = async () => {
     try {
-      const response = await fetch('/api/users?role=instructor,teacher,admin');
+      const response = await coursesStaffService.listInstructorUsers();
       const data = await response.json();
       if (response.ok) {
         // Handle different possible response structures
@@ -213,9 +210,7 @@ function ExamsPageContent() {
 
     setDeleting(true);
     try {
-      const response = await fetch(`/api/exams/${examToDelete._id}`, {
-        method: 'DELETE',
-      });
+      const response = await examsStaffService.deleteAdminExam(examToDelete._id);
 
       const data = await response.json();
 

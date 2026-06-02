@@ -14,6 +14,7 @@ import { Assignment, AssignmentFilters as AssignmentFiltersType } from '@/types/
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LuPlus as Plus, LuSearch as Search, LuX as X, LuFileText as LuFileText } from 'react-icons/lu';;
+import { assignmentsStaffService } from '@/services/assignmentsStaffService';
 import { useRouter } from 'next/navigation';
 
 function AssignmentsPageContent() {
@@ -52,12 +53,7 @@ function AssignmentsPageContent() {
         ...(filters.search && { search: filters.search }),
       });
 
-      const response = await fetch(`/api/assignments?${queryParams}`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
+      const response = await assignmentsStaffService.listAdminAssignments(queryParams.toString());
       const data = await response.json();
 
       if (response.ok) {
@@ -140,9 +136,7 @@ function AssignmentsPageContent() {
 
     setDeleting(true);
     try {
-      const response = await fetch(`/api/assignments/${assignmentToDelete._id}`, {
-        method: 'DELETE',
-      });
+      const response = await assignmentsStaffService.deleteAdminAssignment(assignmentToDelete._id);
 
       const data = await response.json();
 

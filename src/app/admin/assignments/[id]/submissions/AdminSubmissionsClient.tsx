@@ -16,6 +16,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFo
 import { LuArrowLeft as ArrowLeft, LuSearch as Search, LuX as X, LuSettings as Settings, LuFilter as Filter, LuDownload as Download, LuFileText as LuFileText, LuUsers as Users, LuTarget as Target, LuClock as Clock, LuCheck as Check, LuLoader as Loader2, LuUser as User, LuCalendar as Calendar } from 'react-icons/lu';
 import { AttractiveTextarea } from '@/components/ui/attractive-textarea';
 import ConfirmModal from '@/components/ui/confirm-modal';
+import { assignmentsStaffService } from '@/services/assignmentsStaffService';
 
 function AssignmentSubmissionsPageContent() {
   const params = useParams();
@@ -54,7 +55,7 @@ function AssignmentSubmissionsPageContent() {
 
   const fetchAssignment = async () => {
     try {
-      const response = await fetch(`/api/assignments/${assignmentId}`);
+      const response = await assignmentsStaffService.getAssignment(assignmentId);
       const data = await response.json();
       
       if (response.ok) {
@@ -79,7 +80,10 @@ function AssignmentSubmissionsPageContent() {
         ...(filters.sortOrder && { sortOrder: filters.sortOrder }),
       });
 
-      const response = await fetch(`/api/assignments/${assignmentId}/submissions?${queryParams}`);
+      const response = await assignmentsStaffService.listSubmissions(
+        assignmentId,
+        queryParams.toString(),
+      );
       const data = await response.json();
       
       if (response.ok) {
@@ -189,10 +193,10 @@ function AssignmentSubmissionsPageContent() {
     if (!submissionToDelete) return;
     setDeleting(true);
     try {
-      const res = await fetch(`/api/assignments/${assignmentId}/submissions/${submissionToDelete._id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
+      const res = await assignmentsStaffService.deleteSubmission(
+        assignmentId,
+        submissionToDelete._id,
+      );
       const data = await res.json();
       if (res.ok) {
         setSubmissionToDelete(null);
@@ -218,12 +222,11 @@ function AssignmentSubmissionsPageContent() {
     }
     try {
       setGrading(true);
-      const res = await fetch(`/api/assignments/${assignmentId}/submissions/${gradingSubmission._id}/grade`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ score: parsed, feedback: gradeFeedback || undefined })
-      });
+      const res = await assignmentsStaffService.gradeSubmission(
+        assignmentId,
+        gradingSubmission._id,
+        { score: parsed, feedback: gradeFeedback || undefined },
+      );
       const data = await res.json();
       if (res.ok) {
         setShowGradeDrawer(false);

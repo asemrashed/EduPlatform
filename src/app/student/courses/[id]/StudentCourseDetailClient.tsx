@@ -15,6 +15,7 @@ import { htmlToPlainText } from '@/lib/utils';
 import { studentLearningService } from '@/services/studentLearningService';
 import { fetchAccountProfile } from '@/lib/accountClient';
 import { createEnrollment } from '@/lib/api/enrollmentClient';
+import { websiteContentService } from '@/services/websiteContentService';
 import {
   getLessonQuizCountsByCourse,
   getLessonQuizHistory,
@@ -26,6 +27,11 @@ import {
 
 const DEFAULT_LESSON_BANNER_TITLE = 'Student Dashboard';
 const QUIZ_KEEP_PRACTICING_THRESHOLD = 60;
+type CourseLessonBanner = {
+  enabled: boolean;
+  title: string;
+  imageUrl: string;
+};
 const getLastLessonStorageKey = (courseId: string) => `student-course-last-lesson:${courseId}`;
 const getLessonPlaybackStorageKey = (courseId: string, lessonId: string) =>
   `student-course-playback:${courseId}:${lessonId}`;
@@ -121,11 +127,7 @@ export default function StudentCourseLearningPage() {
   const [lessonQuizCounts, setLessonQuizCounts] = useState<Record<string, number>>({});
   const [submittedQuizByLesson, setSubmittedQuizByLesson] = useState<Record<string, boolean>>({});
   const [studentPhone, setStudentPhone] = useState('');
-  const [courseLessonBanner, setCourseLessonBanner] = useState<{
-    enabled: boolean;
-    title: string;
-    imageUrl: string;
-  } | null>(null);
+  const [courseLessonBanner, setCourseLessonBanner] = useState<CourseLessonBanner | null>(null);
   const isValidQuizSubmission = (submission: any) => {
     const totalQuestions = Number(submission?.totalQuestions ?? 0);
     const correctAnswers = Number(submission?.correctAnswers ?? 0);
@@ -192,13 +194,12 @@ export default function StudentCourseLearningPage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/api/website-content', { cache: 'no-store' });
-        if (!res.ok || cancelled) return;
-        const json = await res.json();
-        const data = json?.data;
+        const data = await websiteContentService.getWebsiteContent();
         if (cancelled) return;
-        if (data?.courseLessonBanner != null) {
-          setCourseLessonBanner(data.courseLessonBanner);
+        if (cancelled) return;
+        const banner = (data as Record<string, unknown> | null)?.courseLessonBanner;
+        if (banner && typeof banner === 'object') {
+          setCourseLessonBanner(banner as CourseLessonBanner);
         }
       } catch {
         if (!cancelled) setCourseLessonBanner(null);

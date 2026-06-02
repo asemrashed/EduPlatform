@@ -20,6 +20,7 @@ import InstructorPageWrapper from '@/components/InstructorPageWrapper';
 import { LuPlus as Plus, LuSearch as Search, LuFilter as Filter, LuBookOpen as BookOpen, LuTag as Tag, LuClock as Clock, LuTarget as Target, LuPencil as Edit, LuTrash2 as Trash2, LuEye as Eye, LuUpload as Upload, LuFileText as LuFileText, LuCheck as CheckCircle, LuSettings as Settings, LuX as X } from 'react-icons/lu';;
 import { format } from 'date-fns';
 import { Question as QuestionType } from '@/types/exam';
+import { questionsStaffService } from '@/services/questionsStaffService';
 import { InstructorRoleShell } from '@/components/role-area/InstructorRoleShell';
 
 type Question = QuestionType;
@@ -77,12 +78,7 @@ function InstructorQuestionBankPageContent() {
         ...(filters.sortOrder && { sortOrder: filters.sortOrder }),
       });
 
-      const response = await fetch(`/api/instructor/questions?${queryParams}`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await questionsStaffService.listInstructorQuestions(queryParams.toString());
 
       if (response.ok) {
         const data = await response.json();
@@ -187,13 +183,7 @@ function InstructorQuestionBankPageContent() {
 
     try {
       setDeletingQuestion(true);
-      const response = await fetch(`/api/instructor/questions/${questionToDelete._id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await questionsStaffService.deleteInstructorQuestion(questionToDelete._id);
 
       if (response.ok) {
         setShowDeleteConfirm(false);

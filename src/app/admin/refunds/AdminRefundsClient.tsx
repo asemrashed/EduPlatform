@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFo
 import { LuRefreshCw as RefreshCw, LuSearch as Search, LuX as X, LuDollarSign as DollarSign, LuFilter as Filter, LuTag as Tag, LuCalendar as Calendar, LuArrowUpDown as ArrowUpDown, LuSettings as Settings, LuUser as User, LuTriangleAlert as AlertTriangle, LuCheck as CheckCircle, LuClock as Clock, LuX as XCircle } from 'react-icons/lu';;
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { paymentRefundService } from '@/services/paymentRefundService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Payment {
@@ -88,7 +89,7 @@ function RefundsPageContent() {
         ...(filters.sortOrder && { sortOrder: filters.sortOrder }),
       });
 
-      const response = await fetch(`/api/payment/eligible-refunds?${queryParams}`);
+      const response = await paymentRefundService.listEligibleRefunds(queryParams.toString());
       const data = await response.json();
 
       if (response.ok) {
@@ -121,7 +122,7 @@ function RefundsPageContent() {
         ...(filters.sortOrder && { sortOrder: filters.sortOrder }),
       });
 
-      const response = await fetch(`/api/payment/refund-history?${queryParams}`);
+      const response = await paymentRefundService.listRefundHistory(queryParams.toString());
       const data = await response.json();
 
       if (response.ok) {

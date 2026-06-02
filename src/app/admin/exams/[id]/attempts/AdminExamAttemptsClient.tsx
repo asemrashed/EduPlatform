@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { AttractiveSelect } from '@/components/ui/attractive-select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
 import { LuArrowLeft as ArrowLeft, LuX as X, LuSettings as Settings } from 'react-icons/lu';
+import { examsStaffService } from '@/services/examsStaffService';
 import ConfirmModal from '@/components/ui/confirm-modal';
 
 interface ExamBrief {
@@ -44,7 +45,7 @@ function AdminExamAttemptsPageContent() {
   const [deleting, setDeleting] = useState(false);
 
   const fetchExam = async () => {
-    const res = await fetch(`/api/exams/${examId}`, { credentials: 'include' });
+    const res = await examsStaffService.getAdminExam(examId);
     const data = await res.json();
     if (res.ok) {
       const e = data.data?.exam || data.exam;
@@ -62,7 +63,7 @@ function AdminExamAttemptsPageContent() {
         sortBy: filters.sortBy === 'submittedAt' ? 'submittedAt' : filters.sortBy,
         sortOrder: filters.sortOrder,
       });
-      const res = await fetch(`/api/exams/${examId}/attempts?${q}`, { credentials: 'include' });
+      const res = await examsStaffService.listAdminExamAttempts(examId, q.toString());
       const data = await res.json();
       if (res.ok) {
         setAttempts(data.data?.attempts || []);
@@ -132,10 +133,7 @@ function AdminExamAttemptsPageContent() {
     if (!attemptToDelete) return;
     setDeleting(true);
     try {
-      const res = await fetch(`/api/exams/${examId}/attempts/${attemptToDelete._id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
+      const res = await examsStaffService.deleteAdminExamAttempt(examId, attemptToDelete._id);
       if (res.ok) {
         setAttemptToDelete(null);
         fetchAttempts();

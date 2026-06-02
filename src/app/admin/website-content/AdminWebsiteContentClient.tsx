@@ -42,6 +42,9 @@ import {
   sanitizeWebsiteContentForSave,
 } from '@/lib/websiteContentDefaults';
 import { mergeEditorialHeroContent } from '@/lib/mergeHeroContent';
+import { websiteContentAdminService } from '@/services/websiteContentAdminService';
+import { coursesStaffService } from '@/services/coursesStaffService';
+import { courseReviewService } from '@/services/courseReviewService';
 import type { WebsiteContent } from './sections/types';
 import { CMS_SIDEBAR_GROUPS, getCmsTabLabel, isMoreTab, MORE_TAB_IDS } from './cmsSidebarConfig';
 import { CmsSectionsLayout } from './CmsSectionsLayout';
@@ -114,7 +117,7 @@ function WebsiteContentPageContent() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/api/courses?limit=500&page=1&status=published', { cache: 'no-store' });
+        const res = await coursesStaffService.listCourses('limit=500&page=1&status=published');
         if (!res.ok || cancelled) return;
         const data = await res.json();
         const list = data?.data?.courses ?? data?.courses ?? [];
@@ -301,9 +304,7 @@ function WebsiteContentPageContent() {
     try {
       setIsLoading(true);
       // Admin portal: no cache, always fetch fresh data
-      const response = await fetch('/api/admin/website-content', {
-        cache: 'no-store', // Always fetch fresh data for admin
-      });
+      const response = await websiteContentAdminService.getWebsiteContent();
       if (!response.ok) throw new Error('Failed to fetch content');
       const data = await response.json();
       const fetchedContent = stripLegacyWebsiteContentKeys(
@@ -431,9 +432,7 @@ function WebsiteContentPageContent() {
   const fetchReviews = async () => {
     setReviewsLoading(true);
     try {
-      const response = await fetch('/api/course-reviews?limit=1000', {
-        cache: 'no-store',
-      });
+      const response = await courseReviewService.listReviews('limit=1000');
       if (response.ok) {
         const data = await response.json();
         const reviewsData = data.data?.reviews || data.reviews || [];
@@ -453,7 +452,7 @@ function WebsiteContentPageContent() {
 
   const fetchReviewFormOptions = async () => {
     try {
-      const coursesResponse = await fetch('/api/courses?limit=500&page=1', { cache: 'no-store' });
+      const coursesResponse = await coursesStaffService.listCourses('limit=500&page=1');
 
       if (coursesResponse.ok) {
         const coursesData = await coursesResponse.json();
@@ -498,18 +497,12 @@ function WebsiteContentPageContent() {
 
     try {
       setCreatingReview(true);
-      const response = await fetch('/api/admin/course-reviews', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...newReview,
-          title: newReview.title.trim() || undefined,
-          comment: newReview.comment.trim() || undefined,
-          videoUrl: newReview.videoUrl.trim() || undefined,
-          videoThumbnail: newReview.videoThumbnail.trim() || undefined,
-        }),
+      const response = await courseReviewService.createAdminReview({
+        ...newReview,
+        title: newReview.title.trim() || undefined,
+        comment: newReview.comment.trim() || undefined,
+        videoUrl: newReview.videoUrl.trim() || undefined,
+        videoThumbnail: newReview.videoThumbnail.trim() || undefined,
       });
 
       const data = await response.json();
@@ -545,15 +538,9 @@ function WebsiteContentPageContent() {
         displayOrder = currentDisplayedCount + 1;
       }
 
-      const response = await fetch(`/api/admin/course-reviews/${reviewId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          isDisplayed: newValue,
-          displayOrder: newValue ? displayOrder : 0,
-        }),
+      const response = await courseReviewService.updateAdminReview(reviewId, {
+        isDisplayed: newValue,
+        displayOrder: newValue ? displayOrder : 0,
       });
 
       if (response.ok) {
@@ -583,14 +570,8 @@ function WebsiteContentPageContent() {
       const updatePromises = reorderedDisplayedReviews
         .filter(review => review.isDisplayed === true)
         .map((review, index) => 
-          fetch(`/api/admin/course-reviews/${review._id}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              displayOrder: index + 1,
-            }),
+          courseReviewService.updateAdminReview(review._id, {
+            displayOrder: index + 1,
           })
         );
 
@@ -666,15 +647,14 @@ function WebsiteContentPageContent() {
     try {
       setIsSaving(true);
       
-      const response = await fetch('/api/admin/website-content', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const response = await websiteContentAdminService.saveWebsiteContent(
+        {
           settings: sanitizeWebsiteContentForSave(
             content as unknown as Record<string, unknown>,
           ),
-        }),
-      });
+        },
+        'POST',
+      );
 
       if (!response.ok) throw new Error('Failed to save content');
       
@@ -693,9 +673,7 @@ function WebsiteContentPageContent() {
     
     try {
       setIsSaving(true);
-      const response = await fetch('/api/admin/website-content', {
-        method: 'PUT',
-      });
+      const response = await websiteContentAdminService.resetWebsiteContent();
 
       if (!response.ok) throw new Error('Failed to reset content');
       
@@ -799,10 +777,7 @@ function WebsiteContentPageContent() {
       formData.append('file', file);
       formData.append('assetType', assetType);
 
-      const response = await fetch('/api/upload/branding', {
-        method: 'POST',
-        body: formData,
-      });
+      const response = await websiteContentAdminService.uploadBranding(formData);
 
       const data = await response.json();
       if (!response.ok || !data?.imageUrl) {

@@ -13,6 +13,7 @@ import { AttractiveTextarea } from '@/components/ui/attractive-textarea';
 import { LuFileText as LuFileText, LuUpload as Upload, LuCalendar as Calendar, LuClock as Clock, LuSend as Send, LuTriangleAlert as AlertCircle, LuCheck as CheckCircle2, LuLink as LuLinkIcon } from 'react-icons/lu';;
 import { Assignment } from '@/types/assignment';
 import { htmlToPlainText } from '@/lib/utils';
+import { studentAssignmentService } from '@/services/studentAssignmentService';
 
 export default function StudentAssignmentDetailPage() {
   const params = useParams();
@@ -31,7 +32,7 @@ export default function StudentAssignmentDetailPage() {
   const fetchAssignment = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/student/assignments/${assignmentId}`, { credentials: 'include' });
+      const res = await studentAssignmentService.getAssignment(assignmentId);
       const data = await res.json();
       if (res.ok) {
         setAssignment(data.data?.assignment || data.assignment || null);
@@ -68,10 +69,7 @@ export default function StudentAssignmentDetailPage() {
         if (file) {
           const uploadForm = new FormData();
           uploadForm.append('files', file);
-          const uploadRes = await fetch('/api/uploads/assignment', {
-            method: 'POST',
-            body: uploadForm,
-          });
+          const uploadRes = await studentAssignmentService.uploadAssignmentFile(uploadForm);
           const uploadJson = await uploadRes.json();
           if (!uploadRes.ok) {
             setError(uploadJson?.error || 'File upload failed');
@@ -81,18 +79,14 @@ export default function StudentAssignmentDetailPage() {
         }
         const body: any = { content: content.trim() };
         if (filesPayload && filesPayload.length > 0) body.files = filesPayload;
-        res = await fetch(`/api/student/assignments/${assignment._id}/submit`, {
+        res = await studentAssignmentService.submitAssignment(assignment._id, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
           body: JSON.stringify(body),
         });
       } else {
         const body: any = { content: content.trim() };
-        res = await fetch(`/api/student/assignments/${assignment._id}/submit`, {
+        res = await studentAssignmentService.submitAssignment(assignment._id, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
           body: JSON.stringify(body),
         });
       }

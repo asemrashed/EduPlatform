@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { LuSettings as Settings, LuTag as Tag, LuFileText as LuFileText, LuArrowUpDown as ArrowUpDown, LuX as X } from 'react-icons/lu';;
 import { Sheet, SheetContent, SheetHeader, SheetFooter } from '@/components/ui/sheet';
+import { studentAssignmentService } from '@/services/studentAssignmentService';
 
 export default function StudentAssignmentsPage() {
   const router = useRouter();
@@ -41,7 +42,7 @@ export default function StudentAssignmentsPage() {
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
       });
-      const res = await fetch(`/api/student/assignments?${queryParams.toString()}`, { credentials: 'include' });
+      const res = await studentAssignmentService.listAssignments(queryParams);
       const data = await res.json();
       if (res.ok) {
         setAssignments(data.data?.assignments || data.assignments || []);

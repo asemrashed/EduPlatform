@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LuPlus as Plus, LuX as X, LuSave as Save, LuArrowLeft as ArrowLeft } from 'react-icons/lu';;
+import { questionsStaffService } from '@/services/questionsStaffService';
 import { CreateQuestionData } from '@/types/exam';
 
 export default function CreateQuestionPage() {
@@ -106,14 +107,7 @@ export default function CreateQuestionPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/questions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(formData),
-      });
+      const response = await questionsStaffService.createAdminQuestion(formData);
 
       const data = await response.json();
 

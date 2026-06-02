@@ -13,6 +13,8 @@ import { AttractiveInput } from '@/components/ui/attractive-input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { LuSearch as Search, LuX as X, LuStar as Star, LuFilter as Filter, LuEye as Eye, LuEyeOff as EyeOff, LuCheck as Check, LuX as XCircle, LuTrash2 as Trash2, LuThumbsUp as ThumbsUp, LuFlag as Flag, LuUser as User, LuBookOpen as BookOpen, LuCalendar as Calendar, LuArrowUpDown as ArrowUpDown, LuSettings as Settings } from 'react-icons/lu';
 import { CourseReview, ReviewFilters as ReviewFiltersType } from '@/types/course-review';
+import { courseReviewService } from '@/services/courseReviewService';
+import { coursesStaffService } from '@/services/coursesStaffService';
 import { ReviewCard, type ReviewCardAction } from '@/components/review/ReviewCard';
 
 function InstructorReviewsPageContent() {
@@ -72,7 +74,7 @@ function InstructorReviewsPageContent() {
       });
 
       // For instructors, we'll filter reviews for their courses only
-      const response = await fetch(`/api/admin/course-reviews?${queryParams}`);
+      const response = await courseReviewService.listAdminReviews(queryParams.toString());
       const data = await response.json();
 
       if (response.ok) {
@@ -100,7 +102,7 @@ function InstructorReviewsPageContent() {
 
   const fetchCourses = async () => {
     try {
-      const response = await fetch('/api/instructor/courses?limit=100');
+      const response = await coursesStaffService.listInstructorCourses(100);
       const data = await response.json();
       if (response.ok) {
         setCourses(data.data.courses || []);
@@ -112,7 +114,7 @@ function InstructorReviewsPageContent() {
 
   const fetchStudents = async () => {
     try {
-      const response = await fetch('/api/users?role=student&limit=100');
+      const response = await coursesStaffService.listStudentUsers(100);
       const data = await response.json();
       if (response.ok) {
         setStudents(data.users || []);
@@ -124,7 +126,7 @@ function InstructorReviewsPageContent() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/admin/course-reviews');
+      const response = await courseReviewService.listAdminReviewsAll();
       const data = await response.json();
       if (response.ok) {
         const allReviews = data.data.reviews || [];
@@ -184,13 +186,7 @@ function InstructorReviewsPageContent() {
 
   const handleModerateReview = async (reviewId: string, action: string) => {
     try {
-      const response = await fetch(`/api/admin/course-reviews/${reviewId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action }),
-      });
+      const response = await courseReviewService.updateAdminReview(reviewId, { action });
 
       const data = await response.json();
 
@@ -216,9 +212,7 @@ function InstructorReviewsPageContent() {
 
     setDeleting(true);
     try {
-      const response = await fetch(`/api/admin/course-reviews/${reviewToDelete._id}`, {
-        method: 'DELETE',
-      });
+      const response = await courseReviewService.deleteAdminReview(reviewToDelete._id);
 
       const data = await response.json();
 

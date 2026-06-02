@@ -8,4 +8,6 @@ export {
   clearCart,
   removeFromCart,
   setLineQuantity,
+  hydrateCart,
+  setCartLoaded,
 } from "./slices/cartSlice";

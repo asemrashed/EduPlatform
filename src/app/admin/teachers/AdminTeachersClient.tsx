@@ -14,6 +14,7 @@ import AdminPageWrapper from '@/components/AdminPageWrapper';
 import { Teacher, TeacherFilters as TeacherFiltersType } from '@/types/teacher';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { teachersStaffService } from '@/services/teachersStaffService';
 import { LuPlus as Plus, LuSearch as Search, LuX as X } from 'react-icons/lu';;
 
 function TeachersPageContent() {
@@ -52,7 +53,7 @@ function TeachersPageContent() {
         ...(filters.search && { search: filters.search })
       });
 
-      const response = await fetch(`/api/teachers?${queryParams}`);
+      const response = await teachersStaffService.listTeachers(queryParams.toString());
       const data = await response.json();
 
       if (response.ok) {
@@ -124,9 +125,7 @@ function TeachersPageContent() {
 
     setDeleting(true);
     try {
-      const response = await fetch(`/api/teachers/${teacherToDelete._id}`, {
-        method: 'DELETE',
-      });
+      const response = await teachersStaffService.deleteTeacher(teacherToDelete._id);
 
       const data = await response.json();
 

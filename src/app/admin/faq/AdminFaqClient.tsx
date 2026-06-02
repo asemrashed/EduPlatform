@@ -24,6 +24,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { LuPlus as Plus, LuPencil as Pencil, LuTrash2 as Trash2, LuCircleAlert as HelpCircle, LuBookOpen as BookOpen, LuLoader as Loader2 } from 'react-icons/lu';
+import { faqAdminService } from '@/services/faqAdminService';
+import { coursesStaffService } from '@/services/coursesStaffService';
 import { Checkbox } from '@/components/ui/checkbox';
 
 type QAPair = { _id?: string; question: string; answer: string };
@@ -57,7 +59,7 @@ function FAQPageContent() {
   const fetchCourses = useCallback(async () => {
     try {
       setCoursesLoading(true);
-      const res = await fetch('/api/courses?limit=500&page=1&status=published');
+      const res = await coursesStaffService.listCourses("limit=500&page=1&status=published");
       const data = await res.json();
       if (res.ok && data.data?.courses) {
         setCourses(data.data.courses);
@@ -82,7 +84,7 @@ function FAQPageContent() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`/api/admin/faqs?course=${selectedCourseId}&limit=100`);
+      const res = await faqAdminService.listFaqsForCourse(selectedCourseId);
       const data = await res.json();
       if (res.ok && data.data?.faqs) {
         setFaqs(data.data.faqs);
@@ -181,28 +183,24 @@ function FAQPageContent() {
       const toCreate = validPairs.filter((p) => !p._id);
 
       const updatePromises = toUpdate.map((p) =>
-        fetch(`/api/admin/faqs/${p._id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        faqAdminService.updateFaq(
+          p._id,
+          {
             course: formCourseId,
             question: p.question.trim(),
             answer: p.answer.trim(),
-          }),
-        })
+          },
+          'PATCH',
+        )
       );
       let createOk = true;
       if (toCreate.length > 0) {
-        const createRes = await fetch('/api/admin/faqs/bulk', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            course: formCourseId,
-            faqs: toCreate.map((p) => ({
-              question: p.question.trim(),
-              answer: p.answer.trim(),
-            })),
-          }),
+        const createRes = await faqAdminService.bulkCreateFaqs({
+          course: formCourseId,
+          faqs: toCreate.map((p) => ({
+            question: p.question.trim(),
+            answer: p.answer.trim(),
+          })),
         });
         const createData = await createRes.json();
         createOk = createRes.ok && createData.success;
@@ -237,7 +235,7 @@ function FAQPageContent() {
     if (!faqToDelete) return;
     setDeleting(true);
     try {
-      const res = await fetch(`/api/admin/faqs/${faqToDelete._id}`, { method: 'DELETE' });
+      const res = await faqAdminService.deleteFaq(faqToDelete._id);
       const data = await res.json();
       if (res.ok && data.success) {
         setShowDeleteModal(false);

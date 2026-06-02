@@ -14,6 +14,7 @@ import { Enrollment, EnrollmentFilters as EnrollmentFiltersType } from '@/types/
 import { Button } from '@/components/ui/button';
 import { AttractiveInput } from '@/components/ui/attractive-input';
 import { LuPlus as Plus, LuSearch as Search, LuX as X, LuUser as User, LuBookOpen as BookOpen, LuCalendar as Calendar, LuDollarSign as DollarSign, LuTrendingUp as TrendingUp } from 'react-icons/lu';;
+import { enrollmentsStaffService } from '@/services/enrollmentsStaffService';
 import { InstructorRoleShell } from '@/components/role-area/InstructorRoleShell';
 
 function InstructorEnrollmentsPageContent() {
@@ -55,12 +56,7 @@ function InstructorEnrollmentsPageContent() {
         ...(filters.search && { search: filters.search }),
       });
 
-      const response = await fetch(`/api/instructor/enrollments?${queryParams}`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await enrollmentsStaffService.listInstructorEnrollments(queryParams.toString());
 
       if (response.ok) {
         const data = await response.json();
@@ -144,10 +140,7 @@ function InstructorEnrollmentsPageContent() {
 
     setDeleting(true);
     try {
-      const response = await fetch(`/api/instructor/enrollments/${enrollmentToDelete._id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
+      const response = await enrollmentsStaffService.deleteInstructorEnrollment(enrollmentToDelete._id);
 
       if (response.ok) {
         fetchEnrollments();
@@ -171,14 +164,7 @@ function InstructorEnrollmentsPageContent() {
 
   const createEnrollment = async (enrollmentData: any): Promise<Enrollment | null> => {
     try {
-      const response = await fetch('/api/instructor/enrollments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(enrollmentData),
-      });
+      const response = await enrollmentsStaffService.createInstructorEnrollment(enrollmentData);
 
       const data = await response.json();
 
@@ -195,14 +181,7 @@ function InstructorEnrollmentsPageContent() {
 
   const updateEnrollment = async (id: string, enrollmentData: any): Promise<Enrollment | null> => {
     try {
-      const response = await fetch(`/api/instructor/enrollments/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(enrollmentData),
-      });
+      const response = await enrollmentsStaffService.updateInstructorEnrollment(id, enrollmentData);
 
       const data = await response.json();
 

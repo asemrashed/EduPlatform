@@ -22,6 +22,7 @@ import {
 } from "@/data/allCoursePageContent";
 import { cn } from "@/lib/cn";
 import CourseCard from "@/components/CourseCard";
+import { publicCatalogService } from "@/services/publicCatalogService";
 import { CoursesCatalogSkeleton } from "@/components/skeletons/CoursesCatalogSkeleton";
 
 type ViewMode = "grid" | "list";
@@ -152,9 +153,7 @@ export function CoursesCatalogClient() {
 
     const loadSidebarCategories = async () => {
       try {
-        const response = await fetch("/api/public/categories", {
-          cache: "no-store",
-        });
+        const response = await publicCatalogService.listCategories();
         if (!response.ok) return;
 
         const payload = await response.json();

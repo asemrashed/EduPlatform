@@ -15,6 +15,7 @@ import DataTable, { Column } from '@/components/ui/data-table';
 import { LuBookOpen as BookOpen, LuClock as Clock, LuAward as Award, LuCalendar as Calendar, LuPlay as PlayCircle, LuCheck as CheckCircle, LuTarget as Target, LuUsers as Users, LuFileText as LuFileText, LuChartBar, LuEye as Eye, LuTriangleAlert as AlertCircle, LuTimer as Timer, LuCheck as CheckCircle2, LuX as XCircle, LuSearch as Search, LuX as X, LuGraduationCap as GraduationCap, LuTrendingUp as TrendingUp } from 'react-icons/lu';;
 import { format } from 'date-fns';
 import { htmlToPlainText } from '@/lib/utils';
+import { studentExamService } from '@/services/studentExamService';
 
 function attemptExamId(attempt: { examId?: string; exam?: string | { _id?: string } }): string {
   if (attempt.examId) return attempt.examId;
@@ -110,34 +111,18 @@ function StudentExamsPageContent() {
         ...(search && { search }),
         ...(filter !== 'all' && { status: filter })
       });
-
-      const response = await fetch(`/api/student/exams?${queryParams}`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const data = await studentExamService.getStudentExams(queryParams);
+      setExams((data.exams as Exam[]) || []);
+      setPagination(data.pagination || {
+        page: 1,
+        limit: 12,
+        total: 0,
+        pages: 0
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Student Exams Frontend - API Response:', data);
-        setExams(data.data?.exams || []);
-        setPagination(data.data?.pagination || {
-          page: 1,
-          limit: 12,
-          total: 0,
-          pages: 0
-        });
-        // Update stats from API
-        setStats(prev => ({
-          ...prev,
-          availableExams: data.data?.stats?.availableExams ?? prev.availableExams
-        }));
-      } else {
-        console.error('Failed to fetch exams:', response.status, response.statusText);
-        const errorData = await response.json();
-        console.error('Error details:', errorData);
-      }
+      setStats(prev => ({
+        ...prev,
+        availableExams: data.stats?.availableExams ?? prev.availableExams
+      }));
     } catch (error) {
       console.error('Error fetching exams:', error);
     } finally {
@@ -152,17 +137,8 @@ function StudentExamsPageContent() {
 
   const fetchAttempts = async () => {
     try {
-      const response = await fetch('/api/student/exam-attempts', {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setAttempts(data.data?.attempts || []);
-      }
+      const data = await studentExamService.getStudentExamAttempts();
+      setAttempts((data.attempts as ExamAttempt[]) || []);
     } catch (error) {
       console.error('Error fetching attempts:', error);
     }

@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LuSearch as Search, LuEye as Eye, LuRefreshCw as RefreshCw, LuCheck as CheckCircle2, LuX as XCircle, LuClock as Clock, LuGraduationCap as GraduationCap,  } from 'react-icons/lu';;
+import { studentExamService } from '@/services/studentExamService';
 
 interface AttemptRow {
   _id: string;
@@ -44,10 +45,7 @@ export default function ExamHistoryPage() {
       setLoading(true);
       const params = new URLSearchParams();
       if (statusFilter !== 'all') params.set('status', statusFilter);
-      const resp = await fetch(`/api/student/exam-attempts?${params.toString()}`, {
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const resp = await studentExamService.listExamAttemptsByQuery(params.toString());
       if (resp.ok) {
         const data = await resp.json();
         const rows: AttemptRow[] = data.data?.attempts || [];

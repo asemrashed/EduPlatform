@@ -12,6 +12,7 @@ import ConfirmModal from '@/components/ui/confirm-modal';
 import { PastPaper } from '@/types/past-paper';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { pastPapersStaffService } from '@/services/pastPapersStaffService';
 import { LuPlus as Plus, LuSearch as Search, LuX as X } from 'react-icons/lu';;
 
 export default function InstructorPastPapersPage() {
@@ -52,7 +53,7 @@ export default function InstructorPastPapersPage() {
         ...(filters.search && { search: filters.search }),
       });
 
-      const response = await fetch(`/api/past-papers?${queryParams}`);
+      const response = await pastPapersStaffService.listPastPapers(queryParams.toString());
       const data = await response.json();
 
       if (response.ok) {
@@ -115,9 +116,7 @@ export default function InstructorPastPapersPage() {
 
     setDeleting(true);
     try {
-      const response = await fetch(`/api/past-papers/${paperToDelete._id}`, {
-        method: 'DELETE',
-      });
+      const response = await pastPapersStaffService.deletePastPaper(paperToDelete._id);
 
       const data = await response.json();
 

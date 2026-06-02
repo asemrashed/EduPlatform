@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { AttractiveInput } from '@/components/ui/attractive-input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { LuPlus as Plus, LuSearch as Search, LuX as X, LuBookOpen as BookOpen, LuFilter as Filter, LuTag as Tag, LuDollarSign as DollarSign, LuCalendar as Calendar, LuArrowUpDown as ArrowUpDown, LuSettings as Settings, LuUser as User } from 'react-icons/lu';;
+import { coursesStaffService } from '@/services/coursesStaffService';
 import { useRouter } from 'next/navigation';
 
 function CoursesPageContent() {
@@ -73,7 +74,7 @@ function CoursesPageContent() {
       });
 
 
-      const response = await fetch(`/api/courses?${queryParams}`);
+      const response = await coursesStaffService.listCourses(queryParams.toString());
       const data = await response.json();
 
       if (response.ok) {
@@ -98,7 +99,7 @@ function CoursesPageContent() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/categories');
+      const response = await coursesStaffService.listCategories();
       const data = await response.json();
       if (response.ok) {
         setCategories(data.data.categories || []);
@@ -110,7 +111,7 @@ function CoursesPageContent() {
 
   const fetchCreators = async () => {
     try {
-      const response = await fetch('/api/users?role=instructor,teacher,admin');
+      const response = await coursesStaffService.listInstructorUsers();
       const data = await response.json();
       if (response.ok) {
         setCreators(data.users || []);
@@ -166,13 +167,7 @@ function CoursesPageContent() {
       
       console.log('Sending course data:', courseData);
       
-      const response = await fetch('/api/courses', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(courseData),
-      });
+      const response = await coursesStaffService.createCourse(courseData);
 
       const data = await response.json();
       console.log('Course created:', data);
@@ -210,14 +205,8 @@ function CoursesPageContent() {
 
   const handleToggleCourseVisibility = async (course: Course) => {
     try {
-      const response = await fetch(`/api/courses/${course._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          isHidden: !course.isHidden,
-        }),
+      const response = await coursesStaffService.updateCourse(course._id, {
+        isHidden: !course.isHidden,
       });
 
       const data = await response.json();
@@ -237,9 +226,7 @@ function CoursesPageContent() {
 
     setDeleting(true);
     try {
-      const response = await fetch(`/api/courses/${courseToDelete._id}`, {
-        method: 'DELETE',
-      });
+      const response = await coursesStaffService.deleteCourse(courseToDelete._id);
 
       const data = await response.json();
 
@@ -322,11 +309,7 @@ function CoursesPageContent() {
         displayOrder: index + 1,
       }));
 
-      const response = await fetch('/api/courses/reorder', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ courseOrders }),
-      });
+      const response = await coursesStaffService.reorderCourses({ courseOrders });
 
       const data = await response.json();
       if (!response.ok) {

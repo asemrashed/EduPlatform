@@ -19,6 +19,8 @@ import VideoWatermark from '@/components/VideoWatermark';
 import { LuSearch as Search, LuX as X, LuStar as Star, LuFilter as Filter, LuEye as Eye, LuEyeOff as EyeOff, LuCheck as Check, LuX as XCircle, LuTrash2 as Trash2, LuThumbsUp as ThumbsUp, LuFlag as Flag, LuUser as User, LuBookOpen as BookOpen, LuCalendar as Calendar, LuArrowUpDown as ArrowUpDown, LuSettings as Settings, LuBan as Ban, LuLockOpen as Unlock, LuPlay as Play, LuDatabase as Database } from 'react-icons/lu';
 import { CourseReview, ReviewFilters as ReviewFiltersType } from '@/types/course-review';
 import { ReviewCard, type ReviewCardAction } from '@/components/review/ReviewCard';
+import { courseReviewService } from '@/services/courseReviewService';
+import { coursesStaffService } from '@/services/coursesStaffService';
 
 function ReviewsPageContent() {
   const { user } = useAppSelector((state) => state.auth);
@@ -88,7 +90,7 @@ function ReviewsPageContent() {
         ...(filters.sortOrder && { sortOrder: filters.sortOrder }),
       });
 
-      const response = await fetch(`/api/admin/course-reviews?${queryParams}`);
+      const response = await courseReviewService.listAdminReviews(queryParams.toString());
       const data = await response.json();
 
       if (response.ok) {
@@ -111,7 +113,7 @@ function ReviewsPageContent() {
 
   const fetchCourses = async () => {
     try {
-      const response = await fetch('/api/courses?limit=100');
+      const response = await coursesStaffService.listCourses('limit=100');
       const data = await response.json();
       if (response.ok) {
         setCourses(data.data.courses || []);
@@ -123,7 +125,7 @@ function ReviewsPageContent() {
 
   const fetchStudents = async () => {
     try {
-      const response = await fetch('/api/users?role=student&limit=100');
+      const response = await coursesStaffService.listStudentUsers(100);
       const data = await response.json();
       if (response.ok) {
         setStudents(data.users || []);
@@ -135,7 +137,7 @@ function ReviewsPageContent() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/admin/course-reviews');
+      const response = await courseReviewService.listAdminReviewsAll();
       const data = await response.json();
       if (response.ok) {
         const reviews = data.data.reviews || [];
@@ -190,13 +192,7 @@ function ReviewsPageContent() {
 
     try {
       console.log('Blocking/unblocking student:', { studentId, block });
-      const response = await fetch(`/api/admin/students/${studentId}/block-reviews`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ block }),
-      });
+      const response = await courseReviewService.blockStudentReviews(studentId, { block });
 
       const data = await response.json();
 
@@ -217,13 +213,7 @@ function ReviewsPageContent() {
 
   const handleModerateReview = async (reviewId: string, action: string) => {
     try {
-      const response = await fetch(`/api/admin/course-reviews/${reviewId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action }),
-      });
+      const response = await courseReviewService.updateAdminReview(reviewId, { action });
 
       const data = await response.json();
 
@@ -248,14 +238,8 @@ function ReviewsPageContent() {
       const currentValue = currentStatus === true;
       const newValue = !currentValue;
 
-      const response = await fetch(`/api/admin/course-reviews/${reviewId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          isDisplayed: newValue,
-        }),
+      const response = await courseReviewService.updateAdminReview(reviewId, {
+        isDisplayed: newValue,
       });
 
       if (response.ok) {
@@ -293,9 +277,7 @@ function ReviewsPageContent() {
 
     setDeleting(true);
     try {
-      const response = await fetch(`/api/admin/course-reviews/${reviewToDelete._id}`, {
-        method: 'DELETE',
-      });
+      const response = await courseReviewService.deleteAdminReview(reviewToDelete._id);
 
       const data = await response.json();
 
@@ -367,9 +349,7 @@ function ReviewsPageContent() {
 
     setSeeding(true);
     try {
-      const response = await fetch('/api/admin/seed-reviews', {
-        method: 'POST',
-      });
+      const response = await courseReviewService.seedReviews();
 
       const data = await response.json();
 

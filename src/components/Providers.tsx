@@ -5,6 +5,7 @@ import { SessionProvider } from "next-auth/react";
 import { Provider, useDispatch } from "react-redux";
 import { store } from "@/store/store";
 import { checkAuthStatus } from "@/store/slices/authSlice";
+import { CartPersistence } from "@/components/CartPersistence";
 
 function AuthInitializer({ children }: { children: React.ReactNode }) {
   const dispatch = useDispatch();
@@ -21,7 +22,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
       <SessionProvider>
-        <AuthInitializer>{children}</AuthInitializer>
+        <AuthInitializer>
+          <CartPersistence />
+          {children}
+        </AuthInitializer>
       </SessionProvider>
     </Provider>
   );

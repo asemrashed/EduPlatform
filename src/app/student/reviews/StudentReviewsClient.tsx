@@ -19,6 +19,7 @@ import VideoWatermark from '@/components/VideoWatermark';
 import { LuSearch as Search, LuX as X, LuStar as Star, LuFilter as Filter, LuEye as Eye, LuEyeOff as EyeOff, LuCheck as Check, LuX as XCircle, LuTrash2 as Trash2, LuThumbsUp as ThumbsUp, LuFlag as Flag, LuUser as User, LuBookOpen as BookOpen, LuCalendar as Calendar, LuArrowUpDown as ArrowUpDown, LuSettings as Settings, LuPlus as Plus, LuPencil as Edit, LuPencil as Pencil, LuVideo as Video, LuFileText as FileText, LuUpload as Upload, LuLoader as Loader2, LuPlay as Play } from 'react-icons/lu';
 import { CourseReview, ReviewFilters as ReviewFiltersType } from '@/types/course-review';
 import { ReviewCard } from '@/components/review/ReviewCard';
+import { courseReviewService } from '@/services/courseReviewService';
 
 function StudentReviewsPageContent() {
   const { data: session, status } = useSession();
@@ -90,7 +91,7 @@ function StudentReviewsPageContent() {
         ...(filters.sortOrder && { sortOrder: filters.sortOrder }),
       });
 
-      const response = await fetch(`/api/course-reviews?${queryParams}`);
+      const response = await courseReviewService.listReviews(queryParams.toString());
       const data = await response.json();
 
       if (response.ok) {
@@ -113,7 +114,9 @@ function StudentReviewsPageContent() {
 
   const fetchCourses = async () => {
     try {
-      const response = await fetch('/api/enrollments?student=' + session?.user?.id + '&limit=1000');
+      const response = await courseReviewService.listEnrollmentsForStudent(
+        String(session?.user?.id ?? ''),
+      );
       const data = await response.json();
       if (response.ok) {
         const enrollments = data.data?.enrollments || data.enrollments || [];
@@ -138,7 +141,9 @@ function StudentReviewsPageContent() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch(`/api/course-reviews?student=${session?.user?.id}`);
+      const response = await courseReviewService.listReviewsByStudent(
+        String(session?.user?.id ?? ''),
+      );
       const data = await response.json();
       if (response.ok) {
         const reviews = data.data.reviews || [];
@@ -446,18 +451,9 @@ function StudentReviewsPageContent() {
 
     setSubmitting(true);
     try {
-      const url = editingReview 
-        ? `/api/course-reviews/${editingReview._id}`
-        : '/api/course-reviews';
-      
-      const method = editingReview ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const response = await courseReviewService.submitReview(
+        editingReview?._id ?? null,
+        {
           course: reviewForm.course,
           rating: reviewForm.rating,
           reviewType: reviewForm.reviewType,
@@ -465,8 +461,8 @@ function StudentReviewsPageContent() {
           comment: reviewForm.comment,
           videoUrl: reviewForm.videoUrl,
           videoThumbnail: reviewForm.videoThumbnail
-        }),
-      });
+        },
+      );
 
       const data = await response.json();
 
@@ -503,13 +499,7 @@ function StudentReviewsPageContent() {
 
   const handleVoteReview = async (reviewId: string, isHelpful: boolean) => {
     try {
-      const response = await fetch(`/api/course-reviews/${reviewId}/vote`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ isHelpful }),
-      });
+      const response = await courseReviewService.voteReview(reviewId, { isHelpful });
 
       const data = await response.json();
 
@@ -534,9 +524,7 @@ function StudentReviewsPageContent() {
 
     setDeleting(true);
     try {
-      const response = await fetch(`/api/course-reviews/${reviewToDelete._id}`, {
-        method: 'DELETE',
-      });
+      const response = await courseReviewService.deleteReview(reviewToDelete._id);
 
       const data = await response.json();
 

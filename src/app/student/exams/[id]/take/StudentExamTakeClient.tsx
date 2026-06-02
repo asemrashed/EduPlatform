@@ -11,6 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LuClock as Clock, LuBookOpen as BookOpen, LuTarget as Target, LuAward as Award, LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight, LuCheck as CheckCircle, LuTriangleAlert as AlertCircle, LuTimer as Timer, LuSave as Save, LuFlag } from 'react-icons/lu';;
 import { htmlToPlainText } from '@/lib/utils';
+import { studentExamService } from '@/services/studentExamService';
 
 interface Question {
   _id: string;
@@ -88,10 +89,7 @@ function ExamTakingPageContent() {
       setLoading(true);
       
       // Fetch exam details
-      const examResponse = await fetch(`/api/student/exams/${examId}`, {
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const examResponse = await studentExamService.getStudentExam(examId);
       
       if (!examResponse.ok) {
         const err = await examResponse.json().catch(() => ({} as any));
@@ -103,10 +101,8 @@ function ExamTakingPageContent() {
       setQuestions(examData.data.questions);
       
       // Fetch or create attempt
-      const attemptResponse = await fetch('/api/student/exam-attempts', {
+      const attemptResponse = await studentExamService.listExamAttempts({
         method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ examId }),
       });
       
@@ -182,10 +178,8 @@ function ExamTakingPageContent() {
   useEffect(() => {
     const persistInterval = setInterval(() => {
       if (!attempt || !exam?.timeLimit) return;
-      fetch(`/api/student/exam-attempts/${attempt._id}`, {
+      studentExamService.updateExamAttempt(attempt._id, {
         method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           timeSpent: exam.duration ? (exam.duration * 60) - timeRemaining : 0
         })
@@ -241,10 +235,8 @@ function ExamTakingPageContent() {
     if (!attempt) return;
     
     try {
-      const response = await fetch(`/api/student/exam-attempts/${attempt._id}`, {
+      const response = await studentExamService.updateExamAttempt(attempt._id, {
         method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           answers: Object.entries(answers).map(([questionId, answer]) => ({
             questionId,
@@ -268,10 +260,7 @@ function ExamTakingPageContent() {
     
     setSubmitting(true);
     try {
-      const response = await fetch(`/api/student/exam-attempts/${attempt._id}/submit`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await studentExamService.submitExamAttempt(attempt._id, {
         body: JSON.stringify({
           answers: Object.entries(answers).map(([questionId, answer]) => ({
             questionId,

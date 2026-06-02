@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { LuBell as Bell, LuUser as User, LuCalendar as Calendar, LuClock as Clock } from 'react-icons/lu';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { getLatestLessonQuizMark } from '@/lib/api/lessonQuizClient';
 
 const Header = () => {
   const EMPTY_QUIZ_MARK = {
@@ -34,45 +33,6 @@ const Header = () => {
     }
 
     let cancelled = false;
-    const fetchLatestQuizMark = async () => {
-      try {
-        const row = await getLatestLessonQuizMark();
-        if (cancelled) return;
-        if (!row) {
-          setLatestQuizMark(EMPTY_QUIZ_MARK);
-          return;
-        }
-        const totalQuestions = Number(row.totalQuestions ?? 0);
-        const correctAnswers = Number(row.correctAnswers ?? 0);
-        const scorePercentage = Number(row.scorePercentage ?? 0);
-        const isValidQuizMark =
-          Number.isFinite(totalQuestions) &&
-          Number.isFinite(correctAnswers) &&
-          Number.isFinite(scorePercentage) &&
-          totalQuestions > 0 &&
-          correctAnswers >= 0 &&
-          correctAnswers <= totalQuestions &&
-          scorePercentage >= 0 &&
-          scorePercentage <= 100;
-        if (!isValidQuizMark) {
-          setLatestQuizMark(EMPTY_QUIZ_MARK);
-          return;
-        }
-        setLatestQuizMark({
-          scorePercentage,
-          correctAnswers,
-          totalQuestions,
-        });
-      } catch (error) {
-        if (!cancelled) {
-          console.error('Failed to fetch latest quiz mark:', error);
-          setLatestQuizMark(EMPTY_QUIZ_MARK);
-        }
-      }
-    };
-
-    fetchLatestQuizMark();
-
     const handleQuizMarkUpdated = (event: Event) => {
       const customEvent = event as CustomEvent<{
         scorePercentage?: number;
@@ -94,9 +54,6 @@ const Header = () => {
           totalQuestions: detail.totalQuestions,
         });
       }
-
-      // Re-fetch to keep header state consistent with server
-      fetchLatestQuizMark();
     };
     window.addEventListener('quiz-mark-updated', handleQuizMarkUpdated as EventListener);
 

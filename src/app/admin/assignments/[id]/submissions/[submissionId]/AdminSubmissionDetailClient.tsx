@@ -8,6 +8,7 @@ import WelcomeSection from '@/components/WelcomeSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LuEye as Eye, LuDownload as Download, LuArrowLeft as ArrowLeft, LuUser as User, LuCalendar as Calendar, LuTarget as Target, LuFileText as LuFileText } from 'react-icons/lu';;
+import { assignmentsStaffService } from '@/services/assignmentsStaffService';
 import { AssignmentSubmission } from '@/types/assignment';
 
 export default function AdminViewSubmissionPage() {
@@ -22,7 +23,7 @@ export default function AdminViewSubmissionPage() {
   const fetchSubmission = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/assignments/${assignmentId}/submissions?submissionId=${submissionId}`);
+      const res = await assignmentsStaffService.getSubmissionDetail(assignmentId, submissionId);
       const data = await res.json();
       if (res.ok) {
         const list = data.data?.submissions || data.submissions || [];

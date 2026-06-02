@@ -13,6 +13,7 @@ import ConfirmModal from '@/components/ui/confirm-modal';
 import { Student, StudentStatsSummary } from '@/types/student';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { studentsStaffService } from '@/services/studentsStaffService';
 import { LuPlus as Plus, LuSearch as Search, LuX as X, LuUsers as Users } from 'react-icons/lu';;
 
 function InstructorStudentsPageContent() {
@@ -48,7 +49,7 @@ function InstructorStudentsPageContent() {
         ...(filters.search && { search: filters.search }),
       });
 
-      const response = await fetch(`/api/instructor/students?${queryParams}`);
+      const response = await studentsStaffService.listInstructorStudents(queryParams.toString());
       const data = await response.json();
 
       if (response.ok) {
@@ -114,9 +115,7 @@ function InstructorStudentsPageContent() {
 
     setDeleting(true);
     try {
-      const response = await fetch(`/api/students/${studentToDelete._id}`, {
-        method: 'DELETE',
-      });
+      const response = await studentsStaffService.deleteStudent(studentToDelete._id);
 
       const data = await response.json();
 

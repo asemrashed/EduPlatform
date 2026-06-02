@@ -4,15 +4,7 @@ import { LuLayoutDashboard, LuBookOpen as BookOpen, LuUsers as Users, LuMessageS
 import { useRouter, usePathname } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/lib/hooks';
 import { logoutUser } from '@/lib/slices/authSlice';
-import { useCourses } from '@/hooks/useCourses';
-import { useCourseCategories } from '@/hooks/useCourseCategories';
-import { useStudents } from '@/hooks/useStudents';
-import { useTeachers } from '@/hooks/useTeachers';
-import { useEnrollments } from '@/hooks/useEnrollments';
-import { usePastPapers } from '@/hooks/usePastPapers';
-import { useExams } from '@/hooks/useExams';
-import { useAssignments } from '@/hooks/useAssignments';
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 
 import {
   Sidebar,
@@ -35,75 +27,28 @@ const AppSidebar = () => {
   const router = useRouter();
   const pathname = usePathname();
   const { user, isLoading } = useAppSelector((state) => state.auth);
-  const [branding, setBranding] = useState({
+  const branding = {
     logoText: 'EduPlatform',
     logoUrl: '',
     primaryColor: '#0040a1',
-  });
+  };
+  const adminDashboard = useAppSelector((state) => state.dashboard.admin);
 
-  // Fetch data for dynamic badges
-  const { courses } = useCourses();
-  const { categories } = useCourseCategories();
-  const { students } = useStudents();
-  const { teachers } = useTeachers();
-  const { enrollments } = useEnrollments();
-  const { pastPapers } = usePastPapers();
-  const { exams } = useExams();
-  const { assignments } = useAssignments();
-
-  // State for dynamic badges
-  const [badges, setBadges] = useState({
-    courses: 0,
-    categories: 0,
-    students: 0,
-    teachers: 0,
-    enrollments: 0,
-    pastPapers: 0,
-    exams: 0,
-    assignments: 0,
-  });
-
-  // Check if any data is still loading
-  const isDataLoading = courses === undefined || categories === undefined || students === undefined || teachers === undefined || enrollments === undefined || pastPapers === undefined || exams === undefined || assignments === undefined;
-
-  // Update badges when data changes
-  useEffect(() => {
-    if (!isDataLoading) {
-      setBadges({
-        courses: courses?.length || 0,
-        categories: categories?.length || 0,
-        students: students?.length || 0,
-        teachers: teachers?.length || 0,
-        enrollments: enrollments?.length || 0,
-        pastPapers: pastPapers?.length || 0,
-        exams: exams?.length || 0,
-        assignments: assignments?.length || 0,
-      });
-    }
-  }, [courses, categories, students, teachers, enrollments, pastPapers, exams, assignments, isDataLoading]);
-
-  useEffect(() => {
-    const fetchBranding = async () => {
-      try {
-        const response = await fetch('/api/website-content', { cache: 'no-store' });
-        if (!response.ok) return;
-        const data = await response.json();
-        const apiBranding = data?.data?.branding;
-        if (!apiBranding) return;
-
-        setBranding((prev) => ({
-          ...prev,
-          logoText: apiBranding.logoText || prev.logoText,
-          logoUrl: apiBranding.logoUrl || '',
-          primaryColor: apiBranding.logoTextColor1 || prev.primaryColor,
-        }));
-      } catch (error) {
-        console.error('Error fetching branding:', error);
-      }
+  const badges = useMemo(() => {
+    const overview = adminDashboard?.overview;
+    return {
+      courses: Number(overview?.totalCourses ?? 0),
+      categories: 0,
+      students: Number(overview?.totalStudents ?? 0),
+      teachers: Number(overview?.totalTeachers ?? 0),
+      enrollments: Number(overview?.totalEnrollments ?? 0),
+      pastPapers: 0,
+      exams: Array.isArray(adminDashboard?.examStats) ? adminDashboard.examStats.length : 0,
+      assignments: 0,
     };
+  }, [adminDashboard]);
 
-    fetchBranding();
-  }, []);
+  const isDataLoading = !adminDashboard;
 
   const menuItems = [
     {
@@ -140,14 +85,14 @@ const AppSidebar = () => {
           label: 'Courses', 
           href: '/admin/courses',
           description: 'Manage courses & content',
-          badge: !isDataLoading && badges.courses > 0 ? badges.courses.toString() : null
+          badge: badges.courses > 0 ? badges.courses.toString() : null
         },
         { 
           icon: Tag, 
           label: 'Categories', 
           href: '/admin/categories',
           description: 'Course categories',
-          badge: !isDataLoading && badges.categories > 0 ? badges.categories.toString() : null
+          badge: badges.categories > 0 ? badges.categories.toString() : null
         },
         // { 
         //   icon: Layers, 
@@ -168,7 +113,7 @@ const AppSidebar = () => {
           label: 'Assignments', 
           href: '/admin/assignments',
           description: 'Tasks & projects',
-          badge: !isDataLoading && badges.assignments > 0 ? badges.assignments.toString() : null
+          badge: badges.assignments > 0 ? badges.assignments.toString() : null
         },
         // { 
         //   icon: Award, 
@@ -182,14 +127,14 @@ const AppSidebar = () => {
           label: 'Past Papers', 
           href: '/admin/past-papers',
           description: 'Question papers & solutions',
-          badge: !isDataLoading && badges.pastPapers > 0 ? badges.pastPapers.toString() : null
+          badge: badges.pastPapers > 0 ? badges.pastPapers.toString() : null
         },
         { 
           icon: LuFileCheck, 
           label: 'Exams', 
           href: '/admin/exams',
           description: 'Create & manage exams',
-          badge: !isDataLoading && badges.exams > 0 ? badges.exams.toString() : null
+          badge: badges.exams > 0 ? badges.exams.toString() : null
         },
         { 
           icon: LuDatabase, 
@@ -215,21 +160,21 @@ const AppSidebar = () => {
           label: 'Students', 
           href: '/admin/students',
           description: 'Student management',
-          badge: !isDataLoading && badges.students > 0 ? badges.students.toString() : null
+          badge: badges.students > 0 ? badges.students.toString() : null
         },
         { 
           icon: GraduationCap, 
           label: 'Teachers', 
           href: '/admin/teachers',
           description: 'Instructor management',
-          badge: !isDataLoading && badges.teachers > 0 ? badges.teachers.toString() : null
+          badge: badges.teachers > 0 ? badges.teachers.toString() : null
         },
         { 
           icon: UserCheck, 
           label: 'Enrollments', 
           href: '/admin/enrollments',
           description: 'Student course enrollments',
-          badge: !isDataLoading && badges.enrollments > 0 ? badges.enrollments.toString() : null
+          badge: badges.enrollments > 0 ? badges.enrollments.toString() : null
         },
         // { 
         //   icon: DollarSign, 

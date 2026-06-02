@@ -17,6 +17,8 @@ import { AttractiveInput } from '@/components/ui/attractive-input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { LuPlus as Plus, LuSearch as Search, LuX as X, LuBookOpen as BookOpen, LuFilter as Filter, LuTag as Tag, LuClock as Clock, LuCalendar as Calendar, LuArrowUpDown as ArrowUpDown, LuSettings as Settings, LuUser as User, LuTarget as Target } from 'react-icons/lu';;
 import { useRouter } from 'next/navigation';
+import { examsStaffService } from '@/services/examsStaffService';
+import { coursesStaffService } from '@/services/coursesStaffService';
 import { InstructorRoleShell } from '@/components/role-area/InstructorRoleShell';
 
 function InstructorExamsPageContent() {
@@ -72,12 +74,7 @@ function InstructorExamsPageContent() {
         ...(filters.sortOrder && { sortOrder: filters.sortOrder }),
       });
 
-      const response = await fetch(`/api/instructor/exams?${queryParams}`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
+      const response = await examsStaffService.listInstructorExams(queryParams.toString());
       const data = await response.json();
       
       console.log('Instructor Exams API Response:', {
@@ -128,7 +125,7 @@ function InstructorExamsPageContent() {
 
   const fetchCourses = async () => {
     try {
-      const response = await fetch('/api/instructor/courses');
+      const response = await coursesStaffService.listInstructorCourses();
       const data = await response.json();
       if (response.ok) {
         const courses = data.data?.courses || data.courses || data.data || [];
@@ -191,9 +188,7 @@ function InstructorExamsPageContent() {
 
     setDeleting(true);
     try {
-      const response = await fetch(`/api/instructor/exams/${examToDelete._id}`, {
-        method: 'DELETE',
-      });
+      const response = await examsStaffService.deleteInstructorExam(examToDelete._id);
 
       const data = await response.json();
 

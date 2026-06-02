@@ -21,6 +21,7 @@ import AdminPageWrapper from '@/components/AdminPageWrapper';
 import { LuPlus as Plus, LuSearch as Search, LuFilter as Filter, LuBookOpen as BookOpen, LuTag as Tag, LuClock as Clock, LuTarget as Target, LuPencil as Edit, LuTrash2 as Trash2, LuEye as Eye, LuUpload as Upload, LuDatabase, LuFileText as LuFileText, LuCheck as CheckCircle, LuX as XCircle, LuSettings as Settings, LuX as X } from 'react-icons/lu';;
 import { format } from 'date-fns';
 import { Question as QuestionType } from '@/types/exam';
+import { questionsStaffService } from '@/services/questionsStaffService';
 
 type Question = QuestionType;
 
@@ -91,12 +92,7 @@ function QuestionBankPageContent() {
         ...(filters.sortOrder && { sortOrder: filters.sortOrder }),
       });
 
-      const response = await fetch(`/api/questions?${queryParams}`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await questionsStaffService.listAdminQuestions(queryParams.toString());
 
       if (response.ok) {
         const data = await response.json();
@@ -153,12 +149,7 @@ function QuestionBankPageContent() {
   // Fetch exams for CSV upload
   const fetchExams = async () => {
     try {
-      const response = await fetch('/api/exams', {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await questionsStaffService.listAdminExamsForBank();
 
       if (response.ok) {
         const data = await response.json();
@@ -216,13 +207,7 @@ function QuestionBankPageContent() {
 
     try {
       setDeletingQuestion(true);
-      const response = await fetch(`/api/questions/${questionToDelete._id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await questionsStaffService.deleteAdminQuestion(questionToDelete._id);
 
       if (response.ok) {
         setShowDeleteConfirm(false);

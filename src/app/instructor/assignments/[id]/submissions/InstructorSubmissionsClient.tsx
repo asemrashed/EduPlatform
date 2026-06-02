@@ -15,6 +15,7 @@ import { AttractiveInput } from '@/components/ui/attractive-input';
 import { AttractiveTextarea } from '@/components/ui/attractive-textarea';
 import { LuArrowLeft as ArrowLeft, LuUsers as Users, LuClock as Clock, LuCheck as CheckCircle, LuTriangleAlert as AlertCircle, LuFilter as Filter, LuDownload as Download, LuEye as Eye, LuMessageSquare as MessageSquare, LuStar as Star, LuCalendar as Calendar, LuFileText as LuFileText, LuUser as User, LuSettings as Settings, LuTarget as Target } from 'react-icons/lu';;
 import { AssignmentSubmission } from '@/types/assignment';
+import { assignmentsStaffService } from '@/services/assignmentsStaffService';
 
 interface Assignment {
   _id: string;
@@ -60,12 +61,7 @@ function InstructorAssignmentSubmissionsPageContent() {
 
   const fetchAssignment = async () => {
     try {
-      const response = await fetch(`/api/assignments/${assignmentId}`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
+      const response = await assignmentsStaffService.getAssignment(assignmentId);
       const data = await response.json();
 
       if (response.ok) {
@@ -88,12 +84,10 @@ function InstructorAssignmentSubmissionsPageContent() {
         ...(filters.sortOrder && { sortOrder: filters.sortOrder }),
       });
 
-      const response = await fetch(`/api/assignments/${assignmentId}/submissions?${queryParams}`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
+      const response = await assignmentsStaffService.listSubmissions(
+        assignmentId,
+        queryParams.toString(),
+      );
       const data = await response.json();
 
       if (response.ok) {
@@ -203,12 +197,11 @@ function InstructorAssignmentSubmissionsPageContent() {
     }
     try {
       setGrading(true);
-      const res = await fetch(`/api/assignments/${assignmentId}/submissions/${gradingSubmission._id}/grade`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ score: parsed, feedback: gradeFeedback || undefined })
-      });
+      const res = await assignmentsStaffService.gradeSubmission(
+        assignmentId,
+        gradingSubmission._id,
+        { score: parsed, feedback: gradeFeedback || undefined },
+      );
       const data = await res.json();
       if (res.ok) {
         setShowGradeDrawer(false);

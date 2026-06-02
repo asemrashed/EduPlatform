@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { LuArrowLeft as ArrowLeft, LuCheck as CheckCircle, LuX as XCircle, LuClock as Clock, LuTarget as Target, LuAward as Award, LuBookOpen as BookOpen, LuTrendingUp as TrendingUp, LuChartBar, LuEye as Eye, LuRefreshCw as RefreshCw } from 'react-icons/lu';;
 import { format } from 'date-fns';
+import { studentExamService } from '@/services/studentExamService';
 
 function formatResultDate(iso: string | undefined): string {
   if (!iso) return 'N/A';
@@ -80,10 +81,9 @@ function ExamResultsPageContent() {
       setLoading(true);
       
       // Get the latest completed attempt for this exam
-      const response = await fetch(`/api/student/exam-attempts?examId=${examId}&submitted=1`, {
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const response = await studentExamService.listExamAttemptsByQuery(
+        `examId=${examId}&submitted=1`,
+      );
       
       if (!response.ok) {
         throw new Error('Failed to fetch exam results');
@@ -102,10 +102,7 @@ function ExamResultsPageContent() {
       setAttempt(latestAttempt);
       
       // Fetch questions for review
-      const questionsResponse = await fetch(`/api/student/exams/${examId}?includeCorrectAnswers=true`, {
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const questionsResponse = await studentExamService.getStudentExamWithAnswers(examId);
       
       if (questionsResponse.ok) {
         const questionsData = await questionsResponse.json();

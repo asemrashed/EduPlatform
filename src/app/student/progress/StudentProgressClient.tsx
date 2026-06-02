@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import DataTable, { Column } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { LuGraduationCap as GraduationCap, LuCheck as CheckCircle2, LuX as XCircle, LuTimer as Timer, LuTarget as Target, LuTrendingUp as TrendingUp } from 'react-icons/lu';;
+import { studentExamService } from '@/services/studentExamService';
 
 interface AttemptRow {
   _id: string;
@@ -37,10 +38,7 @@ export default function StudentProgressPage() {
   const fetchAttempts = async () => {
     try {
       setLoading(true);
-      const resp = await fetch('/api/student/exam-attempts', {
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const resp = await studentExamService.listExamAttempts();
       if (resp.ok) {
         const data = await resp.json();
         setAttempts(data.data?.attempts || []);

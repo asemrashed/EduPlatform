@@ -14,6 +14,7 @@ import AdminPageWrapper from '@/components/AdminPageWrapper';
 import { PastPaper, PastPaperFilters as PastPaperFiltersType } from '@/types/past-paper';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { pastPapersStaffService } from '@/services/pastPapersStaffService';
 import { LuPlus as Plus, LuSearch as Search, LuX as X, LuFileText as LuFileText } from 'react-icons/lu';;
 
 function PastPapersPageContent() {
@@ -52,7 +53,7 @@ function PastPapersPageContent() {
         ...(filters.search && { search: filters.search })
       });
 
-      const response = await fetch(`/api/past-papers?${queryParams}`);
+      const response = await pastPapersStaffService.listPastPapers(queryParams.toString());
       const data = await response.json();
 
       if (response.ok) {
@@ -123,9 +124,7 @@ function PastPapersPageContent() {
 
     setDeleting(true);
     try {
-      const response = await fetch(`/api/past-papers/${paperToDelete._id}`, {
-        method: 'DELETE',
-      });
+      const response = await pastPapersStaffService.deletePastPaper(paperToDelete._id);
 
       const data = await response.json();
 

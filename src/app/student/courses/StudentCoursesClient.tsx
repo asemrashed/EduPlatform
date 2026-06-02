@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import DataTable, { Column, Action } from '@/components/ui/data-table';
 import { LuBookOpen as BookOpen, LuClock as Clock, LuUsers as Users, LuStar as Star, LuPlay as PlayCircle, LuCheck as CheckCircle, LuDollarSign as DollarSign, LuPlus as Plus, LuEye as Eye, LuArrowRight as ArrowRight } from 'react-icons/lu';
 import { studentLearningService } from '@/services/studentLearningService';
+import { websiteContentService } from '@/services/websiteContentService';
 
 // Fallback when API doesn't return promotional banner
 const DEFAULT_PROMO_HEADLINE = 'Courses Designed for Success';
@@ -105,13 +106,12 @@ export default function StudentCourses() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/api/website-content', { cache: 'no-store' });
-        if (!res.ok || cancelled) return;
-        const json = await res.json();
-        const data = json?.data;
+        const data = await websiteContentService.getWebsiteContent();
         if (cancelled) return;
-        if (data?.promotionalBanner != null) {
-          setPromoBanner(data.promotionalBanner);
+        if (cancelled) return;
+        const promotionalBanner = (data as Record<string, unknown> | null)?.promotionalBanner;
+        if (promotionalBanner != null) {
+          setPromoBanner(promotionalBanner as typeof promoBanner);
         }
       } catch {
         if (!cancelled) setPromoBanner(null);
@@ -127,7 +127,6 @@ export default function StudentCourses() {
         filters.page,
         filters.limit,
       );
-      console.log('result', result);
       setEnrollments(result.enrollments as Enrollment[]);
       setPagination(result.pagination);
     } catch (error) {

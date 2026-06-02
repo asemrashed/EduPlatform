@@ -15,6 +15,8 @@ import { Input } from '@/components/ui/input';
 import { AttractiveInput } from '@/components/ui/attractive-input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { LuPlus as Plus, LuSearch as Search, LuX as X, LuFileText as LuFileText, LuFilter as Filter, LuTag as Tag, LuBookOpen as BookOpen, LuUser as User, LuArrowUpDown as ArrowUpDown, LuSettings as Settings } from 'react-icons/lu';;
+import { assignmentsStaffService } from '@/services/assignmentsStaffService';
+import { coursesStaffService } from '@/services/coursesStaffService';
 import { useRouter } from 'next/navigation';
 
 function InstructorAssignmentsPageContent() {
@@ -63,12 +65,7 @@ function InstructorAssignmentsPageContent() {
         ...(filters.sortOrder && { sortOrder: filters.sortOrder }),
       });
 
-      const response = await fetch(`/api/instructor/assignments?${queryParams}`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
+      const response = await assignmentsStaffService.listInstructorAssignments(queryParams.toString());
       const data = await response.json();
 
       if (response.ok) {
@@ -112,7 +109,7 @@ function InstructorAssignmentsPageContent() {
 
   const fetchCourses = async () => {
     try {
-      const response = await fetch('/api/instructor/courses');
+      const response = await coursesStaffService.listInstructorCourses();
       const data = await response.json();
       if (response.ok) {
         setCourses(data.data?.courses || []);
@@ -147,9 +144,7 @@ function InstructorAssignmentsPageContent() {
 
     try {
       setDeleting(true);
-      const response = await fetch(`/api/assignments/${assignmentToDelete._id}`, {
-        method: 'DELETE',
-      });
+      const response = await assignmentsStaffService.deleteAssignment(assignmentToDelete._id);
 
       const data = await response.json();
 

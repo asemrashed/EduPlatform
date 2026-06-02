@@ -38,60 +38,15 @@ const StudentSidebar = () => {
     pendingResults: 0
   });
 
-  // Fetch exam badges
   useEffect(() => {
-    const fetchExamBadges = async () => {
-      try {
-        const response = await fetch('/api/student/exam-attempts', {
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          const attempts = data.data?.attempts || [];
-          
-          const inProgress = attempts.filter((attempt: any) => attempt.status === 'in_progress').length;
-          const completed = attempts.filter((attempt: any) => attempt.status === 'completed').length;
-          
-          setExamBadges({
-            availableExams: 0, // This would need to be fetched from exams API
-            inProgressExams: inProgress,
-            pendingResults: completed
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching exam badges:', error);
-      }
-    };
-
-    if (user) {
-      fetchExamBadges();
-    }
+    // Shared sidebar avoids direct business fetches in Phase 14B.
+    // Badge hydration will move through dedicated Redux domain flows.
+    setExamBadges({
+      availableExams: 0,
+      inProgressExams: 0,
+      pendingResults: 0,
+    });
   }, [user]);
-
-  useEffect(() => {
-    const fetchBranding = async () => {
-      try {
-        const response = await fetch('/api/website-content', { cache: 'no-store' });
-        if (!response.ok) return;
-        const data = await response.json();
-        const apiBranding = data?.data?.branding;
-        if (!apiBranding) return;
-
-        setBranding((prev) => ({
-          ...prev,
-          logoText: apiBranding.logoText || prev.logoText,
-          logoUrl: apiBranding.logoUrl || '',
-          primaryColor: apiBranding.logoTextColor1 || prev.primaryColor,
-        }));
-      } catch (error) {
-        console.error('Error fetching branding:', error);
-      }
-    };
-
-    fetchBranding();
-  }, []);
 
   const menuItems = [
     {

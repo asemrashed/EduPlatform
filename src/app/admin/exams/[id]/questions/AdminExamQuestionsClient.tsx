@@ -19,6 +19,8 @@ import DataTable, { Column, Action } from '@/components/ui/data-table';
 import QuestionModal from '@/components/QuestionModal';
 import CSVUploadModal from '@/components/CSVUploadModal';
 import QuestionViewModal from '@/components/QuestionViewModal';
+import { examsStaffService } from '@/services/examsStaffService';
+import { questionsStaffService } from '@/services/questionsStaffService';
 import { format } from 'date-fns';
 
 interface QuestionsPageProps {
@@ -75,7 +77,7 @@ function QuestionsPageContent({ params }: QuestionsPageProps) {
     if (!examId) return;
     
     try {
-      const response = await fetch(`/api/exams/${examId}`);
+      const response = await examsStaffService.getAdminExam(examId);
       const data = await response.json();
       if (response.ok) {
         setExam(data.data?.exam || data.exam || null);
@@ -107,7 +109,7 @@ function QuestionsPageContent({ params }: QuestionsPageProps) {
         ...(filters.sortOrder && { sortOrder: filters.sortOrder }),
       });
 
-      const response = await fetch(`/api/questions?${queryParams}`);
+      const response = await questionsStaffService.listAdminQuestions(queryParams.toString());
       const data = await response.json();
 
       if (response.ok) {
@@ -205,10 +207,7 @@ function QuestionsPageContent({ params }: QuestionsPageProps) {
 
     setDeletingQuestion(true);
     try {
-      const response = await fetch(`/api/questions/${questionToDelete._id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
+      const response = await questionsStaffService.deleteAdminQuestion(questionToDelete._id);
 
       if (response.ok) {
         // Remove question from the list
