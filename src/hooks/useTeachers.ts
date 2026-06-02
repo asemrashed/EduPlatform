@@ -53,7 +53,8 @@ export const useTeachers = () => {
         throw new Error(data.error || 'Failed to fetch teachers');
       }
 
-      setTeachers(data.teachers || []);
+      const teachersPayload = data?.data?.teachers ?? data?.teachers ?? [];
+      setTeachers(Array.isArray(teachersPayload) ? teachersPayload : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       console.error('Error fetching teachers:', err);

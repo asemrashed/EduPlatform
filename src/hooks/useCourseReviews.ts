@@ -42,15 +42,9 @@ export function useCourseReviews(courseIds: string[]) {
       // Fetch reviews for all courses in parallel
       const reviewPromises = courseIds.map(async (courseId) => {
         try {
-          // Try the course-specific reviews endpoint first (includes stats)
-          let response = await fetch(`/api/courses/${courseId}/reviews?limit=10`);
-          let useStatsEndpoint = response.ok;
-          
-          // Fallback to general reviews endpoint if course-specific fails
-          if (!response.ok) {
-            response = await fetch(`/api/course-reviews?course=${courseId}&limit=10`);
-            useStatsEndpoint = false;
-          }
+          const response = await fetch(
+            `/api/course-reviews?public=true&context=course-details&course=${courseId}&limit=10`,
+          );
           
           if (response.ok) {
             const data = await response.json();

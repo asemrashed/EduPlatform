@@ -42,11 +42,17 @@ export const useStudents = () => {
       const response = await fetch('/api/students');
       const data = await response.json();
 
+      if (response.status === 401 || response.status === 403) {
+        setStudents([]);
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to fetch students');
       }
 
-      setStudents(data.students || []);
+      const studentsPayload = data?.data?.students ?? data?.students ?? [];
+      setStudents(Array.isArray(studentsPayload) ? studentsPayload : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       console.error('Error fetching students:', err);

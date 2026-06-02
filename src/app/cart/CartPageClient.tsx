@@ -18,7 +18,6 @@ export function CartPageClient() {
     (sum, line) => sum + line.finalPrice * line.quantity,
     0,
   );
-  console.log("Cart items:", items); // Debug log for cart items
 
   if (items.length === 0) {
     return (

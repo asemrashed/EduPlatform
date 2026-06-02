@@ -28,7 +28,7 @@ export const useCheckout = () => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
-  console.log("authUser", authUser, "authLoading", authLoading);
+
   const handleCheckout = async (input?: CheckoutInput) => {
     // Wait for auth to finish loading before checking user
     if (authLoading) {

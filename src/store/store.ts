@@ -5,13 +5,11 @@ import courseDetailReducer from "./slices/courseDetailSlice";
 import coursesReducer from "./slices/coursesSlice";
 import dashboardReducer from "./slices/dashboardSlice";
 import studentPastPapersReducer from "./slices/studentPastPapersSlice";
-import roleAreaReducer from "./slices/roleAreaSlice";
 import uiReducer from "./slices/uiSlice";
 
 export const store = configureStore({
   reducer: {
     ui: uiReducer,
-    roleArea: roleAreaReducer,
     auth: authReducer,
     courses: coursesReducer,
     courseDetail: courseDetailReducer,
