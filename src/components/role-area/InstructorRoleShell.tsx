@@ -3,9 +3,19 @@
 import type { ReactNode } from "react";
 
 /** From `TeacherDashboardLayout` inner area (learning-project). */
-export function InstructorRoleShell({ children }: { children: ReactNode }) {
+export function InstructorRoleShell({
+  children,
+  scroll = true,
+}: {
+  children: ReactNode;
+  scroll?: boolean;
+}) {
   return (
-    <div className="relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-background">
+    <div
+      className={`relative min-h-0 flex-1 overflow-x-hidden bg-background ${
+        scroll ? "overflow-y-auto" : "flex flex-col overflow-hidden"
+      }`}
+    >
       <div className="pointer-events-none absolute inset-0 opacity-10">
         <div className="absolute left-0 top-0 h-full w-full">
           <div className="absolute right-20 top-20 flex h-8 w-8 items-center justify-center">
@@ -41,7 +51,13 @@ export function InstructorRoleShell({ children }: { children: ReactNode }) {
         </div>
       </div>
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-purple-50/10 to-indigo-50/10" />
-      {children}
+      {scroll ? (
+        children
+      ) : (
+        <div className="relative z-10 flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+          {children}
+        </div>
+      )}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { requireSessionUser } from "@/app/api/_lib/phase12";
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await requireSessionUser(["admin"]);
+    const auth = await requireSessionUser(["instructor"]);
     if (auth.error) return auth.error;
 
     const { searchParams } = new URL(request.url);
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       data: { questions, pagination },
     });
   } catch (error) {
-    console.error("Admin question-bank GET error:", error);
+    console.error("Instructor question-bank GET error:", error);
     return NextResponse.json({ success: false, error: "Failed to fetch question bank" }, { status: 500 });
   }
 }

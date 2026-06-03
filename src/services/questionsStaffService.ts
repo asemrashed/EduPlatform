@@ -1,6 +1,28 @@
 import { apiFetch } from "@/lib/api/httpClient";
 
+function bankBase(role: "admin" | "instructor") {
+  return role === "admin" ? "/api/admin/question-bank" : "/api/instructor/question-bank";
+}
+
 export const questionsStaffService = {
+  listQuestionBank(role: "admin" | "instructor", query: string) {
+    return apiFetch(`${bankBase(role)}?${query}`);
+  },
+
+  questionBankStats(role: "admin" | "instructor", query: string) {
+    return apiFetch(`${bankBase(role)}/stats?${query}`);
+  },
+
+  questionBankBulk(
+    role: "admin" | "instructor",
+    body: { ids: string[]; action: "delete" | "activate" | "deactivate" },
+  ) {
+    return apiFetch(`${bankBase(role)}/bulk`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+  },
+
   listAdminQuestions(query: string) {
     return apiFetch(`/api/questions?${query}`);
   },

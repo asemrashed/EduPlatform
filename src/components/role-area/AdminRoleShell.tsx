@@ -84,7 +84,13 @@ export function AdminRoleShell({
             "linear-gradient(135deg, transparent 0%, rgba(236, 72, 153, 0.05) 50%, rgba(168, 85, 247, 0.05) 100%)",
         }}
       />
-      {children}
+      {scroll ? (
+        children
+      ) : (
+        <div className="relative z-10 flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+          {children}
+        </div>
+      )}
     </div>
   );
 }

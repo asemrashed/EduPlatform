@@ -2,16 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import Question from "@/models/Question";
 import Exam from "@/models/Exam";
-import { isObjectId, requireSessionUser, toObjectId } from "@/app/api/_lib/phase12";
+import { isObjectId, requireSessionUser } from "@/app/api/_lib/phase12";
+import { instructorCanAccessQuestion } from "@/app/api/_lib/questionBank";
 
 interface RouteCtx {
   params: Promise<{ id: string }>;
 }
 
 async function getQuestionForUser(id: string, userId: string, role: string) {
-  const filter: Record<string, unknown> = { _id: id };
-  if (role === "instructor") filter.createdBy = toObjectId(userId);
-  return Question.findOne(filter);
+  if (role === "instructor") {
+    const ok = await instructorCanAccessQuestion(userId, id);
+    if (!ok) return null;
+    return Question.findById(id);
+  }
+  return Question.findById(id);
 }
 
 export async function GET(_request: NextRequest, ctx: RouteCtx) {

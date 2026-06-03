@@ -28,7 +28,10 @@ export function DashboardRouteLayout({
         <SidebarInset className="flex min-h-svh min-w-0 flex-1 flex-col overflow-hidden">
           {/* Header contains SidebarTrigger — works for all 3 roles */}
           <Header />
-          <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
+          <div
+            data-dashboard-scroll
+            className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden scrollbar-hide"
+          >
             {children}
           </div>
         </SidebarInset>
