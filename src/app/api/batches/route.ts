@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Batch from "@/models/Batch";
 import {
   buildWeeklyRoutineFromSlots,
+  countActivePaidEnrollmentsByBatchIds,
   instructorBatchFilter,
   listRoutineSlotsForBatch,
   mapBatch,
@@ -59,9 +60,19 @@ export async function GET(request: NextRequest) {
       Batch.countDocuments(filter),
     ]);
 
+    const countMap = await countActivePaidEnrollmentsByBatchIds(
+      batches.map((b) => b._id),
+    );
+
     return NextResponse.json({
       success: true,
-      data: { batches: batches.map((b) => mapBatch(b as Record<string, unknown>)) },
+      data: {
+        batches: batches.map((b) =>
+          mapBatch(b as Record<string, unknown>, {
+            enrolledCount: countMap.get(String(b._id)) ?? 0,
+          }),
+        ),
+      },
       pagination: pagination(page, limit, total),
     });
   } catch (error) {

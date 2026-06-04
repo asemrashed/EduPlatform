@@ -1,6 +1,7 @@
 import type {
   AboutContent,
   AboutPageContent,
+  BatchesContent,
   CertificatesContent,
   ContactPageContent,
   CourseLessonBannerContent,
@@ -20,6 +21,7 @@ import type {
 
 export type {
   AboutContent,
+  BatchesContent,
   BatchLevelItem,
   CertificateItem,
   CertificatesContent,
@@ -43,12 +45,13 @@ export type {
 const DEFAULT_SECTION_ORDER: SectionConfig[] = [
   { id: "hero", label: "Hero", enabled: true, order: 0 },
   { id: "statistics", label: "Statistics", enabled: true, order: 1 },
-  { id: "courses", label: "Featured Courses", enabled: true, order: 2 },
-  { id: "instructors", label: "Instructors", enabled: true, order: 3 },
-  { id: "testimonials", label: "Testimonials", enabled: true, order: 4 },
-  { id: "features", label: "Features", enabled: true, order: 5 },
-  { id: "partners", label: "Partners", enabled: true, order: 6 },
-  { id: "faq", label: "FAQ", enabled: true, order: 7 },
+  { id: "batches", label: "Featured Batches", enabled: true, order: 2 },
+  { id: "courses", label: "Featured Courses", enabled: true, order: 3 },
+  { id: "instructors", label: "Instructors", enabled: true, order: 4 },
+  { id: "testimonials", label: "Testimonials", enabled: true, order: 5 },
+  { id: "features", label: "Features", enabled: true, order: 6 },
+  { id: "partners", label: "Partners", enabled: true, order: 7 },
+  { id: "faq", label: "FAQ", enabled: true, order: 8 },
 ];
 /** CMS keys removed in phase 13.4.15 — stripped on save/load. */
 export const REMOVED_WEBSITE_CONTENT_KEYS = [
@@ -191,6 +194,7 @@ export interface WebsiteContent {
   certificates: CertificatesContent;
   photoGallery: PhotoGalleryContent;
   footer: FooterContent;
+  batches: BatchesContent;
   courses: CoursesContent;
   coursesByCategory: CoursesByCategoryContent;
   homeInstructors: HomeInstructorsContent;
@@ -594,6 +598,17 @@ export const defaultWebsiteContent: WebsiteContent = {
       from: "#E8EEF7",
       to: "#F5E8EA",
     },
+  },
+  batches: {
+    title: {
+      part1: "Live batch",
+      part2: "enrollment",
+    },
+    description:
+      "Structured live programs with weekly routine, subject classes, and instructor-led sessions.",
+    buttonText: "View all",
+    buttonHref: "/enroll",
+    featuredBatchIds: [],
   },
   courses: {
     label: {

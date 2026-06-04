@@ -3,10 +3,14 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import PageSection from '@/components/dashboard/lp/PageSection';
+import {
+  DashboardBatchCard,
+  type DashboardBatchCardData,
+} from '@/components/batches/DashboardBatchCard';
 import type { StaffBatchDashboardSummary } from '@/types/dashboard';
 import type {
+  StudentDashboardBatchSummary,
   StudentDashboardRoutineDay,
   StudentDashboardUpcomingClass,
 } from '@/types/studentDashboard';
@@ -30,11 +34,34 @@ function formatDateTime(iso: string) {
   }
 }
 
+function BatchCardGrid({
+  batches,
+  manageBasePath,
+}: {
+  batches: DashboardBatchCardData[];
+  manageBasePath: string;
+}) {
+  if (batches.length === 0) return null;
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {batches.map((b) => (
+        <DashboardBatchCard
+          key={b._id}
+          batch={b}
+          manageHref={`${manageBasePath}/${b._id}`}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function StudentBatchDashboardSection({
+  batches,
   upcomingClasses,
   weeklyRoutine,
   batchesHref = '/student/batches',
 }: {
+  batches: StudentDashboardBatchSummary[];
   upcomingClasses: StudentDashboardUpcomingClass[];
   weeklyRoutine: StudentDashboardRoutineDay[];
   batchesHref?: string;
@@ -49,7 +76,23 @@ export function StudentBatchDashboardSection({
     })),
   );
 
-  if (upcomingClasses.length === 0 && todaySlots.length === 0 && weeklyRoutine.length === 0) {
+  const cardBatches: DashboardBatchCardData[] = batches.map((b) => ({
+    _id: b._id,
+    name: b.name,
+    grade: b.grade,
+    shortDescription: b.shortDescription,
+    thumbnailUrl: b.thumbnailUrl,
+    fee: b.fee,
+    enrolledCount: b.enrolledCount,
+    maxStudents: b.maxStudents,
+  }));
+
+  if (
+    batches.length === 0 &&
+    upcomingClasses.length === 0 &&
+    todaySlots.length === 0 &&
+    weeklyRoutine.length === 0
+  ) {
     return (
       <PageSection
         title="My batches"
@@ -58,7 +101,10 @@ export function StudentBatchDashboardSection({
       >
         <p className="text-sm text-muted-foreground">
           No batch enrollments yet.{' '}
-          <Link href="/enroll" className="font-medium text-primary underline-offset-4 hover:underline">
+          <Link
+            href="/enroll"
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
             Browse open batches
           </Link>
         </p>
@@ -69,9 +115,15 @@ export function StudentBatchDashboardSection({
   return (
     <PageSection
       title="My batches"
-      description="Upcoming live classes and weekly routine"
+      description="Your enrolled batches, upcoming classes, and weekly routine"
       className="mt-2"
     >
+      {cardBatches.length > 0 && (
+        <div className="mb-6">
+          <BatchCardGrid batches={cardBatches} manageBasePath={batchesHref} />
+        </div>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-3">
           <h3 className="flex items-center gap-2 text-sm font-semibold">
@@ -122,7 +174,7 @@ export function StudentBatchDashboardSection({
             Weekly routine
           </h3>
           {todaySlots.length > 0 ? (
-            <div className="mb-3 rounded-lg bg-muted/50 px-3 py-2 text-sm">
+            <div className="mb-3 rounded-lg border px-3 py-2 text-sm">
               <p className="font-medium">Today</p>
               <ul className="mt-1 space-y-1 text-muted-foreground">
                 {todaySlots.map((slot, i) => (
@@ -191,6 +243,17 @@ export function StaffBatchDashboardSection({
       ? 'Open a batch → Live classes → Attendance tab to mark present/absent.'
       : 'Open any batch → Attendance tab on a live class.';
 
+  const cardBatches: DashboardBatchCardData[] = summary.batches.slice(0, 6).map((b) => ({
+    _id: b._id,
+    name: b.name,
+    grade: b.grade,
+    shortDescription: b.shortDescription,
+    thumbnailUrl: b.thumbnailUrl,
+    fee: b.fee,
+    enrolledCount: b.enrolledCount,
+    maxStudents: b.maxStudents,
+  }));
+
   return (
     <PageSection
       title="Batch management"
@@ -198,10 +261,10 @@ export function StaffBatchDashboardSection({
       className="mt-2"
     >
       <div className="mb-4 flex flex-wrap gap-2">
-        <Button asChild>
+        <Button asChild variant="outline">
           <Link href={batchesBasePath}>
             <LuCalendar className="mr-2 h-4 w-4" />
-            Manage batches ({summary.totalBatches})
+            All batches ({summary.totalBatches})
           </Link>
         </Button>
         <Button asChild variant="outline">
@@ -214,7 +277,7 @@ export function StaffBatchDashboardSection({
       </p>
 
       {summary.upcomingClasses.length > 0 ? (
-        <div className="mb-4">
+        <div className="mb-6">
           <h3 className="mb-2 text-sm font-semibold">Upcoming live classes</h3>
           <ul className="space-y-2">
             {summary.upcomingClasses.map((cls) => (
@@ -229,35 +292,18 @@ export function StaffBatchDashboardSection({
                   </p>
                 </div>
                 <Button asChild size="sm" variant="outline">
-                  <Link href={`${batchesBasePath}/${cls.batchId}`}>Open batch</Link>
+                  <Link href={`${batchesBasePath}/${cls.batchId}`}>Manage</Link>
                 </Button>
               </li>
             ))}
           </ul>
         </div>
       ) : (
-        <p className="mb-4 text-sm text-muted-foreground">No upcoming live classes.</p>
+        <p className="mb-6 text-sm text-muted-foreground">No upcoming live classes.</p>
       )}
 
-      {summary.batches.length > 0 ? (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {summary.batches.slice(0, 6).map((b) => (
-            <Link
-              key={b._id}
-              href={`${batchesBasePath}/${b._id}`}
-              className="rounded-lg border p-3 transition-colors hover:bg-muted/40"
-            >
-              <p className="font-medium">{b.name}</p>
-              <p className="text-xs text-muted-foreground">{b.subject}</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <Badge variant="secondary">{b.enrolledCount} students</Badge>
-                {b.nextClassAt ? (
-                  <Badge variant="outline">Next: {formatDateTime(b.nextClassAt)}</Badge>
-                ) : null}
-              </div>
-            </Link>
-          ))}
-        </div>
+      {cardBatches.length > 0 ? (
+        <BatchCardGrid batches={cardBatches} manageBasePath={batchesBasePath} />
       ) : (
         <p className="text-sm text-muted-foreground">No active batches yet.</p>
       )}

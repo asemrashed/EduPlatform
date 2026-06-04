@@ -93,6 +93,7 @@ export function DashboardPageClient({ fixedRole }: DashboardPageClientProps) {
               loading={loading}
               enrollments={student?.enrollments ?? []}
               courseProgress={student?.courseProgress ?? []}
+              batches={student?.batches ?? []}
               upcomingClasses={student?.upcomingClasses ?? []}
               weeklyRoutine={student?.weeklyRoutine ?? []}
             />

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Batch, { type IBatchScheduleSlot } from "@/models/Batch";
 import BatchEnrollment from "@/models/BatchEnrollment";
 import RoutineSlot from "@/models/RoutineSlot";
+import { ensureMongooseModelsRegistered } from "@/lib/registerMongooseModels";
 import { isObjectId, toObjectId, type SessionUser } from "@/app/api/_lib/phase12";
 import { normalizeBatchGrade } from "@/lib/batchGrades";
 import {
@@ -79,7 +80,32 @@ export function buildWeeklyRoutine(schedule: IBatchScheduleSlot[]) {
   return days;
 }
 
-export function mapBatch(row: Record<string, unknown>) {
+/** Active, paid batch enrollments — same criteria as public enroll listing. */
+export async function countActivePaidEnrollmentsByBatchIds(
+  batchIds: unknown[],
+): Promise<Map<string, number>> {
+  if (batchIds.length === 0) return new Map();
+
+  const countRows = await BatchEnrollment.aggregate([
+    {
+      $match: {
+        batchId: { $in: batchIds },
+        status: "active",
+        paymentStatus: "paid",
+      },
+    },
+    { $group: { _id: "$batchId", count: { $sum: 1 } } },
+  ]);
+
+  return new Map(
+    countRows.map((r) => [String(r._id), Number(r.count) || 0]),
+  );
+}
+
+export function mapBatch(
+  row: Record<string, unknown>,
+  options?: { enrolledCount?: number },
+) {
   const instructorIds = resolveBatchInstructorIds(row);
   const grade = normalizeBatchGrade(
     row.grade ??
@@ -104,6 +130,7 @@ export function mapBatch(row: Record<string, unknown>) {
     thumbnailUrl: row.thumbnailUrl,
     videoUrl: row.videoUrl,
     features: Array.isArray(row.features) ? row.features : [],
+    enrolledCount: options?.enrolledCount ?? 0,
     createdAt: (row.createdAt as Date)?.toISOString?.() ?? row.createdAt,
     updatedAt: (row.updatedAt as Date)?.toISOString?.() ?? row.updatedAt,
   };
@@ -211,6 +238,7 @@ export async function studentEnrolledBatchIds(studentId: string) {
 }
 
 export async function listRoutineSlotsForBatch(batchId: string) {
+  ensureMongooseModelsRegistered();
   await ensureRoutineSlotsMigrated(batchId);
   const rows = await RoutineSlot.find({ batchId: toObjectId(batchId) })
     .populate("instructorId", "fullName firstName lastName email")

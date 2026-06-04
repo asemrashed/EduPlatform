@@ -129,7 +129,12 @@ export function getMockStudentDashboardComposite(): StudentDashboardComposite {
       {
         _id: "batch-mock-1",
         name: "HSC Physics Live Batch — Spring 2026",
-        subject: "Physics",
+        grade: "12",
+        shortDescription: "Live HSC Physics preparation",
+        thumbnailUrl: "",
+        fee: 3500,
+        maxStudents: 40,
+        enrolledCount: 1,
       },
     ],
     upcomingClasses: [

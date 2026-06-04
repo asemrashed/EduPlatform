@@ -1,13 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import BatchCard from '@/components/batches/BatchCard';
-import type { PublicBatchRow } from '@/services/publicBatchesService';
 import { BatchCreateForm } from '@/components/batches/BatchCreateForm';
 import { batchesService, type BatchRecord } from '@/services/batchesService';
 import { LuPlus as Plus } from 'react-icons/lu';
+import { DashboardBatchCard } from './DashboardBatchCard';
 
 type InstructorOption = {
   _id: string;
@@ -96,45 +94,23 @@ export function BatchListClient({
         <p className="text-muted-foreground">{emptyMessage}</p>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {batches.map((b, i) => {
-            const cardBatch: PublicBatchRow = {
-              _id: b._id,
-              name: b.name,
-              subject: b.subject,
-              grade: b.grade || 'O',
-              startDate: b.startDate,
-              endDate: b.endDate,
-              fee: b.fee,
-              maxStudents: b.maxStudents,
-              enrolledCount: 0,
-              seatsRemaining: b.maxStudents,
-              isFull: false,
-              shortDescription: b.shortDescription || '',
-              thumbnailUrl: b.thumbnailUrl || '',
-              videoUrl: b.videoUrl,
-              features: b.features || [],
-              description: b.description,
-              instructorIds: b.instructorIds || [],
-              instructorName: 'Instructor',
-            };
-            return (
-              <div key={b._id} className="flex flex-col gap-2">
-                <BatchCard batch={cardBatch} index={i} />
-                <div className="flex gap-2 px-1">
-                  <Button asChild variant="outline" size="sm" className="flex-1">
-                    <Link href={`${detailBasePath}/${b._id}`}>Manage</Link>
-                  </Button>
-                  {b.isActive && (
-                    <Button asChild variant="ghost" size="sm">
-                      <Link href={`/enroll/${b._id}`} target="_blank" rel="noopener noreferrer">
-                        Public
-                      </Link>
-                    </Button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {batches.map((b) => (
+            <DashboardBatchCard
+              key={b._id}
+              className="w-full"
+              batch={{
+                _id: b._id,
+                name: b.name,
+                grade: b.grade || 'O',
+                shortDescription: b.shortDescription || '',
+                thumbnailUrl: b.thumbnailUrl || '',
+                fee: b.fee,
+                maxStudents: b.maxStudents,
+                enrolledCount: b.enrolledCount ?? 0,
+              }}
+              manageHref={`${detailBasePath}/${b._id}`}
+            />
+          ))}
         </div>
       )}
     </div>

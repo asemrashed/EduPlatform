@@ -38,6 +38,7 @@ import {
 import Header from "@/components/Header";
 import { StudentBatchDashboardSection } from "@/components/dashboard/BatchDashboardWidgets";
 import type {
+  StudentDashboardBatchSummary,
   StudentDashboardRoutineDay,
   StudentDashboardUpcomingClass,
 } from "@/types/studentDashboard";
@@ -104,6 +105,7 @@ export interface StudentDashboardParityProps {
   loading: boolean;
   enrollments: Enrollment[];
   courseProgress: CourseProgress[];
+  batches: StudentDashboardBatchSummary[];
   upcomingClasses: StudentDashboardUpcomingClass[];
   weeklyRoutine: StudentDashboardRoutineDay[];
 }
@@ -113,6 +115,7 @@ export function StudentDashboardParity({
   loading,
   enrollments,
   courseProgress,
+  batches,
   upcomingClasses,
   weeklyRoutine,
 }: StudentDashboardParityProps) {
@@ -385,6 +388,7 @@ export function StudentDashboardParity({
         </PageGrid>
 
         <StudentBatchDashboardSection
+          batches={batches}
           upcomingClasses={upcomingClasses}
           weeklyRoutine={weeklyRoutine}
         />

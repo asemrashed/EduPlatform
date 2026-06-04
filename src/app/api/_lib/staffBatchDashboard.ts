@@ -1,6 +1,9 @@
 import Batch from "@/models/Batch";
-import BatchEnrollment from "@/models/BatchEnrollment";
 import LiveClass from "@/models/LiveClass";
+import {
+  countActivePaidEnrollmentsByBatchIds,
+  instructorBatchFilter,
+} from "@/app/api/_lib/batchAccess";
 import type { StaffBatchDashboardSummary } from "@/types/dashboard";
 
 export async function loadStaffBatchDashboardSummary(options: {
@@ -10,11 +13,11 @@ export async function loadStaffBatchDashboardSummary(options: {
   const limit = options.batchLimit ?? 12;
   const filter: Record<string, unknown> = { isActive: true };
   if (options.instructorId) {
-    filter.instructorId = options.instructorId;
+    Object.assign(filter, instructorBatchFilter(options.instructorId));
   }
 
   const batches = await Batch.find(filter)
-    .select("name subject")
+    .select("name grade shortDescription thumbnailUrl fee maxStudents")
     .sort({ startDate: -1 })
     .limit(limit)
     .lean();
@@ -24,17 +27,8 @@ export async function loadStaffBatchDashboardSummary(options: {
     return { totalBatches: 0, batches: [], upcomingClasses: [] };
   }
 
-  const [countRows, upcomingRows] = await Promise.all([
-    BatchEnrollment.aggregate([
-      {
-        $match: {
-          batchId: { $in: batchIds },
-          status: "active",
-          paymentStatus: "paid",
-        },
-      },
-      { $group: { _id: "$batchId", count: { $sum: 1 } } },
-    ]),
+  const [countMap, upcomingRows, totalBatches] = await Promise.all([
+    countActivePaidEnrollmentsByBatchIds(batchIds),
     LiveClass.find({
       batchId: { $in: batchIds },
       isActive: true,
@@ -43,11 +37,9 @@ export async function loadStaffBatchDashboardSummary(options: {
       .sort({ scheduledAt: 1 })
       .limit(6)
       .lean(),
+    Batch.countDocuments(filter),
   ]);
 
-  const countMap = new Map(
-    countRows.map((r) => [String(r._id), Number(r.count) || 0]),
-  );
   const nameMap = new Map(
     batches.map((b) => [String(b._id), String(b.name ?? "Batch")]),
   );
@@ -64,11 +56,15 @@ export async function loadStaffBatchDashboardSummary(options: {
   }
 
   return {
-    totalBatches: await Batch.countDocuments(filter),
+    totalBatches,
     batches: batches.map((b) => ({
       _id: String(b._id),
       name: String(b.name ?? ""),
-      subject: String(b.subject ?? ""),
+      grade: String(b.grade ?? "O"),
+      shortDescription: String(b.shortDescription ?? ""),
+      thumbnailUrl: String(b.thumbnailUrl ?? ""),
+      fee: Number(b.fee) || 0,
+      maxStudents: Number(b.maxStudents) || 0,
       enrolledCount: countMap.get(String(b._id)) ?? 0,
       nextClassAt: nextByBatch.get(String(b._id)),
     })),

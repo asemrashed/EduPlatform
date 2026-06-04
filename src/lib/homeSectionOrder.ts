@@ -7,6 +7,7 @@ import type { SectionId } from "@/lib/websiteContentTypes";
 export const HOME_PAGE_SECTION_IDS: SectionId[] = [
   "hero",
   "statistics",
+  "batches",
   "courses",
   "instructors",
   "testimonials",
@@ -20,6 +21,7 @@ const HOME_SECTION_ID_SET = new Set<string>(HOME_PAGE_SECTION_IDS);
 const HOME_SECTION_LABELS: Record<string, string> = {
   hero: "Hero",
   statistics: "Statistics",
+  batches: "Featured Batches",
   courses: "Featured Courses",
   features: "Features",
   instructors: "Instructors",

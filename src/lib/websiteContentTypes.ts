@@ -322,6 +322,14 @@ export interface FooterContent {
   socialMedia?: SocialMedia[];
 }
 
+export interface BatchesContent {
+  title: { part1: string; part2: string };
+  description: string;
+  buttonText: string;
+  buttonHref: string;
+  featuredBatchIds?: string[];
+}
+
 export interface CoursesContent {
   label: { text: string; backgroundColor: string };
   title: { part1: string; part2: string };
@@ -357,6 +365,7 @@ export type SectionId =
   | "hero"
   | "about"
   | "courses"
+  | "batches"
   | "features"
   | "instructors"
   | "partners"

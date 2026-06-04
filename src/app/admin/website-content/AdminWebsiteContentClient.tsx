@@ -60,6 +60,7 @@ import { NavigationSection } from './sections/NavigationSection';
 import { FooterSection } from './sections/FooterSection';
 import { ReviewsSection } from './sections/ReviewsSection';
 import { CoursesSection } from './sections/CoursesSection';
+import { BatchesSection } from './sections/BatchesSection';
 import { InstructorsSection } from './sections/InstructorsSection';
 import { PromoBannersSection } from './sections/PromoBannersSection';
 import { SectionOrderSection } from './sections/SectionOrderSection';
@@ -106,6 +107,7 @@ function WebsiteContentPageContent() {
 
   // Published courses list for "Featured courses" selector (courses tab)
   const [publishedCoursesList, setPublishedCoursesList] = useState<Array<{ _id: string; title: string }>>([]);
+  const [publishedBatchesList, setPublishedBatchesList] = useState<Array<{ _id: string; name: string }>>([]);
 
   useEffect(() => {
     fetchContent();
@@ -723,6 +725,37 @@ function WebsiteContentPageContent() {
     );
   };
 
+  const addFeaturedBatch = (batchId: string) => {
+    if (!content || !batchId) return;
+    const currentIds = content.batches?.featuredBatchIds ?? [];
+    if (currentIds.includes(batchId)) return;
+    if (currentIds.length >= 4) {
+      alert('You can select up to 4 featured batches for the home page.');
+      return;
+    }
+    updateContent(['batches', 'featuredBatchIds'], [...currentIds, batchId]);
+  };
+
+  const removeFeaturedBatch = (batchId: string) => {
+    if (!content) return;
+    const currentIds = content.batches?.featuredBatchIds ?? [];
+    updateContent(
+      ['batches', 'featuredBatchIds'],
+      currentIds.filter((id: string) => id !== batchId),
+    );
+  };
+
+  const moveFeaturedBatch = (batchId: string, direction: 'up' | 'down') => {
+    if (!content) return;
+    const currentIds = [...(content.batches?.featuredBatchIds ?? [])];
+    const index = currentIds.indexOf(batchId);
+    if (index < 0) return;
+    const swapIndex = direction === 'up' ? index - 1 : index + 1;
+    if (swapIndex < 0 || swapIndex >= currentIds.length) return;
+    [currentIds[index], currentIds[swapIndex]] = [currentIds[swapIndex], currentIds[index]];
+    updateContent(['batches', 'featuredBatchIds'], currentIds);
+  };
+
   const moveFeaturedCourse = (courseId: string, direction: 'up' | 'down') => {
     if (!content) return;
     const currentIds = [...(content.courses?.featuredCourseIds ?? [])];
@@ -870,6 +903,18 @@ function WebsiteContentPageContent() {
           updateContent={updateContent}
           uploadingAsset={uploadingAsset}
           handleBrandingUpload={handleBrandingUpload}
+        />
+      );
+    }
+    if (activeTab === 'batches') {
+      return (
+        <BatchesSection
+          content={content}
+          updateContent={updateContent}
+          publishedBatchesList={publishedBatchesList}
+          addFeaturedBatch={addFeaturedBatch}
+          removeFeaturedBatch={removeFeaturedBatch}
+          moveFeaturedBatch={moveFeaturedBatch}
         />
       );
     }

@@ -20,6 +20,7 @@ export type BatchRecord = {
   endDate: string;
   maxStudents: number;
   fee: number;
+  enrolledCount: number;
   isActive: boolean;
   description?: string;
   shortDescription?: string;

@@ -24,6 +24,7 @@ import { mapFeaturedReviewsToTestimonials } from "@/lib/mapFeaturedReviewsToTest
 import type { FeaturedInstructor } from "@/types/featured-instructor";
 import { HomeFeaturesSection } from "@/components/features/HomeFeaturesSection";
 import { HomeStatisticsSection } from "@/components/home/HomeStatisticsSection";
+import { HomeBatchesSection } from "@/components/home/HomeBatchesSection";
 import { resolveFeaturesContent } from "@/lib/resolveFeaturesContent";
 import { HomePageSkeleton } from "@/components/skeletons/HomePageSkeleton";
 import { resolveHomeSectionOrder } from "@/lib/homeSectionOrder";
@@ -177,6 +178,10 @@ export function HomePageClient({
             key="statistics"
             content={cmsData?.statistics}
           />
+        );
+      case "batches":
+        return (
+          <HomeBatchesSection key="batches" content={cmsData?.batches} />
         );
       case "courses":
         return (

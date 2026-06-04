@@ -1,7 +1,11 @@
+import "@/lib/registerMongooseModels";
 import Batch from "@/models/Batch";
 import BatchEnrollment from "@/models/BatchEnrollment";
 import LiveClass from "@/models/LiveClass";
-import { buildWeeklyRoutine } from "@/app/api/_lib/batchAccess";
+import {
+  countActivePaidEnrollmentsByBatchIds,
+  listRoutineSlotsForBatch,
+} from "@/app/api/_lib/batchAccess";
 import type {
   StudentDashboardBatchSummary,
   StudentDashboardRoutineDay,
@@ -34,9 +38,9 @@ export async function loadStudentBatchDashboardData(studentId: string): Promise<
     return { batches: [], upcomingClasses: [], weeklyRoutine: [] };
   }
 
-  const [batchRows, liveClassRows] = await Promise.all([
+  const [batchRows, liveClassRows, countMap] = await Promise.all([
     Batch.find({ _id: { $in: batchIds } })
-      .select("name subject schedule")
+      .select("name grade shortDescription thumbnailUrl fee maxStudents")
       .lean(),
     LiveClass.find({
       batchId: { $in: batchIds },
@@ -46,6 +50,7 @@ export async function loadStudentBatchDashboardData(studentId: string): Promise<
       .sort({ scheduledAt: 1 })
       .limit(8)
       .lean(),
+    countActivePaidEnrollmentsByBatchIds(batchIds),
   ]);
 
   const nameById = new Map(
@@ -55,7 +60,12 @@ export async function loadStudentBatchDashboardData(studentId: string): Promise<
   const batches: StudentDashboardBatchSummary[] = batchRows.map((b) => ({
     _id: String(b._id),
     name: String(b.name ?? ""),
-    subject: String(b.subject ?? ""),
+    grade: String(b.grade ?? "O"),
+    shortDescription: String(b.shortDescription ?? ""),
+    thumbnailUrl: String(b.thumbnailUrl ?? ""),
+    fee: Number(b.fee) || 0,
+    maxStudents: Number(b.maxStudents) || 0,
+    enrolledCount: countMap.get(String(b._id)) ?? 0,
   }));
 
   const upcomingClasses: StudentDashboardUpcomingClass[] = liveClassRows.map(
@@ -79,19 +89,36 @@ export async function loadStudentBatchDashboardData(studentId: string): Promise<
   const routineByBatch: StudentDashboardRoutineDay[] = [];
   for (const batch of batchRows) {
     const batchId = String(batch._id);
-    const weekly = buildWeeklyRoutine(
-      Array.isArray(batch.schedule) ? batch.schedule : [],
-    );
+    const slots = await listRoutineSlotsForBatch(batchId);
+    const byDay = new Map<number, { label: string; slots: typeof slots }>();
+    const labels = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
+    for (let d = 0; d <= 6; d++) {
+      byDay.set(d, { label: labels[d], slots: [] });
+    }
+    for (const slot of slots.filter((s) => s.status === "active")) {
+      const day = byDay.get(slot.dayOfWeek);
+      if (day) {
+        day.slots.push(slot);
+      }
+    }
     routineByBatch.push({
       batchId,
       batchName: String(batch.name ?? ""),
-      days: weekly.map((day) => ({
-        dayOfWeek: day.dayOfWeek,
+      days: Array.from(byDay.entries()).map(([dayOfWeek, day]) => ({
+        dayOfWeek,
         label: day.label,
         slots: day.slots.map((slot) => ({
           startTime: slot.startTime,
           endTime: slot.endTime,
-          title: slot.title,
+          title: slot.topic,
         })),
       })),
     });

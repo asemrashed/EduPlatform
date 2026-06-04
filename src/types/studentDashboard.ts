@@ -49,7 +49,12 @@ export interface StudentDashboardCourseProgress {
 export interface StudentDashboardBatchSummary {
   _id: string;
   name: string;
-  subject: string;
+  grade: string;
+  shortDescription?: string;
+  thumbnailUrl?: string;
+  fee: number;
+  maxStudents: number;
+  enrolledCount: number;
 }
 
 export interface StudentDashboardUpcomingClass {

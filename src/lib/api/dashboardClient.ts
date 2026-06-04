@@ -27,7 +27,11 @@ function normalizeBatchSummary(
       ? raw.batches.map((b) => ({
           _id: b._id ?? "",
           name: b.name ?? "",
-          subject: b.subject ?? "",
+          grade: b.grade ?? "O",
+          shortDescription: b.shortDescription,
+          thumbnailUrl: b.thumbnailUrl,
+          fee: b.fee ?? 0,
+          maxStudents: b.maxStudents ?? 0,
           enrolledCount: b.enrolledCount ?? 0,
           nextClassAt: b.nextClassAt,
         }))
@@ -96,7 +100,12 @@ function normalizeStudentDashboard(
       ? raw.batches.map((b) => ({
           _id: b._id ?? "",
           name: b.name ?? "",
-          subject: b.subject ?? "",
+          grade: b.grade ?? "O",
+          shortDescription: b.shortDescription,
+          thumbnailUrl: b.thumbnailUrl,
+          fee: b.fee ?? 0,
+          maxStudents: b.maxStudents ?? 0,
+          enrolledCount: b.enrolledCount ?? 0,
         }))
       : [],
     upcomingClasses: Array.isArray(raw.upcomingClasses)

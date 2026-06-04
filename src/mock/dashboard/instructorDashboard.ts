@@ -78,7 +78,11 @@ export function getMockInstructorDashboard(): InstructorDashboardApiPayload {
         {
           _id: "batch-mock-1",
           name: "HSC Physics Live Batch",
-          subject: "Physics",
+          grade: "12",
+          shortDescription: "Live HSC Physics preparation",
+          thumbnailUrl: "",
+          fee: 3500,
+          maxStudents: 40,
           enrolledCount: 24,
           nextClassAt: new Date("2026-06-10T14:00:00.000Z").toISOString(),
         },

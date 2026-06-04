@@ -50,6 +50,7 @@ export const CMS_SIDEBAR_GROUPS: CmsSidebarGroup[] = [
     items: [
       { id: 'hero', label: 'Hero', icon: Sparkles },
       { id: 'statistics', label: 'Statistics', icon: ChartBar },
+      { id: 'batches', label: 'Featured Batches', icon: Briefcase },
       { id: 'features', label: 'Features', icon: Layers },
       { id: 'instructors', label: 'Instructors', icon: Users },
       { id: 'faq', label: 'FAQ', icon: MessageSquare },
@@ -69,7 +70,10 @@ export const CMS_SIDEBAR_GROUPS: CmsSidebarGroup[] = [
   },
   {
     label: 'Student Portal',
-    items: [{ id: 'courses', label: 'Featured Courses', icon: Briefcase }],
+    items: [
+      { id: 'batches', label: 'Featured Batches', icon: Briefcase },
+      { id: 'courses', label: 'Featured Courses', icon: Briefcase },
+    ],
   },
   {
     label: 'Future',

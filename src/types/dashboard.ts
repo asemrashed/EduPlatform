@@ -54,7 +54,11 @@ export interface StaffBatchDashboardSummary {
   batches: Array<{
     _id: string;
     name: string;
-    subject: string;
+    grade: string;
+    shortDescription?: string;
+    thumbnailUrl?: string;
+    fee: number;
+    maxStudents: number;
     enrolledCount: number;
     nextClassAt?: string;
   }>;

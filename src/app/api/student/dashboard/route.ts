@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import connectDB from "@/lib/mongodb";
+import "@/lib/registerMongooseModels";
 import { authOptions } from "@/lib/auth";
 import { INSTRUCTOR_USER_SELECT } from "@/app/api/_lib/instructorProfile";
 import Enrollment from "@/models/Enrollment";

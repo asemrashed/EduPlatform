@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { ensureMongooseModelsRegistered } from "@/lib/registerMongooseModels";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -40,5 +41,6 @@ export default async function connectDB() {
   }
 
   cached.conn = await cached.promise;
+  ensureMongooseModelsRegistered();
   return cached.conn;
 }

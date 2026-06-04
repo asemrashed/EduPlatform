@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Batch from "@/models/Batch";
 import {
+  countActivePaidEnrollmentsByBatchIds,
   mapBatch,
   requireBatchManageAccess,
   requireBatchViewAccess,
@@ -21,10 +22,17 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     const access = await requireBatchViewAccess(id, auth.user);
     if (access.error) return access.error;
 
+    const countMap = await countActivePaidEnrollmentsByBatchIds([
+      access.batch._id,
+    ]);
+    const batchId = String(access.batch._id);
+
     return NextResponse.json({
       success: true,
       data: {
-        batch: mapBatch(access.batch as Record<string, unknown>),
+        batch: mapBatch(access.batch as Record<string, unknown>, {
+          enrolledCount: countMap.get(batchId) ?? 0,
+        }),
         canManage: access.canManage,
       },
     });
