@@ -11,6 +11,7 @@ import {
   LuGlobe as Globe,
   LuGraduationCap as GraduationCap,
   LuLayoutDashboard,
+  LuLayers,
   LuMessageSquare as MessageSquare,
   LuSettings as Settings,
   LuStar as Star,
@@ -92,6 +93,7 @@ const instructorNav: SidebarNavCategory[] = [
       { icon: LuClipboardList, label: "Assignments", href: "/instructor/assignments", badge: "3" },
       { icon: LuBookmark, label: "Past Papers", href: "/instructor/past-papers", badge: null },
       { icon: LuFileText, label: "Question Bank", href: "/instructor/question-bank", badge: null },
+      { icon: LuDatabase, label: "Platform Question Bank", href: "/instructor/platform-question-bank", badge: null },
       { icon: LuFileText, label: "Exams", href: "/instructor/exams", badge: null },
       { icon: Users, label: "Enrollments", href: "/instructor/enrollments", badge: null },
       { icon: Star, label: "Reviews", href: "/instructor/reviews", badge: null },
@@ -125,6 +127,12 @@ const adminNav: SidebarNavCategory[] = [
       { icon: LuBookmark, label: "Past Papers", href: "/admin/past-papers", badge: null },
       { icon: LuFileCheck, label: "Exams", href: "/admin/exams", badge: null },
       { icon: LuDatabase, label: "Question Bank", href: "/admin/question-bank", badge: null },
+      {
+        icon: LuLayers,
+        label: "Platform Question Bank",
+        href: "/admin/platform-question-bank",
+        badge: null,
+      },
     ],
   },
   {
