@@ -1,19 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import Batch from "@/models/Batch";
-import User from "@/models/User";
 import {
-  buildWeeklyRoutine,
+  buildWeeklyRoutineFromSlots,
   instructorBatchFilter,
+  listRoutineSlotsForBatch,
   mapBatch,
   studentEnrolledBatchIds,
 } from "@/app/api/_lib/batchAccess";
+import { parseInstructorIdsInput } from "@/app/api/_lib/batchInstructors";
 import {
-  isObjectId,
+  parseBatchMarketingBody,
+  validateBatchMarketingForCreate,
+} from "@/app/api/_lib/batchMarketing";
+import {
   pagination,
   parseLimit,
   parsePage,
   requireSessionUser,
-  toObjectId,
 } from "@/app/api/_lib/phase12";
 
 export async function GET(request: NextRequest) {
@@ -47,6 +50,7 @@ export async function GET(request: NextRequest) {
       filter.$or = [
         { name: { $regex: search, $options: "i" } },
         { subject: { $regex: search, $options: "i" } },
+        { grade: { $regex: search, $options: "i" } },
       ];
     }
 
@@ -78,29 +82,19 @@ export async function POST(request: NextRequest) {
     const name = typeof body.name === "string" ? body.name.trim() : "";
     const subject = typeof body.subject === "string" ? body.subject.trim() : "";
 
-    if (!name || !subject) {
+    if (!name) {
       return NextResponse.json(
-        { success: false, error: "name and subject are required" },
+        { success: false, error: "name is required" },
         { status: 400 },
       );
     }
 
-    let instructorId = auth.user.id;
-    if (auth.user.role === "admin") {
-      if (!isObjectId(body.instructorId)) {
-        return NextResponse.json(
-          { success: false, error: "instructorId is required for admin" },
-          { status: 400 },
-        );
-      }
-      const instructor = await User.findById(body.instructorId).select("role").lean();
-      if (!instructor || instructor.role !== "instructor") {
-        return NextResponse.json(
-          { success: false, error: "Instructor not found" },
-          { status: 404 },
-        );
-      }
-      instructorId = body.instructorId;
+    const instructorParse = await parseInstructorIdsInput(body, auth.user);
+    if (instructorParse.error) {
+      return NextResponse.json(
+        { success: false, error: instructorParse.error },
+        { status: 400 },
+      );
     }
 
     const startDate = body.startDate ? new Date(String(body.startDate)) : null;
@@ -122,29 +116,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const schedule = Array.isArray(body.schedule) ? body.schedule : [];
+    const marketing = parseBatchMarketingBody(body);
+    const marketingErrors = validateBatchMarketingForCreate({
+      name,
+      thumbnailUrl: marketing.thumbnailUrl,
+      shortDescription: marketing.shortDescription,
+      fee: Number.isFinite(fee) && fee >= 0 ? fee : NaN,
+    });
+    if (marketingErrors.length > 0) {
+      return NextResponse.json(
+        { success: false, error: marketingErrors.join(". ") },
+        { status: 400 },
+      );
+    }
 
+    const instructorIds = instructorParse.ids;
     const batch = await Batch.create({
       name,
       subject,
-      instructorId: toObjectId(instructorId),
-      schedule,
+      instructorIds,
+      instructorId: instructorIds[0],
+      grade: marketing.grade,
+      schedule: [],
       startDate,
       endDate,
       maxStudents,
       fee: Number.isFinite(fee) && fee >= 0 ? fee : 0,
       isActive: body.isActive !== false,
-      description: typeof body.description === "string" ? body.description.trim() : undefined,
+      description: marketing.description,
+      shortDescription: marketing.shortDescription,
+      thumbnailUrl: marketing.thumbnailUrl,
+      videoUrl: marketing.videoUrl,
+      features: marketing.features,
     });
 
     const mapped = mapBatch(batch.toObject() as Record<string, unknown>);
+    const slots = await listRoutineSlotsForBatch(String(batch._id));
 
     return NextResponse.json(
       {
         success: true,
         data: {
           batch: mapped,
-          routine: buildWeeklyRoutine(batch.schedule),
+          routine: buildWeeklyRoutineFromSlots(slots),
         },
       },
       { status: 201 },

@@ -1,4 +1,5 @@
 import type { AdminDashboardApiPayload } from "@/types/dashboard";
+import { emptyBatchSummary } from "./emptyBatchSummary";
 
 /** Full `GET /api/admin/dashboard` body shape — `learning-project` route. */
 export function getMockAdminDashboardFull(): AdminDashboardApiPayload {
@@ -173,6 +174,18 @@ export function getMockAdminDashboardFull(): AdminDashboardApiPayload {
         { _id: "2026-02", total: 1750000 },
         { _id: "2026-03", total: 2100000 },
         { _id: "2026-04", total: 980000 },
+      ],
+    },
+    batchSummary: {
+      ...emptyBatchSummary,
+      totalBatches: 5,
+      batches: [
+        {
+          _id: "batch-mock-1",
+          name: "HSC Physics Live Batch",
+          subject: "Physics",
+          enrolledCount: 24,
+        },
       ],
     },
   };

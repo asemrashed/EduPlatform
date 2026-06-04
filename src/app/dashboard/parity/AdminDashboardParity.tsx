@@ -17,6 +17,7 @@ import {
   LuDollarSign as DollarSign,
 } from "react-icons/lu";
 import type { AdminDashboardApiPayload } from "@/types/dashboard";
+import { StaffBatchDashboardSection } from "@/components/dashboard/BatchDashboardWidgets";
 // import Header from "@/components/Header";
 
 export interface AdminDashboardParityProps {
@@ -267,6 +268,14 @@ export function AdminDashboardParity({
           </div>
         </PageSection>
 
+        {dashboardData?.batchSummary ? (
+          <StaffBatchDashboardSection
+            summary={dashboardData.batchSummary}
+            batchesBasePath="/admin/batches"
+            roleLabel="admin"
+          />
+        ) : null}
+
         {/* Quick Actions */}
         <PageSection 
           title="Quick Actions"
@@ -303,6 +312,13 @@ export function AdminDashboardParity({
             }}>
               <div className="text-2xl mb-2">👥</div>
               <div className="text-sm font-medium">Manage Students</div>
+            </Link>
+            <Link href="/admin/batches" className="p-4 text-white rounded-lg transition-all duration-200 text-center" style={{
+              background: "linear-gradient(135deg, #0EA5E9 0%, #6366F1 100%)",
+              boxShadow: "0 4px 15px rgba(14, 165, 233, 0.3)",
+            }}>
+              <div className="text-2xl mb-2">📅</div>
+              <div className="text-sm font-medium">Manage Batches</div>
             </Link>
             <Link href="/admin/teachers" className="p-4 text-white rounded-lg transition-all duration-200 text-center" style={{
               background: "linear-gradient(135deg, #EC4899 0%, #A855F7 100%)",

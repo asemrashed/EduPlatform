@@ -8,6 +8,8 @@ export const API_ENDPOINTS = {
   ACCOUNT_CHANGE_PASSWORD: "/api/account/change-password",
   PUBLIC_COURSES: "/api/public/courses",
   publicCourse: (id: string) => `/api/public/courses/${id}`,
+  PUBLIC_BATCHES: "/api/public/batches",
+  publicBatch: (id: string) => `/api/public/batches/${id}`,
   PUBLIC_CHAPTERS: "/api/public/chapters",
   PUBLIC_LESSONS: "/api/public/lessons",
   PUBLIC_FAQS: "/api/public/faqs",

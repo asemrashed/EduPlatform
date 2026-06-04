@@ -46,6 +46,26 @@ export interface InstructorDashboardApiPayload {
     enrolledCourses: number;
     lastActive: string;
   }>;
+  batchSummary: StaffBatchDashboardSummary;
+}
+
+export interface StaffBatchDashboardSummary {
+  totalBatches: number;
+  batches: Array<{
+    _id: string;
+    name: string;
+    subject: string;
+    enrolledCount: number;
+    nextClassAt?: string;
+  }>;
+  upcomingClasses: Array<{
+    _id: string;
+    batchId: string;
+    batchName: string;
+    title: string;
+    scheduledAt: string;
+    type: "live" | "recorded";
+  }>;
 }
 
 /** `GET /api/admin/dashboard` — `learning-project/src/app/api/admin/dashboard/route.ts` */
@@ -107,6 +127,7 @@ export interface AdminDashboardApiPayload {
     completions: Array<{ _id: string; count: number }>;
     revenue: Array<{ _id: string; total: number }>;
   };
+  batchSummary: StaffBatchDashboardSummary;
 }
 
 export type DashboardPayload =

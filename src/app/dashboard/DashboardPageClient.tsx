@@ -58,8 +58,8 @@ export function DashboardPageClient({ fixedRole }: DashboardPageClientProps) {
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
             {fixedRole
-              ? "Learning-project UI parity (mock API) for this role."
-              : "Learning-project UI parity (mock API). Role switcher is QA-only and does not alter section structure."}
+              ? "Your enrollments, progress, and batch schedule from the live API."
+              : "Role switcher is QA-only. Student dashboard always uses the live API."}
           </p>
         </div>
         {fixedRole ? null : <DashboardRoleSwitcher />}
@@ -93,6 +93,8 @@ export function DashboardPageClient({ fixedRole }: DashboardPageClientProps) {
               loading={loading}
               enrollments={student?.enrollments ?? []}
               courseProgress={student?.courseProgress ?? []}
+              upcomingClasses={student?.upcomingClasses ?? []}
+              weeklyRoutine={student?.weeklyRoutine ?? []}
             />
           ) : null}
           {role === "instructor" ? (

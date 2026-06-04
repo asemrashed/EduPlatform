@@ -366,6 +366,7 @@ export const defaultWebsiteContent: WebsiteContent = {
     items: [
       { label: "Home", href: "/" },
       { label: "All Courses", href: "/courses" },
+      { label: "Enroll", href: "/enroll" },
       { label: "About us", href: "/about" },
       { label: "Contact", href: "/contact" },
     ],

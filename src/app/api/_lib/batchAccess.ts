@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
 import Batch, { type IBatchScheduleSlot } from "@/models/Batch";
 import BatchEnrollment from "@/models/BatchEnrollment";
+import RoutineSlot from "@/models/RoutineSlot";
 import { isObjectId, toObjectId, type SessionUser } from "@/app/api/_lib/phase12";
+import { normalizeBatchGrade } from "@/lib/batchGrades";
+import {
+  batchHasInstructor,
+  resolveBatchInstructorIds,
+} from "@/app/api/_lib/batchInstructors";
+import { ensureRoutineSlotsMigrated } from "@/app/api/_lib/legacyRoutineMigrate";
+import { mapRoutineSlot } from "@/app/api/_lib/mapBatchClass";
 
 export const WEEKDAY_LABELS = [
   "Sunday",
@@ -13,10 +21,49 @@ export const WEEKDAY_LABELS = [
   "Saturday",
 ] as const;
 
+const WEEKDAY_SHORT = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"] as const;
+
+export function weekdayShort(dayOfWeek: number) {
+  return WEEKDAY_SHORT[dayOfWeek] ?? "?";
+}
+
+export function buildWeeklyRoutineFromSlots(
+  slots: {
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+    topic: string;
+    instructorName?: string;
+    status: string;
+    _id: string;
+    batchClassTitle?: string;
+  }[],
+) {
+  const days = WEEKDAY_LABELS.map((label, dayOfWeek) => ({
+    dayOfWeek,
+    label,
+    shortLabel: weekdayShort(dayOfWeek),
+    slots: [] as typeof slots,
+  }));
+
+  for (const slot of slots) {
+    const day = days[slot.dayOfWeek];
+    if (day) day.slots.push(slot);
+  }
+
+  for (const day of days) {
+    day.slots.sort((a, b) => a.startTime.localeCompare(b.startTime));
+  }
+
+  return days;
+}
+
+/** @deprecated Legacy embedded schedule grid */
 export function buildWeeklyRoutine(schedule: IBatchScheduleSlot[]) {
   const days = WEEKDAY_LABELS.map((label, dayOfWeek) => ({
     dayOfWeek,
     label,
+    shortLabel: weekdayShort(dayOfWeek),
     slots: [] as IBatchScheduleSlot[],
   }));
 
@@ -33,11 +80,19 @@ export function buildWeeklyRoutine(schedule: IBatchScheduleSlot[]) {
 }
 
 export function mapBatch(row: Record<string, unknown>) {
+  const instructorIds = resolveBatchInstructorIds(row);
+  const grade = normalizeBatchGrade(
+    row.grade ??
+      (typeof row.category === "string" ? row.category : undefined),
+  );
+
   return {
     _id: String(row._id),
     name: row.name,
-    subject: row.subject,
-    instructorId: String(row.instructorId),
+    subject: row.subject ?? "",
+    grade,
+    instructorId: instructorIds[0] ?? "",
+    instructorIds,
     schedule: Array.isArray(row.schedule) ? row.schedule : [],
     startDate: (row.startDate as Date)?.toISOString?.() ?? row.startDate,
     endDate: (row.endDate as Date)?.toISOString?.() ?? row.endDate,
@@ -45,15 +100,22 @@ export function mapBatch(row: Record<string, unknown>) {
     fee: row.fee,
     isActive: Boolean(row.isActive),
     description: row.description,
+    shortDescription: row.shortDescription,
+    thumbnailUrl: row.thumbnailUrl,
+    videoUrl: row.videoUrl,
+    features: Array.isArray(row.features) ? row.features : [],
     createdAt: (row.createdAt as Date)?.toISOString?.() ?? row.createdAt,
     updatedAt: (row.updatedAt as Date)?.toISOString?.() ?? row.updatedAt,
   };
 }
 
-export function canManageBatch(user: SessionUser, batch: { instructorId: unknown }) {
+export function canManageBatch(
+  user: SessionUser,
+  batch: { instructorIds?: unknown[]; instructorId?: unknown },
+) {
   if (user.role === "admin") return true;
   if (user.role === "instructor") {
-    return String(batch.instructorId) === String(user.id);
+    return batchHasInstructor(batch, user.id);
   }
   return false;
 }
@@ -131,7 +193,10 @@ export async function requireBatchManageAccess(batchId: string, user: SessionUse
 }
 
 export function instructorBatchFilter(userId: string) {
-  return { instructorId: toObjectId(userId) };
+  const oid = toObjectId(userId);
+  return {
+    $or: [{ instructorId: oid }, { instructorIds: oid }],
+  };
 }
 
 export async function studentEnrolledBatchIds(studentId: string) {
@@ -143,4 +208,15 @@ export async function studentEnrolledBatchIds(studentId: string) {
     .select("batchId")
     .lean();
   return rows.map((r) => r.batchId);
+}
+
+export async function listRoutineSlotsForBatch(batchId: string) {
+  await ensureRoutineSlotsMigrated(batchId);
+  const rows = await RoutineSlot.find({ batchId: toObjectId(batchId) })
+    .populate("instructorId", "fullName firstName lastName email")
+    .populate("batchClassId", "title")
+    .sort({ dayOfWeek: 1, startTime: 1 })
+    .lean();
+
+  return rows.map((r) => mapRoutineSlot(r as Record<string, unknown>));
 }

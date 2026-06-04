@@ -7,6 +7,7 @@ import CourseProgress from "@/models/CourseProgress";
 import Enrollment from "@/models/Enrollment";
 import Payment from "@/models/Payment";
 import User from "@/models/User";
+import { loadStaffBatchDashboardSummary } from "@/app/api/_lib/staffBatchDashboard";
 
 type RecentEnrollmentItem = {
   id: string;
@@ -212,6 +213,10 @@ export async function GET() {
       studentUsers.map((u) => [String(u._id), u as Record<string, unknown>]),
     );
 
+    const batchSummary = await loadStaffBatchDashboardSummary({
+      instructorId: userId,
+    });
+
     const students = studentRollups.map((rollup) => {
       const user = userById.get(String(rollup._id));
       const firstName = String(user?.firstName ?? "");
@@ -252,6 +257,7 @@ export async function GET() {
         },
         courses,
         students,
+        batchSummary,
       },
     });
   } catch (error) {

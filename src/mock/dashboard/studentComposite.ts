@@ -122,5 +122,45 @@ export function getMockStudentDashboardComposite(): StudentDashboardComposite {
     },
   ];
 
-  return { enrollments, courseProgress };
+  return {
+    enrollments,
+    courseProgress,
+    batches: [
+      {
+        _id: "batch-mock-1",
+        name: "HSC Physics Live Batch — Spring 2026",
+        subject: "Physics",
+      },
+    ],
+    upcomingClasses: [
+      {
+        _id: "lc-mock-1",
+        batchId: "batch-mock-1",
+        batchName: "HSC Physics Live Batch — Spring 2026",
+        title: "Mechanics — Problem solving",
+        scheduledAt: iso("2026-06-10T14:00:00.000Z"),
+        durationMinutes: 90,
+        type: "live",
+        joinUrl: "https://meet.example.com/physics-live",
+      },
+    ],
+    weeklyRoutine: [
+      {
+        batchId: "batch-mock-1",
+        batchName: "HSC Physics Live Batch — Spring 2026",
+        days: [
+          {
+            dayOfWeek: 1,
+            label: "Monday",
+            slots: [{ startTime: "18:00", endTime: "19:30", title: "Live class" }],
+          },
+          {
+            dayOfWeek: 4,
+            label: "Thursday",
+            slots: [{ startTime: "18:00", endTime: "19:30", title: "Revision" }],
+          },
+        ],
+      },
+    ],
+  };
 }

@@ -9,6 +9,7 @@ import Enrollment from "@/models/Enrollment";
 import Exam from "@/models/Exam";
 import ExamAttempt from "@/models/ExamAttempt";
 import Payment from "@/models/Payment";
+import { loadStaffBatchDashboardSummary } from "@/app/api/_lib/staffBatchDashboard";
 
 type RecentEnrollmentItem = {
   id: string;
@@ -263,6 +264,8 @@ export async function GET() {
       ]),
     );
 
+    const batchSummary = await loadStaffBatchDashboardSummary({});
+
     return NextResponse.json({
       success: true,
       data: {
@@ -350,6 +353,7 @@ export async function GET() {
             total: Number(row.total || 0),
           })),
         },
+        batchSummary,
       },
     });
   } catch (error) {

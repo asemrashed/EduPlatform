@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { INSTRUCTOR_USER_SELECT } from "@/app/api/_lib/instructorProfile";
 import Enrollment from "@/models/Enrollment";
 import CourseProgress from "@/models/CourseProgress";
+import { loadStudentBatchDashboardData } from "@/app/api/_lib/studentBatchDashboard";
 import type {
   StudentDashboardComposite,
   StudentDashboardCourse,
@@ -157,7 +158,7 @@ export async function GET() {
 
     await connectDB();
 
-    const [enrollmentRows, progressRows] = await Promise.all([
+    const [enrollmentRows, progressRows, batchData] = await Promise.all([
       Enrollment.find({ student: userId })
         .populate({
           path: "course",
@@ -170,15 +171,41 @@ export async function GET() {
         .populate({ path: "course", select: "_id" })
         .sort({ updatedAt: -1 })
         .lean(),
+      loadStudentBatchDashboardData(userId),
     ]);
 
+    const courseProgress = progressRows.map((row) =>
+      mapCourseProgress(row as Record<string, unknown>),
+    );
+    const progressByCourseId = new Map(
+      courseProgress.map((cp) => [cp.course, cp]),
+    );
+
+    const enrollments = enrollmentRows.map((row) => {
+      const enrollment = mapEnrollment(row as Record<string, unknown>);
+      const cp = progressByCourseId.get(enrollment.course._id);
+      if (!cp) return enrollment;
+
+      const status = cp.isCompleted
+        ? ("completed" as const)
+        : cp.progressPercentage > 0
+          ? ("in_progress" as const)
+          : enrollment.status;
+
+      return {
+        ...enrollment,
+        progress: cp.progressPercentage,
+        status,
+        lastAccessedAt: cp.lastAccessedAt || enrollment.lastAccessedAt,
+      };
+    });
+
     const data: StudentDashboardComposite = {
-      enrollments: enrollmentRows.map((row) =>
-        mapEnrollment(row as Record<string, unknown>),
-      ),
-      courseProgress: progressRows.map((row) =>
-        mapCourseProgress(row as Record<string, unknown>),
-      ),
+      enrollments,
+      courseProgress,
+      batches: batchData.batches,
+      upcomingClasses: batchData.upcomingClasses,
+      weeklyRoutine: batchData.weeklyRoutine,
     };
 
     return NextResponse.json({ success: true, data });

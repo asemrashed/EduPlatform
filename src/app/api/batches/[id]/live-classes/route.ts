@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import LiveClass from "@/models/LiveClass";
+import {
+  syncLiveClassToBatchRoutine,
+  type ClassRecurrence,
+} from "@/app/api/_lib/batchRoutineSync";
 import { requireBatchManageAccess, requireBatchViewAccess } from "@/app/api/_lib/batchAccess";
 import { isObjectId, requireSessionUser, toObjectId } from "@/app/api/_lib/phase12";
+
+function parseRecurrence(value: unknown): ClassRecurrence {
+  if (value === "weekly" || value === "monthly") return value;
+  return "once";
+}
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -12,6 +21,7 @@ function mapLiveClass(row: Record<string, unknown>, includeLinks: boolean) {
     title: row.title,
     scheduledAt: (row.scheduledAt as Date)?.toISOString?.() ?? row.scheduledAt,
     durationMinutes: row.durationMinutes,
+    recurrence: row.recurrence || "once",
     type: row.type,
     isActive: Boolean(row.isActive),
     createdAt: (row.createdAt as Date)?.toISOString?.() ?? row.createdAt,
@@ -107,18 +117,22 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     const type = body.type === "recorded" ? "recorded" : "live";
+    const recurrence = parseRecurrence(body.recurrence);
 
     const liveClass = await LiveClass.create({
       batchId: toObjectId(batchId),
       title,
       scheduledAt,
       durationMinutes,
+      recurrence,
       meetLink: typeof body.meetLink === "string" ? body.meetLink.trim() : undefined,
       recordingUrl:
         typeof body.recordingUrl === "string" ? body.recordingUrl.trim() : undefined,
       type,
       isActive: body.isActive !== false,
     });
+
+    await syncLiveClassToBatchRoutine(batchId, liveClass, recurrence);
 
     return NextResponse.json(
       {

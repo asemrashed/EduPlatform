@@ -1,4 +1,5 @@
 import type { InstructorDashboardApiPayload } from "@/types/dashboard";
+import { emptyBatchSummary } from "./emptyBatchSummary";
 
 /** Mirrors `GET /api/instructor/dashboard` success body (`learning-project`). */
 export function getMockInstructorDashboard(): InstructorDashboardApiPayload {
@@ -70,5 +71,28 @@ export function getMockInstructorDashboard(): InstructorDashboardApiPayload {
         lastActive: new Date("2026-04-10T19:15:00.000Z").toISOString(),
       },
     ],
+    batchSummary: {
+      ...emptyBatchSummary,
+      totalBatches: 2,
+      batches: [
+        {
+          _id: "batch-mock-1",
+          name: "HSC Physics Live Batch",
+          subject: "Physics",
+          enrolledCount: 24,
+          nextClassAt: new Date("2026-06-10T14:00:00.000Z").toISOString(),
+        },
+      ],
+      upcomingClasses: [
+        {
+          _id: "lc-mock-1",
+          batchId: "batch-mock-1",
+          batchName: "HSC Physics Live Batch",
+          title: "Mechanics — Live",
+          scheduledAt: new Date("2026-06-10T14:00:00.000Z").toISOString(),
+          type: "live",
+        },
+      ],
+    },
   };
 }

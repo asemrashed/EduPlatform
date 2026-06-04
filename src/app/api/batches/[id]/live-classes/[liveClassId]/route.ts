@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import LiveClass from "@/models/LiveClass";
+import {
+  removeLiveClassFromBatchRoutine,
+  syncLiveClassToBatchRoutine,
+  type ClassRecurrence,
+} from "@/app/api/_lib/batchRoutineSync";
 import { requireBatchManageAccess, requireBatchViewAccess } from "@/app/api/_lib/batchAccess";
 import { isObjectId, requireSessionUser, toObjectId } from "@/app/api/_lib/phase12";
+
+function parseRecurrence(value: unknown): ClassRecurrence {
+  if (value === "weekly" || value === "monthly") return value;
+  return "once";
+}
 
 type RouteContext = { params: Promise<{ id: string; liveClassId: string }> };
 
@@ -12,6 +22,7 @@ function mapLiveClass(row: Record<string, unknown>) {
     title: row.title,
     scheduledAt: (row.scheduledAt as Date)?.toISOString?.() ?? row.scheduledAt,
     durationMinutes: row.durationMinutes,
+    recurrence: row.recurrence || "once",
     meetLink: row.meetLink || undefined,
     recordingUrl: row.recordingUrl || undefined,
     type: row.type,
@@ -96,6 +107,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
     if (body.type === "live" || body.type === "recorded") updates.type = body.type;
     if (typeof body.isActive === "boolean") updates.isActive = body.isActive;
+    if (body.recurrence !== undefined) {
+      updates.recurrence = parseRecurrence(body.recurrence);
+    }
 
     const liveClass = await LiveClass.findOneAndUpdate(
       { _id: liveClassId, batchId: toObjectId(batchId) },
@@ -109,6 +123,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         { status: 404 },
       );
     }
+
+    const recurrence = parseRecurrence(liveClass.recurrence);
+    await syncLiveClassToBatchRoutine(batchId, liveClass, recurrence);
 
     return NextResponse.json({
       success: true,
@@ -144,6 +161,8 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
         { status: 404 },
       );
     }
+
+    await removeLiveClassFromBatchRoutine(batchId, liveClassId);
 
     return NextResponse.json({ success: true, data: { deactivated: true } });
   } catch (error) {

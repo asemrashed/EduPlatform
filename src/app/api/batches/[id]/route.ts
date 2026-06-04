@@ -5,6 +5,9 @@ import {
   requireBatchManageAccess,
   requireBatchViewAccess,
 } from "@/app/api/_lib/batchAccess";
+import { parseInstructorIdsInput } from "@/app/api/_lib/batchInstructors";
+import { parseBatchMarketingBody } from "@/app/api/_lib/batchMarketing";
+import { normalizeBatchGrade } from "@/lib/batchGrades";
 import { requireSessionUser } from "@/app/api/_lib/phase12";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -48,9 +51,29 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     if (typeof body.name === "string") updates.name = body.name.trim();
     if (typeof body.subject === "string") updates.subject = body.subject.trim();
+    const marketing = parseBatchMarketingBody(body);
     if (typeof body.description === "string") updates.description = body.description.trim();
+    if (typeof body.shortDescription === "string") {
+      updates.shortDescription = body.shortDescription.trim();
+    }
+    if (typeof body.thumbnailUrl === "string") updates.thumbnailUrl = body.thumbnailUrl.trim();
+    if (typeof body.videoUrl === "string") updates.videoUrl = body.videoUrl.trim();
+    if (body.features !== undefined) updates.features = marketing.features;
+    if (body.grade !== undefined) updates.grade = normalizeBatchGrade(body.grade);
     if (typeof body.isActive === "boolean") updates.isActive = body.isActive;
     if (Array.isArray(body.schedule)) updates.schedule = body.schedule;
+
+    if (body.instructorIds !== undefined || body.instructorId !== undefined) {
+      const instructorParse = await parseInstructorIdsInput(body, auth.user);
+      if (instructorParse.error) {
+        return NextResponse.json(
+          { success: false, error: instructorParse.error },
+          { status: 400 },
+        );
+      }
+      updates.instructorIds = instructorParse.ids;
+      updates.instructorId = instructorParse.ids[0] ?? undefined;
+    }
     if (body.startDate) updates.startDate = new Date(String(body.startDate));
     if (body.endDate) updates.endDate = new Date(String(body.endDate));
     if (body.maxStudents !== undefined) updates.maxStudents = Number(body.maxStudents);

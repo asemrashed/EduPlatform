@@ -17,23 +17,41 @@ import { BrandLogo } from "@/components/layout/BrandLogo";
 const FALLBACK_NAV = [
   { href: "/", label: "Home" },
   { href: "/courses", label: "All Courses" },
+  { href: "/enroll", label: "Enroll" },
   { href: "/about", label: "About us" },
   { href: "/contact", label: "Contact" },
 ] as const;
 
 type NavItem = { href: string; label: string };
 
+const ENROLL_NAV_ITEM: NavItem = { href: "/enroll", label: "Enroll" };
+
 function resolveHeaderNav(cmsData?: WebsiteContent | null): NavItem[] {
   const items = cmsData?.mobileMenu?.items?.filter(
     (item) => item.label?.trim() && item.href?.trim(),
   );
-  if (items && items.length > 0) {
-    return items.map((item) => ({
-      href: item.href.trim(),
-      label: item.label.trim(),
-    }));
+  const base =
+    items && items.length > 0
+      ? items.map((item) => ({
+          href: item.href.trim(),
+          label: item.label.trim(),
+        }))
+      : [...FALLBACK_NAV];
+
+  const hasEnroll = base.some(
+    (item) => item.href === "/enroll" || item.label.toLowerCase() === "enroll",
+  );
+  if (hasEnroll) return base;
+
+  const coursesIdx = base.findIndex((item) => item.href === "/courses");
+  if (coursesIdx >= 0) {
+    return [
+      ...base.slice(0, coursesIdx + 1),
+      ENROLL_NAV_ITEM,
+      ...base.slice(coursesIdx + 1),
+    ];
   }
-  return [...FALLBACK_NAV];
+  return [...base, ENROLL_NAV_ITEM];
 }
 
 function resolveHeaderBranding(cmsData?: WebsiteContent | null) {

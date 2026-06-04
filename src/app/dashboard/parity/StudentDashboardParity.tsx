@@ -36,6 +36,11 @@ import {
   LuFileText as LuFileText,
 } from "react-icons/lu";
 import Header from "@/components/Header";
+import { StudentBatchDashboardSection } from "@/components/dashboard/BatchDashboardWidgets";
+import type {
+  StudentDashboardRoutineDay,
+  StudentDashboardUpcomingClass,
+} from "@/types/studentDashboard";
 
 interface Course {
   _id: string;
@@ -99,6 +104,8 @@ export interface StudentDashboardParityProps {
   loading: boolean;
   enrollments: Enrollment[];
   courseProgress: CourseProgress[];
+  upcomingClasses: StudentDashboardUpcomingClass[];
+  weeklyRoutine: StudentDashboardRoutineDay[];
 }
 
 export function StudentDashboardParity({
@@ -106,6 +113,8 @@ export function StudentDashboardParity({
   loading,
   enrollments,
   courseProgress,
+  upcomingClasses,
+  weeklyRoutine,
 }: StudentDashboardParityProps) {
   const router = useRouter();
   const [stats, setStats] = useState<StudentStats>({
@@ -359,10 +368,26 @@ export function StudentDashboardParity({
                   </span>
                   <span>Reviews</span>
                 </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-2 border border-violet-300 text-violet-700 hover:border-violet-500 focus:ring-2 focus:ring-violet-200 cursor-pointer"
+                  onClick={() => router.push('/student/batches')}
+                  aria-label="My Batches"
+                >
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-md">
+                    <Clock className="h-4 w-4" />
+                  </span>
+                  <span>My Batches</span>
+                </Button>
               </div>
             </PageSection>
           </div>
         </PageGrid>
+
+        <StudentBatchDashboardSection
+          upcomingClasses={upcomingClasses}
+          weeklyRoutine={weeklyRoutine}
+        />
         
         {/* Bottom Section - My Courses */}
         <PageSection 
@@ -420,17 +445,13 @@ export function StudentDashboardParity({
                           <h3 className="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors duration-200">
                             {title}
                           </h3>
-                          <p className="text-xs text-gray-500 line-clamp-2 mt-1">
+                          {/* <p className="text-xs text-gray-500 line-clamp-2 mt-1">
                             {description}
-                          </p>
+                          </p> */}
                           <div className="flex items-center gap-2 mt-2">
                             <Badge variant="outline" className="text-xs">
                               {categoryName}
                             </Badge>
-                            <div className="flex items-center gap-1 text-xs text-yellow-600">
-                              <Star className="h-3 w-3 fill-current" />
-                              <span>{'4.5'}</span>
-                            </div>
                           </div>
                         </button>
                       </div>

@@ -16,10 +16,21 @@ export default function CourseCard({
   list?: boolean 
 }) {
   const router = useRouter();
+  const imageSrc = typeof course?.image === "string" ? course.image.trim() : "";
+  const actionLabel =
+    typeof course?.actionLabel === "string" && course.actionLabel.trim()
+      ? course.actionLabel.trim()
+      : "Enroll Course";
+  const isFree =
+    course?.isFree === true ||
+    course?.price === "Free" ||
+    course?.price === 0;
   
   const rawHref = typeof course?.href === "string" ? course.href : "";
   const targetHref =
-    rawHref.startsWith("/course/") || rawHref.startsWith("/courses")
+    rawHref.startsWith("/course/") ||
+    rawHref.startsWith("/courses") ||
+    rawHref.startsWith("/enroll")
       ? rawHref
       : rawHref.startsWith("/")
         ? `/course${rawHref}`
@@ -41,13 +52,19 @@ export default function CourseCard({
         "relative overflow-hidden rounded-lg shrink-0",
         list ? "h-32 w-42 md:h-52 md:w-68" : "h-56 w-full"
       )}>
-        <Image
-          src={course.image}
-          alt={course.title}
-          fill
-          className="object-cover group-hover:scale-105 transition-transform duration-300"
-          sizes="(max-width: 768px) 100vw, 33vw"
-        />
+        {imageSrc ? (
+          <Image
+            src={imageSrc}
+            alt={course.title}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            sizes="(max-width: 768px) 100vw, 33vw"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 text-sm font-medium text-white/70">
+            {course.imageFallback || "Course"}
+          </div>
+        )}
         <span
           className={cn(
             "absolute left-2 top-2 rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-tighter md:left-4 md:top-4 md:px-3 md:py-1.5 md:text-xs",
@@ -70,7 +87,7 @@ export default function CourseCard({
 
         <div className={cn(`flex ${list? 'flex-col items-start gap-2':'flex-row items-center'} justify-between border-t border-outline-variant/20 pt-2 mt-auto`)}>
           <span className="text-2xl font-black text-primary">
-            <span className='text-3xl mr-1'>৳</span>
+            {!isFree && <span className="mr-1 text-3xl">৳</span>}
             {course.price}
           </span>
           <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
@@ -87,7 +104,7 @@ export default function CourseCard({
               e.preventDefault(); // Prevent default link behavior if clicking the button specifically
               router.push(targetHref);
             }} 
-            value="Enroll Course" 
+            value={actionLabel}
           />
         </div>
       </div>

@@ -46,8 +46,38 @@ export interface StudentDashboardCourseProgress {
   startedAt: string;
 }
 
-/** Composite mock — same aggregation as reference student dashboard page. */
+export interface StudentDashboardBatchSummary {
+  _id: string;
+  name: string;
+  subject: string;
+}
+
+export interface StudentDashboardUpcomingClass {
+  _id: string;
+  batchId: string;
+  batchName: string;
+  title: string;
+  scheduledAt: string;
+  durationMinutes: number;
+  type: "live" | "recorded";
+  joinUrl?: string;
+}
+
+export interface StudentDashboardRoutineDay {
+  batchId: string;
+  batchName: string;
+  days: {
+    dayOfWeek: number;
+    label: string;
+    slots: { startTime: string; endTime: string; title?: string }[];
+  }[];
+}
+
+/** Composite — enrollments, progress, and batch academic widgets (Phase 17.7). */
 export interface StudentDashboardComposite {
   enrollments: StudentDashboardEnrollment[];
   courseProgress: StudentDashboardCourseProgress[];
+  batches: StudentDashboardBatchSummary[];
+  upcomingClasses: StudentDashboardUpcomingClass[];
+  weeklyRoutine: StudentDashboardRoutineDay[];
 }

@@ -1,19 +1,48 @@
 import {
   getMockAdminDashboardFull,
   getMockInstructorDashboard,
-  getMockStudentDashboardComposite,
 } from "@/mock/dashboard";
 import { API_ENDPOINTS } from "./endpoints";
 import type {
   AdminDashboardApiPayload,
   DashboardRole,
   InstructorDashboardApiPayload,
+  StaffBatchDashboardSummary,
 } from "@/types/dashboard";
+import { emptyBatchSummary } from "@/mock/dashboard/emptyBatchSummary";
 import type { StudentDashboardComposite } from "@/types/studentDashboard";
 import { isMockApiEnabled } from "@/lib/mockApi/isMockApiEnabled";
 
 function isMockFallbackEnabled(): boolean {
   return isMockApiEnabled();
+}
+
+function normalizeBatchSummary(
+  raw: Partial<StaffBatchDashboardSummary> | undefined,
+): StaffBatchDashboardSummary {
+  if (!raw) return emptyBatchSummary;
+  return {
+    totalBatches: raw.totalBatches ?? 0,
+    batches: Array.isArray(raw.batches)
+      ? raw.batches.map((b) => ({
+          _id: b._id ?? "",
+          name: b.name ?? "",
+          subject: b.subject ?? "",
+          enrolledCount: b.enrolledCount ?? 0,
+          nextClassAt: b.nextClassAt,
+        }))
+      : [],
+    upcomingClasses: Array.isArray(raw.upcomingClasses)
+      ? raw.upcomingClasses.map((c) => ({
+          _id: c._id ?? "",
+          batchId: c.batchId ?? "",
+          batchName: c.batchName ?? "",
+          title: c.title ?? "",
+          scheduledAt: c.scheduledAt ?? "",
+          type: c.type === "recorded" ? "recorded" : "live",
+        }))
+      : [],
+  };
 }
 
 function normalizeStudentDashboard(
@@ -63,15 +92,49 @@ function normalizeStudentDashboard(
           startedAt: item.startedAt ?? "",
         }))
       : [],
+    batches: Array.isArray(raw.batches)
+      ? raw.batches.map((b) => ({
+          _id: b._id ?? "",
+          name: b.name ?? "",
+          subject: b.subject ?? "",
+        }))
+      : [],
+    upcomingClasses: Array.isArray(raw.upcomingClasses)
+      ? raw.upcomingClasses.map((c) => ({
+          _id: c._id ?? "",
+          batchId: c.batchId ?? "",
+          batchName: c.batchName ?? "",
+          title: c.title ?? "",
+          scheduledAt: c.scheduledAt ?? "",
+          durationMinutes: c.durationMinutes ?? 0,
+          type: c.type === "recorded" ? "recorded" : "live",
+          joinUrl: c.joinUrl,
+        }))
+      : [],
+    weeklyRoutine: Array.isArray(raw.weeklyRoutine)
+      ? raw.weeklyRoutine.map((batch) => ({
+          batchId: batch.batchId ?? "",
+          batchName: batch.batchName ?? "",
+          days: Array.isArray(batch.days)
+            ? batch.days.map((d) => ({
+                dayOfWeek: d.dayOfWeek ?? 0,
+                label: d.label ?? "",
+                slots: Array.isArray(d.slots)
+                  ? d.slots.map((s) => ({
+                      startTime: s.startTime ?? "",
+                      endTime: s.endTime ?? "",
+                      title: s.title,
+                    }))
+                  : [],
+              }))
+            : [],
+        }))
+      : [],
   };
 }
 
+/** Always uses `GET /api/student/dashboard` — never mock (Phase 15 / 17.7). */
 export async function getStudentDashboard(): Promise<StudentDashboardComposite> {
-  if (isMockApiEnabled()) {
-    await Promise.resolve();
-    return getMockStudentDashboardComposite();
-  }
-
   const response = await fetch(API_ENDPOINTS.STUDENT_DASHBOARD, {
     method: "GET",
     credentials: "include",
@@ -180,6 +243,7 @@ export async function getInstructorDashboard(): Promise<InstructorDashboardApiPa
             lastActive: item.lastActive ?? "",
           }))
         : [],
+      batchSummary: normalizeBatchSummary(raw.batchSummary),
     };
   } catch (error) {
     if (isMockFallbackEnabled()) {
@@ -294,6 +358,7 @@ export async function getAdminDashboard(): Promise<AdminDashboardApiPayload> {
             }))
           : [],
       },
+      batchSummary: normalizeBatchSummary(raw.batchSummary),
     };
   } catch (error) {
     if (isMockFallbackEnabled()) {

@@ -28,6 +28,8 @@ import {
 } from "react-icons/lu";
 import { htmlToPlainText } from "@/lib/utils";
 import type { InstructorDashboardApiPayload } from "@/types/dashboard";
+import { StaffBatchDashboardSection } from "@/components/dashboard/BatchDashboardWidgets";
+import { LuCalendar as CalendarIcon } from "react-icons/lu";
 
 function formatDashDate(iso: string | undefined): string {
   if (iso == null || iso === "") return "N/A";
@@ -329,11 +331,27 @@ export function InstructorDashboardParity({
                   <Star className="h-4 w-4 mr-2" />
                   Course Reviews
                 </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => router.push('/instructor/batches')}
+                >
+                  <CalendarIcon className="h-4 w-4 mr-2" />
+                  Manage Batches
+                </Button>
               </div>
             </PageSection>
           </div>
         </PageGrid>
         
+        {apiData?.batchSummary ? (
+          <StaffBatchDashboardSection
+            summary={apiData.batchSummary}
+            batchesBasePath="/instructor/batches"
+            roleLabel="instructor"
+          />
+        ) : null}
+
         {/* Bottom Section - Recent Students */}
         <PageSection 
           title="Recent Students"

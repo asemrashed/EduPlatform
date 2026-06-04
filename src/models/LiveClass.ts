@@ -1,13 +1,18 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 export type LiveClassType = "live" | "recorded";
+export type LiveClassRecurrence = "once" | "weekly" | "monthly";
 
 export interface ILiveClass extends Document {
   _id: mongoose.Types.ObjectId;
   batchId: mongoose.Types.ObjectId;
+  batchClassId?: mongoose.Types.ObjectId;
+  routineSlotId?: mongoose.Types.ObjectId;
+  instructorId?: mongoose.Types.ObjectId;
   title: string;
   scheduledAt: Date;
   durationMinutes: number;
+  recurrence: LiveClassRecurrence;
   meetLink?: string;
   type: LiveClassType;
   recordingUrl?: string;
@@ -24,6 +29,21 @@ const LiveClassSchema = new Schema<ILiveClass>(
       required: [true, "Batch is required"],
       index: true,
     },
+    batchClassId: {
+      type: Schema.Types.ObjectId,
+      ref: "BatchClass",
+      index: true,
+    },
+    routineSlotId: {
+      type: Schema.Types.ObjectId,
+      ref: "RoutineSlot",
+      index: true,
+    },
+    instructorId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      index: true,
+    },
     title: {
       type: String,
       required: [true, "Title is required"],
@@ -38,6 +58,12 @@ const LiveClassSchema = new Schema<ILiveClass>(
       type: Number,
       required: true,
       min: 1,
+    },
+    recurrence: {
+      type: String,
+      enum: ["once", "weekly", "monthly"],
+      default: "once",
+      required: true,
     },
     meetLink: {
       type: String,
