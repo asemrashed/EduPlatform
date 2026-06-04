@@ -1,9 +1,14 @@
 import mongoose, { Document, Schema } from "mongoose";
 
+export type PaymentEntityType = "course" | "batch";
+
 export interface IPayment extends Document {
   user: mongoose.Types.ObjectId;
-  course: mongoose.Types.ObjectId;
-  enrollment: mongoose.Types.ObjectId;
+  entityType: PaymentEntityType;
+  course?: mongoose.Types.ObjectId;
+  enrollment?: mongoose.Types.ObjectId;
+  batchId?: mongoose.Types.ObjectId;
+  batchEnrollment?: mongoose.Types.ObjectId;
   amount: number;
   transactionId: string;
   gateway: "sslcommerz";
@@ -21,15 +26,28 @@ const PaymentSchema = new Schema<IPayment>(
       ref: "User",
       required: true,
     },
+    entityType: {
+      type: String,
+      enum: ["course", "batch"],
+      default: "course",
+      required: true,
+      index: true,
+    },
     course: {
       type: Schema.Types.ObjectId,
       ref: "Course",
-      required: true,
     },
     enrollment: {
       type: Schema.Types.ObjectId,
       ref: "Enrollment",
-      required: true,
+    },
+    batchId: {
+      type: Schema.Types.ObjectId,
+      ref: "Batch",
+    },
+    batchEnrollment: {
+      type: Schema.Types.ObjectId,
+      ref: "BatchEnrollment",
     },
     amount: {
       type: Number,
@@ -69,6 +87,8 @@ const PaymentSchema = new Schema<IPayment>(
 );
 
 PaymentSchema.index({ transactionId: 1 }, { unique: true });
+PaymentSchema.index({ entityType: 1, batchId: 1, status: 1 });
+PaymentSchema.index({ user: 1, entityType: 1, status: 1, createdAt: -1 });
 
 const Payment =
   mongoose.models.Payment || mongoose.model<IPayment>("Payment", PaymentSchema);

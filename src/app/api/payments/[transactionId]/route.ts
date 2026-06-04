@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import Payment from "@/models/Payment";
+import BatchEnrollment from "@/models/BatchEnrollment";
 
 export async function GET(
   _request: NextRequest,
@@ -33,7 +34,9 @@ export async function GET(
     await connectDB();
 
     const payment = await Payment.findOne({ transactionId: normalizedId })
-      .select("_id user course enrollment amount status transactionId createdAt")
+      .select(
+        "_id user entityType course enrollment batchId batchEnrollment amount status transactionId createdAt",
+      )
       .lean();
 
     if (!payment) {
@@ -50,20 +53,59 @@ export async function GET(
       );
     }
 
+    const entityType = payment.entityType === "batch" ? "batch" : "course";
+    const isSuccess = payment.status === "success";
+
+    if (entityType === "batch") {
+      const batchEnrollment = payment.batchEnrollment
+        ? await BatchEnrollment.findById(payment.batchEnrollment)
+            .select("_id status paymentStatus")
+            .lean()
+        : null;
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          id: String(payment._id),
+          entityType: "batch",
+          transactionId: payment.transactionId,
+          amount: String(payment.amount),
+          currency: "BDT",
+          status: payment.status,
+          initiatedAt: payment.createdAt,
+          batchId: payment.batchId ? String(payment.batchId) : undefined,
+          batchEnrollment: batchEnrollment
+            ? {
+                id: String(batchEnrollment._id),
+                status: batchEnrollment.status,
+                paymentStatus: batchEnrollment.paymentStatus,
+              }
+            : {
+                id: payment.batchEnrollment
+                  ? String(payment.batchEnrollment)
+                  : undefined,
+                status: isSuccess ? "active" : "pending",
+                paymentStatus: isSuccess ? "paid" : "pending",
+              },
+        },
+      });
+    }
+
     return NextResponse.json({
       success: true,
       data: {
         id: String(payment._id),
+        entityType: "course",
         transactionId: payment.transactionId,
         amount: String(payment.amount),
         currency: "BDT",
         status: payment.status,
         initiatedAt: payment.createdAt,
-        courseId: String(payment.course),
+        courseId: payment.course ? String(payment.course) : undefined,
         enrollment: {
-          id: String(payment.enrollment),
-          status: payment.status === "success" ? "enrolled" : "suspended",
-          paymentStatus: payment.status === "success" ? "paid" : payment.status,
+          id: payment.enrollment ? String(payment.enrollment) : undefined,
+          status: isSuccess ? "enrolled" : "suspended",
+          paymentStatus: isSuccess ? "paid" : payment.status,
         },
       },
     });

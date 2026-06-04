@@ -1,6 +1,7 @@
 import type { IconType } from "react-icons";
 import {
   LuBookOpen as BookOpen,
+  LuCalendar as Calendar,
   LuBookmark,
   LuChartBar,
   LuClipboardList,
@@ -52,6 +53,7 @@ const studentNav: SidebarNavCategory[] = [
       { icon: BookOpen, label: "My Courses", href: "/student/courses", badge: null },
       { icon: GraduationCap, label: "Exams", href: "/student/exams", badge: null },
       { icon: LuFileText, label: "Assignments", href: "/student/assignments", badge: "2" },
+      { icon: Calendar, label: "My Batches", href: "/student/batches", badge: null },
       { icon: LuBookmark, label: "Past Papers", href: "/student/past-papers", badge: null },
       { icon: Star, label: "Reviews", href: "/student/reviews", badge: null },
     ],
@@ -96,6 +98,7 @@ const instructorNav: SidebarNavCategory[] = [
       { icon: LuDatabase, label: "Platform Question Bank", href: "/instructor/platform-question-bank", badge: null },
       { icon: LuFileText, label: "Exams", href: "/instructor/exams", badge: null },
       { icon: Users, label: "Enrollments", href: "/instructor/enrollments", badge: null },
+      { icon: Calendar, label: "Batches", href: "/instructor/batches", badge: null },
       { icon: Star, label: "Reviews", href: "/instructor/reviews", badge: null },
     ],
   },
@@ -141,6 +144,7 @@ const adminNav: SidebarNavCategory[] = [
       { icon: Users, label: "Students", href: "/admin/students", badge: null },
       { icon: GraduationCap, label: "Teachers", href: "/admin/teachers", badge: null },
       { icon: UserCheck, label: "Enrollments", href: "/admin/enrollments", badge: null },
+      { icon: Calendar, label: "Batches", href: "/admin/batches", badge: null },
     ],
   },
   {
