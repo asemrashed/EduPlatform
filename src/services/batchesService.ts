@@ -156,7 +156,11 @@ export const batchesService = {
     const res = await fetch(`/api/batches/${batchId}/classes`);
     return parseJson<{
       success: boolean;
-      data?: { classes: BatchClassRecord[]; canManage: boolean };
+      data?: {
+        classes: BatchClassRecord[];
+        subjects?: BatchClassRecord[];
+        canManage: boolean;
+      };
       error?: string;
     }>(res);
   },

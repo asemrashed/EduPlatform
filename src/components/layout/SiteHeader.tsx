@@ -13,6 +13,7 @@ import {
 
 import { LuShoppingBag } from "react-icons/lu";
 import { BrandLogo } from "@/components/layout/BrandLogo";
+import { ResourcesNavDropdown } from "@/components/layout/ResourcesNavDropdown";
 
 const FALLBACK_NAV = [
   { href: "/", label: "Home" },
@@ -177,6 +178,7 @@ export function SiteHeader({ cmsData }: SiteHeaderProps) {
                 pathname={pathname}
               />
             ))}
+            <ResourcesNavDropdown pathname={pathname} variant="desktop" />
           </nav>
         </div>
 
@@ -267,6 +269,11 @@ export function SiteHeader({ cmsData }: SiteHeaderProps) {
                 onNavigate={() => setOpen(false)}
               />
             ))}
+            <ResourcesNavDropdown
+              pathname={pathname}
+              variant="mobile"
+              onNavigate={() => setOpen(false)}
+            />
           </nav>
         </div>
       )}

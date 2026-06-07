@@ -27,10 +27,12 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       .sort({ sortOrder: 1, title: 1 })
       .lean();
 
+    const subjects = rows.map((r) => mapBatchClass(r as Record<string, unknown>));
     return NextResponse.json({
       success: true,
       data: {
-        classes: rows.map((r) => mapBatchClass(r as Record<string, unknown>)),
+        classes: subjects,
+        subjects,
         canManage: access.canManage,
       },
     });

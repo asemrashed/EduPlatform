@@ -16,7 +16,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 const INSTRUCTOR_SELECT = "fullName firstName lastName email role";
 
-export async function GET(_request: NextRequest, context: RouteContext) {
+export async function GET(request: NextRequest, context: RouteContext) {
   try {
     await connectDB();
     const auth = await requireSessionUser(["admin", "instructor", "student"]);
@@ -26,7 +26,11 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     const access = await requireBatchViewAccess(batchId, auth.user);
     if (access.error) return access.error;
 
-    const slots = await listRoutineSlotsForBatch(batchId);
+    const batchClassId = request.nextUrl.searchParams.get("batchClassId")?.trim();
+    let slots = await listRoutineSlotsForBatch(batchId);
+    if (batchClassId && isObjectId(batchClassId)) {
+      slots = slots.filter((s) => String(s.batchClassId ?? "") === batchClassId);
+    }
 
     return NextResponse.json({
       success: true,

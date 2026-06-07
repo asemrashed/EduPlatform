@@ -72,6 +72,7 @@ export async function buildQuestionBankFilter(
   const examParam = (searchParams.get("exam") || "").trim();
   const courseParam = (searchParams.get("course") || "").trim();
   const chapterParam = (searchParams.get("chapter") || "").trim();
+  const lessonParam = (searchParams.get("lesson") || "").trim();
 
   const filter: Record<string, unknown> = {};
 
@@ -104,7 +105,9 @@ export async function buildQuestionBankFilter(
 
   const hierarchyParts: Record<string, unknown>[] = [];
 
-  if (chapterParam && isObjectId(chapterParam)) {
+  if (lessonParam && isObjectId(lessonParam)) {
+    hierarchyParts.push({ lesson: toObjectId(lessonParam) });
+  } else if (chapterParam && isObjectId(chapterParam)) {
     const chapterIds = await resolveChapterIds(
       courseParam && isObjectId(courseParam) ? courseParam : null,
       chapterParam,

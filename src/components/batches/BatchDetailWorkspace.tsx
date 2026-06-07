@@ -14,7 +14,7 @@ import {
   type LiveClassRecord,
 } from '@/services/batchesService';
 import { BatchCalendar } from '@/components/batches/BatchCalendar';
-import { BatchClassesPanel } from '@/components/batches/BatchClassesPanel';
+import { BatchSubjectsPanel } from '@/components/batches/BatchSubjectsPanel';
 import { BatchRoutineWorkspace } from '@/components/batches/BatchRoutineWorkspace';
 import {
   BatchMarketingFormFields,
@@ -156,6 +156,8 @@ export function BatchDetailWorkspace({
   titlePrefix?: string;
 }) {
   const router = useRouter();
+  const subjectBasePath = `${listHref.replace(/\/$/, '')}/${batchId}/subjects`;
+  const studentSubjectBasePath = `/student/batches/${batchId}/subjects`;
   const [tab, setTab] = useState<TabId>('routine');
   const [batch, setBatch] = useState<BatchRecord | null>(null);
   const [canManage, setCanManage] = useState(false);
@@ -498,7 +500,7 @@ export function BatchDetailWorkspace({
 
   const tabs: { id: TabId; label: string }[] = [
     { id: 'routine', label: 'Class routine' },
-    { id: 'batchClasses', label: 'Classes' },
+    { id: 'batchClasses', label: 'Subjects' },
     { id: 'sessions', label: 'Live sessions' },
     { id: 'calendar', label: 'Calendar' },
     ...(canManage ? [{ id: 'attendance' as TabId, label: 'Attendance' }] : []),
@@ -644,7 +646,12 @@ export function BatchDetailWorkspace({
       )}
 
       {tab === 'batchClasses' && (
-        <BatchClassesPanel batchId={batchId} canManage={canManage} />
+        <BatchSubjectsPanel
+          batchId={batchId}
+          canManage={canManage}
+          subjectBasePath={subjectBasePath}
+          studentSubjectBasePath={studentSubjectBasePath}
+        />
       )}
 
       {tab === 'sessions' && (
