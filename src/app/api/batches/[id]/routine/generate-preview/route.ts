@@ -11,7 +11,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     await connectDB();
-    const auth = await requireSessionUser(["admin", "instructor"]);
+    const auth = await requireSessionUser(["admin"]);
     if (auth.error) return auth.error;
 
     const { id: batchId } = await context.params;

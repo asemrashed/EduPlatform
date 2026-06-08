@@ -10,7 +10,9 @@ import { LuKey, LuClock } from 'react-icons/lu';
 type AccessSummary = {
   hasActiveGrant: boolean;
   activeGrant?: { expiresAt?: string; grantedAt?: string } | null;
-  pendingRequest?: { _id: string; createdAt?: string } | null;
+  pendingRequest?: { _id: string; createdAt?: string; isPaid?: boolean } | null;
+  paidAccessEnabled?: boolean;
+  paidAccessFee?: number;
 };
 
 interface Props {
@@ -33,6 +35,23 @@ export default function PlatformInstructorAccessBanner({ onAccessChanged }: Prop
   useEffect(() => {
     load();
   }, [load]);
+
+  const payForAccess = async () => {
+    setError('');
+    setBusy(true);
+    try {
+      const res = await platformQuestionsService.payForAdminQbAccess();
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(json.error || 'Could not start payment');
+        return;
+      }
+      const url = json.data?.checkout_url;
+      if (url) window.location.href = url;
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const requestAccess = async () => {
     setError('');
@@ -104,9 +123,16 @@ export default function PlatformInstructorAccessBanner({ onAccessChanged }: Prop
         rows={2}
       />
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button size="sm" disabled={busy} onClick={requestAccess}>
-        Request access
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        {summary.paidAccessEnabled && summary.paidAccessFee ? (
+          <Button size="sm" disabled={busy} onClick={payForAccess}>
+            Pay ৳{summary.paidAccessFee} for instant access
+          </Button>
+        ) : null}
+        <Button size="sm" variant="outline" disabled={busy} onClick={requestAccess}>
+          Request free access (admin approval)
+        </Button>
+      </div>
     </Card>
   );
 }

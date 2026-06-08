@@ -8,11 +8,18 @@ import {
   resolveWorksheetBrowseCanDownload,
   VISIBLE_RESOURCE_WORKSHEET_FILTER,
 } from "@/app/api/_lib/resourceWorksheets";
+import {
+  resolveResourceCenterAccess,
+  summarizeResourceBrowseAccess,
+} from "@/app/api/_lib/resourceAccess";
 
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
     const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
+    const role = session?.user?.role;
+    const access = await resolveResourceCenterAccess(userId, role);
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search")?.trim();
@@ -35,8 +42,8 @@ export async function GET(request: NextRequest) {
     const worksheets = await Promise.all(
       rows.map(async (row) => {
         const canDownload = await resolveWorksheetBrowseCanDownload(
-          session?.user?.id,
-          session?.user?.role,
+          userId,
+          role,
           row as { accessPolicy?: string; subject?: string; batchId?: unknown },
         );
         return mapResourceWorksheet(row as Record<string, unknown>, {
@@ -51,6 +58,8 @@ export async function GET(request: NextRequest) {
       data: {
         worksheets,
         subjects: [...new Set(worksheets.map((w) => w.subject))].sort(),
+        access,
+        stats: summarizeResourceBrowseAccess(worksheets),
       },
     });
   } catch (error) {

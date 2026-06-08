@@ -98,7 +98,7 @@ export async function studentCanDownloadNote(
 export async function resolveBrowseCanDownload(
   userId: string | undefined,
   role: string | undefined,
-  note: { accessPolicy?: string; subject?: string },
+  note: { accessPolicy?: string; subject?: string; batchId?: unknown },
 ): Promise<boolean> {
   if (note.accessPolicy !== "batch") return true;
   if (role === "admin" || role === "instructor") return true;

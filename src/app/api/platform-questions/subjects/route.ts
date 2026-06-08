@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
+import connectDB from "@/lib/mongodb";
 import { requireSessionUser } from "@/app/api/_lib/phase12";
 import { getPlatformQuestionSubjects } from "@/app/api/_lib/platformQuestions";
 
 export async function GET() {
   try {
+    await connectDB();
     const auth = await requireSessionUser(["admin", "instructor"]);
     if (auth.error) return auth.error;
 

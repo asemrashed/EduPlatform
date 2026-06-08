@@ -36,6 +36,15 @@ export interface IPlatformQuestion extends Document {
   /** Public id from `POST /api/upload/pdf` when sourceType is pdf. */
   sourcePdfPublicId?: string;
   tags: string[];
+  /** Optional batch curriculum linkage (Phase 18+). */
+  batchId?: mongoose.Types.ObjectId;
+  batchClassId?: mongoose.Types.ObjectId;
+  subjectModuleId?: mongoose.Types.ObjectId;
+  subjectLessonId?: mongoose.Types.ObjectId;
+  /** Optional course curriculum linkage. */
+  courseId?: mongoose.Types.ObjectId;
+  chapterId?: mongoose.Types.ObjectId;
+  lessonId?: mongoose.Types.ObjectId;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -114,6 +123,13 @@ const PlatformQuestionSchema = new Schema<IPlatformQuestion>(
     sourceFileId: { type: Schema.Types.ObjectId },
     sourcePdfPublicId: { type: String, trim: true, index: true },
     tags: { type: [String], default: [] },
+    batchId: { type: Schema.Types.ObjectId, ref: "Batch", index: true },
+    batchClassId: { type: Schema.Types.ObjectId, ref: "BatchClass", index: true },
+    subjectModuleId: { type: Schema.Types.ObjectId, ref: "SubjectModule", index: true },
+    subjectLessonId: { type: Schema.Types.ObjectId, ref: "SubjectLesson", index: true },
+    courseId: { type: Schema.Types.ObjectId, ref: "Course", index: true },
+    chapterId: { type: Schema.Types.ObjectId, ref: "Chapter", index: true },
+    lessonId: { type: Schema.Types.ObjectId, ref: "Lesson", index: true },
     isActive: { type: Boolean, default: true, index: true },
   },
   { timestamps: true },

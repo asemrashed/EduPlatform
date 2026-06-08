@@ -25,8 +25,6 @@ import {
   LuPlus,
   LuSearch,
   LuBookOpen,
-  LuChevronRight,
-  LuChevronDown,
   LuPencil,
   LuTrash2,
   LuEye,
@@ -66,9 +64,10 @@ export default function CourseQuestionBankWorkspace({
 }: Props) {
   const [courses, setCourses] = useState<CourseNode[]>([]);
   const [chaptersByCourse, setChaptersByCourse] = useState<Record<string, ChapterNode[]>>({});
-  const [expandedCourses, setExpandedCourses] = useState<Set<string>>(new Set());
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
+  const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
+  const [lessonsByChapter, setLessonsByChapter] = useState<Record<string, { _id: string; title: string }[]>>({});
 
   const [questions, setQuestions] = useState<EnrichedQuestion[]>([]);
   const [exams, setExams] = useState<ExamNode[]>([]);
@@ -110,6 +109,7 @@ export default function CourseQuestionBankWorkspace({
     if (examFilter !== 'all') params.set('exam', examFilter);
     if (selectedCourseId) params.set('course', selectedCourseId);
     if (selectedChapterId) params.set('chapter', selectedChapterId);
+    if (selectedLessonId) params.set('lesson', selectedLessonId);
     return params.toString();
   }, [
     pagination.page,
@@ -121,6 +121,7 @@ export default function CourseQuestionBankWorkspace({
     examFilter,
     selectedCourseId,
     selectedChapterId,
+    selectedLessonId,
   ]);
 
   const statsQuery = useMemo(() => {
@@ -158,6 +159,21 @@ export default function CourseQuestionBankWorkspace({
       })),
     }));
   }, [chaptersByCourse]);
+
+  const loadLessons = useCallback(async (chapterId: string) => {
+    if (lessonsByChapter[chapterId]) return;
+    const res = await apiFetch(`/api/lessons?chapter=${chapterId}&limit=200&sortBy=order&sortOrder=asc`);
+    if (!res.ok) return;
+    const json = await res.json();
+    const list = json.data?.lessons || json.lessons || [];
+    setLessonsByChapter((prev) => ({
+      ...prev,
+      [chapterId]: list.map((l: { _id: string; title?: string }) => ({
+        _id: String(l._id),
+        title: String(l.title || 'Lesson'),
+      })),
+    }));
+  }, [lessonsByChapter]);
 
   const loadExams = useCallback(async () => {
     const res = await apiFetch('/api/exams?limit=200');
@@ -217,38 +233,25 @@ export default function CourseQuestionBankWorkspace({
     return exams.filter((e) => e.course === selectedCourseId || !e.course);
   }, [exams, selectedCourseId]);
 
-  const toggleCourse = async (courseId: string) => {
-    setExpandedCourses((prev) => {
-      const next = new Set(prev);
-      if (next.has(courseId)) next.delete(courseId);
-      else next.add(courseId);
-      return next;
-    });
-    await loadChapters(courseId);
-  };
-
   const scopeLabel = useMemo(() => {
     if (!selectedCourseId) return 'All courses';
-    const course = courses.find((c) => c._id === selectedCourseId);
-    if (!selectedChapterId) return course?.title || 'Course';
-    const chapters = chaptersByCourse[selectedCourseId] || [];
-    const chapter = chapters.find((ch) => ch._id === selectedChapterId);
-    return chapter ? `${course?.title} › ${chapter.title}` : course?.title || 'Course';
-  }, [courses, chaptersByCourse, selectedCourseId, selectedChapterId]);
+    return courses.find((c) => c._id === selectedCourseId)?.title || 'Course';
+  }, [courses, selectedCourseId]);
+
+  const chapterOptions = selectedCourseId
+    ? chaptersByCourse[selectedCourseId] || []
+    : [];
+  const lessonOptions = selectedChapterId
+    ? lessonsByChapter[selectedChapterId] || []
+    : [];
 
   const selectCourse = (courseId: string | null, closeMobileNav = false) => {
     setSelectedCourseId(courseId);
     setSelectedChapterId(null);
+    setSelectedLessonId(null);
     setPagination((p) => ({ ...p, page: 1 }));
     setExamFilter('all');
     if (courseId) void loadChapters(courseId);
-    if (closeMobileNav) setMobileNavOpen(false);
-  };
-
-  const selectChapter = (courseId: string, chapterId: string, closeMobileNav = false) => {
-    setSelectedCourseId(courseId);
-    setSelectedChapterId(chapterId);
-    setPagination((p) => ({ ...p, page: 1 }));
     if (closeMobileNav) setMobileNavOpen(false);
   };
 
@@ -307,48 +310,16 @@ export default function CourseQuestionBankWorkspace({
             : 'space-y-0.5'
         }
       >
-        {courses.map((course) => {
-          const open = expandedCourses.has(course._id);
-          const chapters = chaptersByCourse[course._id] || [];
-          return (
-            <div key={course._id}>
-              <div className="flex items-center gap-0.5">
-                <button
-                  type="button"
-                  className="rounded p-1 hover:bg-muted"
-                  onClick={() => toggleCourse(course._id)}
-                  aria-label="Expand chapters"
-                >
-                  {open ? <LuChevronDown size={14} /> : <LuChevronRight size={14} />}
-                </button>
-                <button
-                  type="button"
-                  className={`flex-1 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted ${selectedCourseId === course._id && !selectedChapterId ? 'bg-primary/10 font-medium' : ''}`}
-                  onClick={() => selectCourse(course._id, closeOnSelect)}
-                >
-                  {course.title}
-                </button>
-              </div>
-              {open && (
-                <div className="ml-5 border-l pl-2">
-                  {chapters.map((ch) => (
-                    <button
-                      key={ch._id}
-                      type="button"
-                      className={`mb-0.5 w-full rounded-md px-2 py-1 text-left text-xs hover:bg-muted ${selectedChapterId === ch._id ? 'bg-primary/10 font-medium' : 'text-muted-foreground'}`}
-                      onClick={() => selectChapter(course._id, ch._id, closeOnSelect)}
-                    >
-                      {ch.title}
-                    </button>
-                  ))}
-                  {!chapters.length && (
-                    <p className="px-2 py-1 text-xs text-muted-foreground">No chapters</p>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {courses.map((course) => (
+          <button
+            key={course._id}
+            type="button"
+            className={`w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted ${selectedCourseId === course._id ? 'bg-primary/10 font-medium' : ''}`}
+            onClick={() => selectCourse(course._id, closeOnSelect)}
+          >
+            {course.title}
+          </button>
+        ))}
       </div>
     </>
   );
@@ -420,6 +391,41 @@ export default function CourseQuestionBankWorkspace({
                 }}
               />
             </div>
+            <Select
+              value={selectedChapterId || 'all'}
+              onValueChange={(v) => {
+                const chapterId = v === 'all' ? null : v;
+                setSelectedChapterId(chapterId);
+                setSelectedLessonId(null);
+                setPagination((p) => ({ ...p, page: 1 }));
+                if (chapterId) void loadLessons(chapterId);
+              }}
+              disabled={!selectedCourseId}
+            >
+              <SelectTrigger className="w-[150px]"><SelectValue placeholder="Chapter" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All chapters</SelectItem>
+                {chapterOptions.map((ch) => (
+                  <SelectItem key={ch._id} value={ch._id}>{ch.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={selectedLessonId || 'all'}
+              onValueChange={(v) => {
+                setSelectedLessonId(v === 'all' ? null : v);
+                setPagination((p) => ({ ...p, page: 1 }));
+              }}
+              disabled={!selectedChapterId}
+            >
+              <SelectTrigger className="w-[150px]"><SelectValue placeholder="Lesson" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All lessons</SelectItem>
+                {lessonOptions.map((l) => (
+                  <SelectItem key={l._id} value={l._id}>{l.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v); setPagination((p) => ({ ...p, page: 1 })); }}>
               <SelectTrigger className="w-[120px]"><SelectValue placeholder="Type" /></SelectTrigger>
               <SelectContent>

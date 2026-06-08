@@ -1,5 +1,9 @@
 import { apiFetch } from "@/lib/api/httpClient";
 import type {
+  ResourceBrowseStats,
+  ResourceCenterAccess,
+} from "@/types/resourceAccess";
+import type {
   CreateResourceWorksheetDto,
   GenerateResourceWorksheetDto,
   ResourceWorksheetRow,
@@ -70,7 +74,12 @@ export const resourceWorksheetsService = {
     const res = await apiFetch(`/api/public/resource-worksheets${suffix}`);
     const json = (await res.json()) as {
       success?: boolean;
-      data?: { worksheets?: ResourceWorksheetRow[]; subjects?: string[] };
+      data?: {
+        worksheets?: ResourceWorksheetRow[];
+        subjects?: string[];
+        access?: ResourceCenterAccess;
+        stats?: ResourceBrowseStats;
+      };
       error?: string;
     };
     return { res, json };

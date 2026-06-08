@@ -34,6 +34,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
           enrolledCount: countMap.get(batchId) ?? 0,
         }),
         canManage: access.canManage,
+        canManageRoutine: access.canManageRoutine,
+        assignedSubjectIds: access.assignedSubjectIds ?? [],
       },
     });
   } catch (error) {
@@ -47,7 +49,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
-    const auth = await requireSessionUser(["admin", "instructor"]);
+    const auth = await requireSessionUser(["admin"]);
     if (auth.error) return auth.error;
 
     const { id } = await context.params;
@@ -110,7 +112,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
-    const auth = await requireSessionUser(["admin", "instructor"]);
+    const auth = await requireSessionUser(["admin"]);
     if (auth.error) return auth.error;
 
     const { id } = await context.params;

@@ -3,7 +3,7 @@ import Batch from "@/models/Batch";
 import {
   buildWeeklyRoutineFromSlots,
   countActivePaidEnrollmentsByBatchIds,
-  instructorBatchFilter,
+  instructorAccessibleBatchFilter,
   listRoutineSlotsForBatch,
   mapBatch,
   studentEnrolledBatchIds,
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const filter: Record<string, unknown> = {};
 
     if (auth.user.role === "instructor") {
-      Object.assign(filter, instructorBatchFilter(auth.user.id));
+      Object.assign(filter, await instructorAccessibleBatchFilter(auth.user.id));
     } else if (auth.user.role === "student") {
       const batchIds = await studentEnrolledBatchIds(auth.user.id);
       if (batchIds.length === 0) {

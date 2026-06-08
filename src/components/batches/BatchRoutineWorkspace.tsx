@@ -13,6 +13,7 @@ import {
   type GeneratedSessionPreview,
   type RoutineSlotRecord,
 } from '@/services/batchesService';
+import { BatchRoutineCalendar } from '@/components/batches/BatchRoutineCalendar';
 
 const DAY_SHORT = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
@@ -185,6 +186,8 @@ export function BatchRoutineWorkspace({
 
   return (
     <div className="space-y-6">
+      <BatchRoutineCalendar batchId={batchId} />
+
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
           <div>

@@ -18,7 +18,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ResourceBrowseSkeleton } from "@/components/resources/ResourceBrowseSkeleton";
+import { ResourceFreemiumBanner } from "@/components/resources/ResourceFreemiumBanner";
+import { ResourcePageContainer } from "@/components/resources/ResourcePageContainer";
 import { resourceNotesService } from "@/services/resourceNotesService";
+import { DEFAULT_RESOURCE_ACCESS } from "@/lib/resources/access";
+import type { ResourceCenterAccess } from "@/types/resourceAccess";
 import type { ResourceNoteRow } from "@/types/resourceNote";
 import { LuDownload, LuLock, LuSearch } from "react-icons/lu";
 
@@ -37,6 +42,8 @@ export function ResourceNotesBrowseClient({
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("all");
+  const [access, setAccess] = useState<ResourceCenterAccess>(DEFAULT_RESOURCE_ACCESS);
+  const [lockedCount, setLockedCount] = useState(0);
 
   const fetchNotes = useCallback(async () => {
     setLoading(true);
@@ -55,6 +62,8 @@ export function ResourceNotesBrowseClient({
       }
       setNotes(json.data?.notes ?? []);
       setSubjects(json.data?.subjects ?? []);
+      setAccess(json.data?.access ?? DEFAULT_RESOURCE_ACCESS);
+      setLockedCount(json.data?.stats?.locked ?? 0);
     } catch {
       setError("Could not load notes");
       setNotes([]);
@@ -78,8 +87,12 @@ export function ResourceNotesBrowseClient({
     return [...map.entries()];
   }, [notes]);
 
+  if (loading) {
+    return <ResourceBrowseSkeleton showPageHeader={showPageHeader} variant="list" />;
+  }
+
   return (
-    <div className={showPageHeader ? "mx-auto max-w-screen-2xl px-4 py-8 sm:px-8" : ""}>
+    <ResourcePageContainer withPadding={showPageHeader}>
       {showPageHeader ? (
         <header className="mb-6">
           <h1 className="font-[family-name:var(--font-headline)] text-2xl font-black tracking-tight text-foreground md:text-3xl">
@@ -90,6 +103,13 @@ export function ResourceNotesBrowseClient({
           </p>
         </header>
       ) : null}
+
+      <ResourceFreemiumBanner
+        access={access}
+        context={context}
+        variant="notes"
+        lockedCount={lockedCount}
+      />
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
@@ -122,9 +142,7 @@ export function ResourceNotesBrowseClient({
         </div>
       ) : null}
 
-      {loading ? (
-        <p className="text-sm text-muted-foreground">Loading notes...</p>
-      ) : grouped.length === 0 ? (
+      {grouped.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border px-6 py-12 text-center text-sm text-muted-foreground">
           No notes published yet.
         </div>
@@ -198,6 +216,6 @@ export function ResourceNotesBrowseClient({
           ))}
         </div>
       )}
-    </div>
+    </ResourcePageContainer>
   );
 }

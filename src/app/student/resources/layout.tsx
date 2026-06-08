@@ -7,7 +7,7 @@ export default function StudentResourcesLayout({
   children: ReactNode;
 }) {
   return (
-    <div className="mx-auto w-full max-w-screen-2xl px-4 py-6 sm:px-8">
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-8">
       <header className="mb-4">
         <h1 className="font-[family-name:var(--font-headline)] text-2xl font-black tracking-tight text-foreground md:text-3xl">
           Resources

@@ -1,5 +1,9 @@
 import { apiFetch } from "@/lib/api/httpClient";
 import type {
+  ResourceBrowseStats,
+  ResourceCenterAccess,
+} from "@/types/resourceAccess";
+import type {
   CreateResourceNoteDto,
   ResourceNoteRow,
   UpdateResourceNoteDto,
@@ -29,7 +33,12 @@ type NoteEnvelope = {
 
 type BrowseEnvelope = {
   success?: boolean;
-  data?: { notes?: ResourceNoteRow[]; subjects?: string[] };
+  data?: {
+    notes?: ResourceNoteRow[];
+    subjects?: string[];
+    access?: ResourceCenterAccess;
+    stats?: ResourceBrowseStats;
+  };
   error?: string;
 };
 

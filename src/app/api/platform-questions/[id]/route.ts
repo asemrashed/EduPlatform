@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import PlatformQuestion from "@/models/PlatformQuestion";
-import { isObjectId, requireSessionUser } from "@/app/api/_lib/phase12";
+import { isObjectId, requireSessionUser, toObjectId } from "@/app/api/_lib/phase12";
 import {
   canMutatePlatformQuestion,
   canViewPlatformQuestion,
@@ -73,14 +73,40 @@ export async function PUT(request: NextRequest, ctx: RouteCtx) {
       "isActive",
     ] as const;
 
+    const refFields = [
+      "batchId",
+      "batchClassId",
+      "subjectModuleId",
+      "subjectLessonId",
+      "courseId",
+      "chapterId",
+      "lessonId",
+    ] as const;
+
     for (const key of keys) {
       if (key in body) (q as Record<string, unknown>)[key] = body[key];
     }
 
-    if (auth.user.role === "admin" && "accessPolicy" in body) {
+    for (const key of refFields) {
+      if (key in body) {
+        const val = body[key];
+        if (val && isObjectId(String(val))) {
+          (q as Record<string, unknown>)[key] = toObjectId(String(val));
+        }
+      }
+    }
+
+    if ("accessPolicy" in body) {
       const policy = String(body.accessPolicy);
       if (["private", "shared_with_instructors", "public"].includes(policy)) {
-        q.accessPolicy = policy as typeof q.accessPolicy;
+        if (auth.user.role === "admin") {
+          q.accessPolicy = policy as typeof q.accessPolicy;
+        } else if (
+          String(q.ownerId) === auth.user.id &&
+          (policy === "public" || policy === "private")
+        ) {
+          q.accessPolicy = policy as typeof q.accessPolicy;
+        }
       }
     }
 

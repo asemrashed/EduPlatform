@@ -1,8 +1,9 @@
 import Payment from "@/models/Payment";
 import Enrollment from "@/models/Enrollment";
 import BatchEnrollment from "@/models/BatchEnrollment";
+import QBAccessRequest from "@/models/QBAccessRequest";
 
-export type PaymentEntityType = "course" | "batch";
+export type PaymentEntityType = "course" | "batch" | "qb_access";
 
 export type PaymentForFulfillment = {
   _id: unknown;
@@ -11,8 +12,22 @@ export type PaymentForFulfillment = {
   transactionId?: string;
   enrollment?: unknown;
   batchEnrollment?: unknown;
+  qbAccessRequest?: unknown;
   user?: unknown;
 };
+
+async function fulfillQbAccessPayment(payment: PaymentForFulfillment): Promise<void> {
+  if (!payment.qbAccessRequest) return;
+  const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+  await QBAccessRequest.findByIdAndUpdate(payment.qbAccessRequest, {
+    $set: {
+      status: "approved",
+      isPaid: true,
+      grantedAt: new Date(),
+      expiresAt,
+    },
+  });
+}
 
 export async function markPaymentFailed(
   paymentId: unknown,
@@ -41,6 +56,11 @@ export async function fulfillPaymentSuccess(
       gatewayResponse,
     },
   });
+
+  if (payment.entityType === "qb_access") {
+    await fulfillQbAccessPayment(payment);
+    return "fulfilled";
+  }
 
   const entityType =
     payment.entityType === "batch" ? "batch" : ("course" as const);

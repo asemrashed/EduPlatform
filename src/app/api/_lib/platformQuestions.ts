@@ -1,4 +1,8 @@
 import PlatformQuestion from "@/models/PlatformQuestion";
+import Batch from "@/models/Batch";
+import BatchClass from "@/models/BatchClass";
+import SubjectLesson from "@/models/SubjectLesson";
+import { instructorBatchFilter } from "@/app/api/_lib/batchAccess";
 import { buildInstructorPlatformQuestionScope } from "@/app/api/_lib/platformQuestionAccess";
 import type { SessionUser } from "@/app/api/_lib/phase12";
 import {
@@ -8,6 +12,10 @@ import {
   parsePage,
   toObjectId,
 } from "@/app/api/_lib/phase12";
+import {
+  isPlatformQuestionInTestYourself,
+  TEST_YOURSELF_VISIBLE_FILTER,
+} from "@/lib/resources/testYourself";
 
 export function serializePlatformQuestion(doc: Record<string, unknown>) {
   return {
@@ -18,6 +26,10 @@ export function serializePlatformQuestion(doc: Record<string, unknown>) {
     sourcePdfPublicId: doc.sourcePdfPublicId
       ? String(doc.sourcePdfPublicId)
       : undefined,
+    inTestYourself: isPlatformQuestionInTestYourself({
+      isActive: doc.isActive as boolean | undefined,
+      accessPolicy: doc.accessPolicy as string | undefined,
+    }),
   };
 }
 
@@ -43,6 +55,10 @@ export async function buildPlatformQuestionListFilter(
   const difficulty = (searchParams.get("difficulty") || "").trim();
   const status = (searchParams.get("status") || "").trim();
   const accessPolicy = (searchParams.get("accessPolicy") || "").trim();
+  const testYourself = (searchParams.get("testYourself") || "").trim();
+  const subjectModuleId = (searchParams.get("subjectModuleId") || "").trim();
+  const subjectLessonId = (searchParams.get("subjectLessonId") || "").trim();
+  const batchClassId = (searchParams.get("batchClassId") || "").trim();
 
   if (search) {
     const searchClause = {
@@ -72,6 +88,18 @@ export async function buildPlatformQuestionListFilter(
     ["private", "shared_with_instructors", "public"].includes(accessPolicy)
   ) {
     filter.accessPolicy = accessPolicy;
+  }
+  if (testYourself === "1" || testYourself === "true") {
+    Object.assign(filter, TEST_YOURSELF_VISIBLE_FILTER);
+  }
+  if (subjectModuleId && isObjectId(subjectModuleId)) {
+    filter.subjectModuleId = toObjectId(subjectModuleId);
+  }
+  if (subjectLessonId && isObjectId(subjectLessonId)) {
+    filter.subjectLessonId = toObjectId(subjectLessonId);
+  }
+  if (batchClassId && isObjectId(batchClassId)) {
+    filter.batchClassId = toObjectId(batchClassId);
   }
 
   return filter;
@@ -111,6 +139,68 @@ export async function listPlatformQuestions(
   };
 }
 
+type SubjectTopicEntry = {
+  topic: string;
+  count: number;
+  testYourselfCount: number;
+};
+
+async function mergeBatchCurriculumSubjects(
+  user: SessionUser,
+  subjectMap: Map<string, SubjectTopicEntry[]>,
+) {
+  const batchFilter: Record<string, unknown> = { isActive: { $ne: false } };
+  if (user.role === "instructor") {
+    Object.assign(batchFilter, instructorBatchFilter(user.id));
+  } else if (user.role !== "admin") {
+    return;
+  }
+
+  const batches = await Batch.find(batchFilter).select("_id").lean();
+  const batchIds = batches.map((b) => b._id);
+  if (!batchIds.length) return;
+
+  const classes = await BatchClass.find({
+    batchId: { $in: batchIds },
+    isActive: { $ne: false },
+  })
+    .select("title _id")
+    .lean();
+
+  if (!classes.length) return;
+
+  const classTitleById = new Map(
+    classes.map((c) => [String(c._id), String(c.title ?? "").trim()]),
+  );
+  const classIds = classes.map((c) => c._id);
+
+  const lessons = await SubjectLesson.find({
+    subjectId: { $in: classIds },
+  })
+    .select("title subjectId")
+    .lean();
+
+  const ensureTopic = (subject: string, topic: string) => {
+    if (!subject) return;
+    const list = subjectMap.get(subject) ?? [];
+    if (topic && !list.some((t) => t.topic === topic)) {
+      list.push({ topic, count: 0, testYourselfCount: 0 });
+    }
+    subjectMap.set(subject, list);
+  };
+
+  for (const bc of classes) {
+    const subject = String(bc.title ?? "").trim();
+    ensureTopic(subject, "");
+  }
+
+  for (const lesson of lessons) {
+    const subject = classTitleById.get(String(lesson.subjectId)) ?? "";
+    const topic = String(lesson.title ?? "").trim();
+    ensureTopic(subject, topic);
+  }
+}
+
 export async function getPlatformQuestionSubjects(user: SessionUser) {
   const scope = await buildPlatformQuestionScopeFilter(user);
   const rows = await PlatformQuestion.aggregate([
@@ -119,26 +209,91 @@ export async function getPlatformQuestionSubjects(user: SessionUser) {
       $group: {
         _id: { subject: "$subject", topic: "$topic" },
         count: { $sum: 1 },
+        testYourselfCount: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$accessPolicy", "public"] },
+                  { $ne: ["$isActive", false] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
       },
     },
     { $sort: { "_id.subject": 1, "_id.topic": 1 } },
   ]);
 
-  const subjectMap = new Map<string, { topic: string; count: number }[]>();
+  const subjectMap = new Map<string, SubjectTopicEntry[]>();
   for (const row of rows) {
     const subject = String(row._id?.subject || "").trim();
     const topic = String(row._id?.topic || "").trim();
     if (!subject) continue;
     const list = subjectMap.get(subject) || [];
-    if (topic) list.push({ topic, count: row.count as number });
+    if (topic) {
+      const existing = list.find((t) => t.topic === topic);
+      if (existing) {
+        existing.count += row.count as number;
+        existing.testYourselfCount += row.testYourselfCount as number;
+      } else {
+        list.push({
+          topic,
+          count: row.count as number,
+          testYourselfCount: row.testYourselfCount as number,
+        });
+      }
+    }
     subjectMap.set(subject, list);
   }
 
+  await mergeBatchCurriculumSubjects(user, subjectMap);
+
   return {
-    subjects: Array.from(subjectMap.entries()).map(([subject, topics]) => ({
-      subject,
-      topics,
-    })),
+    subjects: Array.from(subjectMap.entries())
+      .map(([subject, topics]) => ({
+        subject,
+        topics: topics
+          .filter((t) => t.topic)
+          .sort((a, b) => a.topic.localeCompare(b.topic)),
+      }))
+      .filter((node) => node.subject)
+      .sort((a, b) => a.subject.localeCompare(b.subject)),
+  };
+}
+
+export async function getPlatformQuestionTestYourselfSummary(user: SessionUser) {
+  const scope = await buildPlatformQuestionScopeFilter(user);
+  const filter = { ...scope, ...TEST_YOURSELF_VISIBLE_FILTER };
+
+  const [total, topicRows] = await Promise.all([
+    PlatformQuestion.countDocuments(filter),
+    PlatformQuestion.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: { subject: "$subject", topic: "$topic" },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { "_id.subject": 1, "_id.topic": 1 } },
+    ]),
+  ]);
+
+  const topics = topicRows.map((row) => ({
+    subject: String(row._id?.subject ?? "").trim(),
+    topic: String(row._id?.topic ?? "").trim(),
+    questionCount: row.count as number,
+  }));
+
+  return {
+    total,
+    topicCount: topics.length,
+    subjects: [...new Set(topics.map((t) => t.subject).filter(Boolean))].sort(),
+    topics,
   };
 }
 
@@ -206,6 +361,23 @@ export function parseCreatePlatformQuestionBody(
     : [];
   const isActive = body.isActive !== false;
 
+  const curriculumRefs: Record<string, unknown> = {};
+  const refFields = [
+    "batchId",
+    "batchClassId",
+    "subjectModuleId",
+    "subjectLessonId",
+    "courseId",
+    "chapterId",
+    "lessonId",
+  ] as const;
+  for (const key of refFields) {
+    const val = body[key];
+    if (val && isObjectId(String(val))) {
+      curriculumRefs[key] = toObjectId(String(val));
+    }
+  }
+
   let accessPolicy = String(body.accessPolicy || "private");
   if (
     !["private", "shared_with_instructors", "public"].includes(accessPolicy)
@@ -234,6 +406,7 @@ export function parseCreatePlatformQuestionBody(
     ownerId: toObjectId(user.id),
     sourceType: "manual" as const,
     aiGenerated: false,
+    ...curriculumRefs,
   };
 }
 

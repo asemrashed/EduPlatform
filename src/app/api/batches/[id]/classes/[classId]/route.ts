@@ -14,7 +14,7 @@ const INSTRUCTOR_SELECT = "fullName firstName lastName email role";
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     await connectDB();
-    const auth = await requireSessionUser(["admin", "instructor"]);
+    const auth = await requireSessionUser(["admin"]);
     if (auth.error) return auth.error;
 
     const { id: batchId, classId } = await context.params;
@@ -87,7 +87,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
     await connectDB();
-    const auth = await requireSessionUser(["admin", "instructor"]);
+    const auth = await requireSessionUser(["admin"]);
     if (auth.error) return auth.error;
 
     const { id: batchId, classId } = await context.params;

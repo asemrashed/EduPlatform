@@ -8,6 +8,10 @@ import {
   resolveBrowseCanDownload,
   VISIBLE_RESOURCE_NOTE_FILTER,
 } from "@/app/api/_lib/resourceNotes";
+import {
+  resolveResourceCenterAccess,
+  summarizeResourceBrowseAccess,
+} from "@/app/api/_lib/resourceAccess";
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,6 +20,7 @@ export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
     const role = session?.user?.role;
+    const access = await resolveResourceCenterAccess(userId, role);
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search")?.trim();
@@ -44,7 +49,7 @@ export async function GET(request: NextRequest) {
         const canDownload = await resolveBrowseCanDownload(
           userId,
           role,
-          row as { accessPolicy?: string; subject?: string },
+          row as { accessPolicy?: string; subject?: string; batchId?: unknown },
         );
         return mapResourceNote(row as Record<string, unknown>, {
           includePdf: false,
@@ -57,7 +62,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: { notes, subjects },
+      data: {
+        notes,
+        subjects,
+        access,
+        stats: summarizeResourceBrowseAccess(notes),
+      },
     });
   } catch (error) {
     console.error("Public resource notes error:", error);

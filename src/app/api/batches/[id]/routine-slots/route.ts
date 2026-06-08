@@ -31,6 +31,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
     if (batchClassId && isObjectId(batchClassId)) {
       slots = slots.filter((s) => String(s.batchClassId ?? "") === batchClassId);
     }
+    if (auth.user.role === "instructor") {
+      slots = slots.filter((s) => s.instructorId === auth.user.id);
+    }
 
     return NextResponse.json({
       success: true,
@@ -38,7 +41,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         batchId,
         slots,
         weekly: buildWeeklyRoutineFromSlots(slots),
-        canManage: access.canManage,
+        canManage: access.canManageRoutine,
       },
     });
   } catch (error) {
@@ -53,7 +56,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     await connectDB();
-    const auth = await requireSessionUser(["admin", "instructor"]);
+    const auth = await requireSessionUser(["admin"]);
     if (auth.error) return auth.error;
 
     const { id: batchId } = await context.params;

@@ -19,6 +19,7 @@ export default async function AdminBatchSubjectPage({
           batchId={id}
           subjectId={subjectId}
           backHref={`/admin/batches/${id}`}
+          allowLiveScheduling
         />
       </div>
     </AdminPageWrapper>

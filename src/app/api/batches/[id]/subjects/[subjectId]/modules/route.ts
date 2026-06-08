@@ -4,8 +4,9 @@ import BatchClass from "@/models/BatchClass";
 import SubjectModule from "@/models/SubjectModule";
 import SubjectLesson from "@/models/SubjectLesson";
 import {
-  requireBatchManageAccess,
+  canManageSubjectCurriculum,
   requireBatchViewAccess,
+  requireSubjectCurriculumManage,
 } from "@/app/api/_lib/batchAccess";
 import {
   mapSubjectLesson,
@@ -40,11 +41,16 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     const batchOid = toObjectId(batchId);
     const subjectOid = toObjectId(subjectId);
 
+    const canManageCurriculum = canManageSubjectCurriculum(
+      auth.user,
+      subjectRow as { instructorId?: unknown },
+    );
+
     const moduleFilter: Record<string, unknown> = {
       batchId: batchOid,
       subjectId: subjectOid,
     };
-    if (!access.canManage) {
+    if (!canManageCurriculum) {
       moduleFilter.isPublished = true;
     }
 
@@ -56,7 +62,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       batchId: batchOid,
       subjectId: subjectOid,
     };
-    if (!access.canManage) {
+    if (!canManageCurriculum) {
       lessonFilter.isPublished = true;
     }
 
@@ -86,7 +92,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       data: {
         subject: mapBatchClass(subjectRow as Record<string, unknown>),
         modules: curriculum,
-        canManage: access.canManage,
+        canManage: canManageCurriculum,
       },
     });
   } catch (error) {
@@ -105,7 +111,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     if (auth.error) return auth.error;
 
     const { id: batchId, subjectId } = await context.params;
-    const access = await requireBatchManageAccess(batchId, auth.user);
+    const access = await requireSubjectCurriculumManage(batchId, subjectId, auth.user);
     if (access.error) return access.error;
 
     const subjectResolved = await requireSubjectInBatch(batchId, subjectId);

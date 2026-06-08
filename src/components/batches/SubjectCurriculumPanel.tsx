@@ -79,10 +79,12 @@ function LessonFormFields({
   form,
   onChange,
   idPrefix,
+  allowLiveScheduling = false,
 }: {
   form: LessonFormState;
   onChange: (patch: Partial<LessonFormState>) => void;
   idPrefix: string;
+  allowLiveScheduling?: boolean;
 }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
@@ -103,20 +105,22 @@ function LessonFormFields({
           onChange={(e) => onChange({ description: e.target.value })}
         />
       </div>
-      <div>
-        <Label htmlFor={`${idPrefix}-type`}>Type</Label>
-        <select
-          id={`${idPrefix}-type`}
-          className="mt-1 flex h-9 w-full rounded-md border bg-background px-3 text-sm"
-          value={form.type}
-          onChange={(e) =>
-            onChange({ type: e.target.value as 'live' | 'recorded' })
-          }
-        >
-          <option value="recorded">Recorded</option>
-          <option value="live">Live class</option>
-        </select>
-      </div>
+      {allowLiveScheduling && (
+        <div>
+          <Label htmlFor={`${idPrefix}-type`}>Type</Label>
+          <select
+            id={`${idPrefix}-type`}
+            className="mt-1 flex h-9 w-full rounded-md border bg-background px-3 text-sm"
+            value={form.type}
+            onChange={(e) =>
+              onChange({ type: e.target.value as 'live' | 'recorded' })
+            }
+          >
+            <option value="recorded">Recorded</option>
+            <option value="live">Live class</option>
+          </select>
+        </div>
+      )}
       <div className="flex items-end gap-2 pb-1">
         <input
           id={`${idPrefix}-published`}
@@ -209,13 +213,16 @@ export function SubjectCurriculumPanel({
   batchId,
   subjectId,
   backHref,
+  allowLiveScheduling = false,
 }: {
   batchId: string;
   subjectId: string;
   backHref: string;
+  allowLiveScheduling?: boolean;
 }) {
   const [subject, setSubject] = useState<BatchClassRecord | null>(null);
   const [modules, setModules] = useState<SubjectModuleWithLessons[]>([]);
+  const [canManage, setCanManage] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
@@ -243,6 +250,7 @@ export function SubjectCurriculumPanel({
     if (res.success && res.data) {
       setSubject(res.data.subject);
       setModules(res.data.modules);
+      setCanManage(Boolean(res.data.canManage));
       setExpandedModules((prev) => {
         const next = new Set(prev);
         for (const mod of res.data!.modules) next.add(mod._id);
@@ -425,41 +433,45 @@ export function SubjectCurriculumPanel({
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Add module</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Modules group related class sessions (e.g. &quot;Chapter 1 — Mechanics&quot;).
-          </p>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2">
-          <div>
-            <Label>Module title</Label>
-            <Input
-              value={moduleForm.title}
-              onChange={(e) => setModuleForm((f) => ({ ...f, title: e.target.value }))}
-              placeholder="e.g. Module 1 — Introduction"
-            />
-          </div>
-          <div>
-            <Label>Description (optional)</Label>
-            <Input
-              value={moduleForm.description}
-              onChange={(e) =>
-                setModuleForm((f) => ({ ...f, description: e.target.value }))
-              }
-            />
-          </div>
-          <div>
-            <Button disabled={savingModule} onClick={handleAddModule}>
-              {savingModule ? 'Adding…' : 'Add module'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {canManage && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Add module</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Modules group related class sessions (e.g. &quot;Chapter 1 — Mechanics&quot;).
+            </p>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label>Module title</Label>
+              <Input
+                value={moduleForm.title}
+                onChange={(e) => setModuleForm((f) => ({ ...f, title: e.target.value }))}
+                placeholder="e.g. Module 1 — Introduction"
+              />
+            </div>
+            <div>
+              <Label>Description (optional)</Label>
+              <Input
+                value={moduleForm.description}
+                onChange={(e) =>
+                  setModuleForm((f) => ({ ...f, description: e.target.value }))
+                }
+              />
+            </div>
+            <div>
+              <Button disabled={savingModule} onClick={handleAddModule}>
+                {savingModule ? 'Adding…' : 'Add module'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {modules.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No modules yet. Add one above.</p>
+        <p className="text-sm text-muted-foreground">
+          {canManage ? 'No modules yet. Add one above.' : 'No curriculum published yet.'}
+        </p>
       ) : (
         <div className="space-y-4">
           {modules.map((mod) => {
@@ -549,23 +561,25 @@ export function SubjectCurriculumPanel({
                           ({mod.lessons.length} lesson{mod.lessons.length === 1 ? '' : 's'})
                         </span>
                       </button>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => startEditModule(mod)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive"
-                          onClick={() => handleDeleteModule(mod._id, mod.title)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      {canManage && (
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => startEditModule(mod)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive"
+                            onClick={() => handleDeleteModule(mod._id, mod.title)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                   {!isEditingModule && mod.description && (
@@ -588,6 +602,7 @@ export function SubjectCurriculumPanel({
                                   <LessonFormFields
                                     idPrefix={`edit-${lesson._id}`}
                                     form={editLessonForm}
+                                    allowLiveScheduling={allowLiveScheduling}
                                     onChange={(patch) =>
                                       setEditLessonForm((f) => ({ ...f, ...patch }))
                                     }
@@ -639,23 +654,25 @@ export function SubjectCurriculumPanel({
                                       </p>
                                     </div>
                                   </div>
-                                  <div className="flex gap-1">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => startEditLesson(lesson)}
-                                    >
-                                      <Pencil className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="text-destructive"
-                                      onClick={() => handleDeleteLesson(lesson)}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
+                                  {canManage && (
+                                    <div className="flex gap-1">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => startEditLesson(lesson)}
+                                      >
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-destructive"
+                                        onClick={() => handleDeleteLesson(lesson)}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </li>
@@ -664,24 +681,27 @@ export function SubjectCurriculumPanel({
                       </ul>
                     )}
 
-                    <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
-                      <p className="text-sm font-medium flex items-center gap-1">
-                        <Plus className="h-4 w-4" /> Add lesson
-                      </p>
-                      <LessonFormFields
-                        idPrefix={`add-${mod._id}`}
-                        form={form}
-                        onChange={(patch) => setLessonForm(mod._id, patch)}
-                      />
-                      <div>
-                        <Button
-                          disabled={savingLesson === mod._id}
-                          onClick={() => handleAddLesson(mod._id)}
-                        >
-                          {savingLesson === mod._id ? 'Adding…' : 'Add lesson'}
-                        </Button>
+                    {canManage && (
+                      <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                        <p className="text-sm font-medium flex items-center gap-1">
+                          <Plus className="h-4 w-4" /> Add lesson
+                        </p>
+                        <LessonFormFields
+                          idPrefix={`add-${mod._id}`}
+                          form={form}
+                          allowLiveScheduling={allowLiveScheduling}
+                          onChange={(patch) => setLessonForm(mod._id, patch)}
+                        />
+                        <div>
+                          <Button
+                            disabled={savingLesson === mod._id}
+                            onClick={() => handleAddLesson(mod._id)}
+                          >
+                            {savingLesson === mod._id ? 'Adding…' : 'Add lesson'}
+                          </Button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </CardContent>
                 )}
               </Card>

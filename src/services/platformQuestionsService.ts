@@ -28,6 +28,13 @@ export type PlatformQuestionPayload = {
   accessPolicy?: "private" | "shared_with_instructors" | "public";
   tags?: string[];
   isActive?: boolean;
+  batchId?: string;
+  batchClassId?: string;
+  subjectModuleId?: string;
+  subjectLessonId?: string;
+  courseId?: string;
+  chapterId?: string;
+  lessonId?: string;
 };
 
 export const platformQuestionsService = {
@@ -37,6 +44,21 @@ export const platformQuestionsService = {
 
   subjects() {
     return apiFetch("/api/platform-questions/subjects");
+  },
+
+  testYourselfSummary() {
+    return apiFetch("/api/platform-questions/test-yourself-summary");
+  },
+
+  curriculumOptions(subject: string) {
+    const params = new URLSearchParams({ subject });
+    return apiFetch(`/api/platform-questions/curriculum-options?${params}`);
+  },
+
+  payForAdminQbAccess() {
+    return apiFetch("/api/platform-questions/access-requests/pay", {
+      method: "POST",
+    });
   },
 
   get(id: string) {

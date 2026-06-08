@@ -14,7 +14,11 @@ export default async function InstructorBatchDetailPage({
   const { id } = await params;
   return (
     <InstructorRoleShell>
-      <BatchDetailWorkspace batchId={id} listHref="/instructor/batches" />
+      <BatchDetailWorkspace
+        batchId={id}
+        listHref="/instructor/batches"
+        workspaceRole="instructor"
+      />
     </InstructorRoleShell>
   );
 }

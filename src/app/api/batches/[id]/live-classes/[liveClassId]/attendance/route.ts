@@ -21,7 +21,7 @@ async function getLiveClassInBatch(batchId: string, liveClassId: string) {
 /** GET — roster with attendance for a live class (instructor/admin). */
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
-    const auth = await requireSessionUser(["admin", "instructor"]);
+    const auth = await requireSessionUser(["admin"]);
     if (auth.error) return auth.error;
 
     const { id: batchId, liveClassId } = await context.params;
@@ -101,7 +101,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 /** PUT — bulk mark present/absent for enrolled students. */
 export async function PUT(request: NextRequest, context: RouteContext) {
   try {
-    const auth = await requireSessionUser(["admin", "instructor"]);
+    const auth = await requireSessionUser(["admin"]);
     if (auth.error) return auth.error;
 
     const { id: batchId, liveClassId } = await context.params;

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Batch, { type IBatchScheduleSlot } from "@/models/Batch";
+import BatchClass from "@/models/BatchClass";
 import BatchEnrollment from "@/models/BatchEnrollment";
 import RoutineSlot from "@/models/RoutineSlot";
 import { ensureMongooseModelsRegistered } from "@/lib/registerMongooseModels";
@@ -136,6 +137,11 @@ export function mapBatch(
   };
 }
 
+export function isBatchAdmin(user: SessionUser) {
+  return user.role === "admin";
+}
+
+/** @deprecated Batch-level instructors no longer receive manage rights; use isBatchAdmin */
 export function canManageBatch(
   user: SessionUser,
   batch: { instructorIds?: unknown[]; instructorId?: unknown },
@@ -145,6 +151,73 @@ export function canManageBatch(
     return batchHasInstructor(batch, user.id);
   }
   return false;
+}
+
+export async function instructorHasSubjectInBatch(batchId: string, userId: string) {
+  const count = await BatchClass.countDocuments({
+    batchId: toObjectId(batchId),
+    instructorId: toObjectId(userId),
+    isActive: { $ne: false },
+  });
+  return count > 0;
+}
+
+export async function assignedSubjectIdsInBatch(batchId: string, userId: string) {
+  const rows = await BatchClass.find({
+    batchId: toObjectId(batchId),
+    instructorId: toObjectId(userId),
+    isActive: { $ne: false },
+  })
+    .select("_id")
+    .lean();
+  return rows.map((r) => String(r._id));
+}
+
+export function canManageSubjectCurriculum(
+  user: SessionUser,
+  subject: { instructorId?: unknown },
+) {
+  if (user.role === "admin") return true;
+  if (user.role === "instructor") {
+    return String(subject.instructorId ?? "") === user.id;
+  }
+  return false;
+}
+
+export async function requireSubjectCurriculumManage(
+  batchId: string,
+  subjectId: string,
+  user: SessionUser,
+) {
+  const view = await requireBatchViewAccess(batchId, user);
+  if (view.error) return view;
+
+  const subject = await BatchClass.findOne({
+    _id: toObjectId(subjectId),
+    batchId: toObjectId(batchId),
+    isActive: { $ne: false },
+  }).lean();
+
+  if (!subject) {
+    return {
+      error: NextResponse.json(
+        { success: false, error: "Subject not found" },
+        { status: 404 },
+      ),
+      batch: null,
+      subject: null,
+    };
+  }
+
+  if (!canManageSubjectCurriculum(user, subject)) {
+    return {
+      error: NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 }),
+      batch: null,
+      subject: null,
+    };
+  }
+
+  return { error: null, batch: view.batch, subject };
 }
 
 export async function hasActiveBatchEnrollment(batchId: string, studentId: string) {
@@ -189,14 +262,44 @@ export async function requireBatchViewAccess(batchId: string, user: SessionUser)
   if (resolved.error) return resolved;
 
   const batch = resolved.batch!;
-  if (canManageBatch(user, batch)) {
-    return { error: null, batch, canManage: true };
+
+  if (user.role === "admin") {
+    return {
+      error: null,
+      batch,
+      canManage: true,
+      canManageRoutine: true,
+      assignedSubjectIds: [] as string[],
+    };
+  }
+
+  if (user.role === "instructor") {
+    const batchInstructor = batchHasInstructor(batch, user.id);
+    const subjectInstructor = await instructorHasSubjectInBatch(batchId, user.id);
+    if (batchInstructor || subjectInstructor) {
+      const assignedSubjectIds = subjectInstructor
+        ? await assignedSubjectIdsInBatch(batchId, user.id)
+        : [];
+      return {
+        error: null,
+        batch,
+        canManage: false,
+        canManageRoutine: false,
+        assignedSubjectIds,
+      };
+    }
   }
 
   if (user.role === "student") {
     const enrolled = await hasActiveBatchEnrollment(batchId, user.id);
     if (enrolled) {
-      return { error: null, batch, canManage: false };
+      return {
+        error: null,
+        batch,
+        canManage: false,
+        canManageRoutine: false,
+        assignedSubjectIds: [] as string[],
+      };
     }
   }
 
@@ -204,13 +307,16 @@ export async function requireBatchViewAccess(batchId: string, user: SessionUser)
     error: NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 }),
     batch: null,
     canManage: false,
+    canManageRoutine: false,
+    assignedSubjectIds: [] as string[],
   };
 }
 
+/** Admin-only batch mutations (settings, subjects, live classes, attendance, routine). */
 export async function requireBatchManageAccess(batchId: string, user: SessionUser) {
   const resolved = await requireBatchViewAccess(batchId, user);
   if (resolved.error) return resolved;
-  if (!resolved.canManage) {
+  if (!isBatchAdmin(user)) {
     return {
       error: NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 }),
       batch: null,
@@ -223,6 +329,18 @@ export function instructorBatchFilter(userId: string) {
   const oid = toObjectId(userId);
   return {
     $or: [{ instructorId: oid }, { instructorIds: oid }],
+  };
+}
+
+export async function instructorAccessibleBatchFilter(userId: string) {
+  const base = instructorBatchFilter(userId);
+  const subjectBatchIds = await BatchClass.distinct("batchId", {
+    instructorId: toObjectId(userId),
+    isActive: { $ne: false },
+  });
+  if (subjectBatchIds.length === 0) return base;
+  return {
+    $or: [...(base.$or as object[]), { _id: { $in: subjectBatchIds } }],
   };
 }
 

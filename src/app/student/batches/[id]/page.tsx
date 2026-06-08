@@ -16,6 +16,7 @@ export default async function StudentBatchDetailPage({
       batchId={id}
       listHref="/student/batches"
       titlePrefix="My batch"
+      workspaceRole="student"
     />
   );
 }

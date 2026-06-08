@@ -14,7 +14,11 @@ export default async function AdminBatchDetailPage({
   const { id } = await params;
   return (
     <AdminPageWrapper>
-      <BatchDetailWorkspace batchId={id} listHref="/admin/batches" />
+      <BatchDetailWorkspace
+        batchId={id}
+        listHref="/admin/batches"
+        workspaceRole="admin"
+      />
     </AdminPageWrapper>
   );
 }

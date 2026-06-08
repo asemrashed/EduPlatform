@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const payment = await Payment.findOne({ transactionId }).select(
-      "_id user entityType course enrollment batchId batchEnrollment status gatewayOrderId transactionId amount createdAt",
+      "_id user entityType course enrollment batchId batchEnrollment qbAccessRequest status gatewayOrderId transactionId amount createdAt",
     );
 
     if (!payment) {
@@ -69,6 +69,56 @@ export async function POST(request: NextRequest) {
         { success: false, error: "Forbidden" },
         { status: 403 },
       );
+    }
+
+    if (payment.entityType === "qb_access") {
+      if (payment.status === "success") {
+        return NextResponse.json({
+          success: true,
+          data: {
+            status: "success",
+            entityType: "qb_access",
+            transactionId: payment.transactionId,
+            amount: String(payment.amount),
+            currency: "BDT",
+          },
+        });
+      }
+
+      const gatewayOrderId =
+        typeof payment.gatewayOrderId === "string" && payment.gatewayOrderId.trim()
+          ? payment.gatewayOrderId
+          : payment.transactionId;
+
+      const verificationResult = await verifyPayment(gatewayOrderId);
+      const record = getValidationRecord(verificationResult.raw);
+      const validatedTranId = getValidationTranId(record);
+      const validatedAmount = getValidationAmount(record);
+      const tranIdMatches =
+        validatedTranId !== "" && validatedTranId === gatewayOrderId;
+      const amountMatches =
+        Number.isFinite(validatedAmount) &&
+        amountsMatch(validatedAmount, Number(payment.amount));
+
+      if (verificationResult.success && tranIdMatches && amountMatches) {
+        await fulfillPaymentSuccess(payment, verificationResult.raw);
+        return NextResponse.json({
+          success: true,
+          data: {
+            status: "success",
+            entityType: "qb_access",
+            transactionId: payment.transactionId,
+            amount: String(payment.amount),
+            currency: "BDT",
+          },
+        });
+      }
+
+      await markPaymentFailed(payment._id, verificationResult.raw);
+      return NextResponse.json({
+        success: false,
+        error: "Payment validation failed",
+      });
     }
 
     const entityType = payment.entityType === "batch" ? "batch" : "course";

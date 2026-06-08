@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,9 +13,9 @@ import {
   type BatchScheduleSlot,
   type LiveClassRecord,
 } from '@/services/batchesService';
-import { BatchCalendar } from '@/components/batches/BatchCalendar';
 import { BatchSubjectsPanel } from '@/components/batches/BatchSubjectsPanel';
 import { BatchRoutineWorkspace } from '@/components/batches/BatchRoutineWorkspace';
+import { BatchInstructorCurriculumPanel } from '@/components/batches/BatchInstructorCurriculumPanel';
 import {
   BatchMarketingFormFields,
   type BatchMarketingFormState,
@@ -30,7 +30,6 @@ import {
 import {
   LuArrowLeft as ArrowLeft,
   LuExternalLink as ExternalLink,
-  LuCalendar as Calendar,
   LuPencil as Pencil,
   LuTrash2 as Trash2,
 } from 'react-icons/lu';
@@ -38,10 +37,12 @@ import {
 type TabId =
   | 'routine'
   | 'batchClasses'
+  | 'curriculum'
   | 'sessions'
-  | 'calendar'
   | 'attendance'
   | 'settings';
+
+type WorkspaceRole = 'admin' | 'instructor' | 'student';
 
 type WeeklyDay = {
   dayOfWeek: number;
@@ -150,17 +151,23 @@ export function BatchDetailWorkspace({
   batchId,
   listHref,
   titlePrefix = 'Batch',
+  workspaceRole = 'admin',
 }: {
   batchId: string;
   listHref: string;
   titlePrefix?: string;
+  workspaceRole?: WorkspaceRole;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const subjectBasePath = `${listHref.replace(/\/$/, '')}/${batchId}/subjects`;
   const studentSubjectBasePath = `/student/batches/${batchId}/subjects`;
-  const [tab, setTab] = useState<TabId>('routine');
+  const initialTab = (searchParams.get('tab') as TabId | null) ?? 'routine';
+  const [tab, setTab] = useState<TabId>(initialTab);
   const [batch, setBatch] = useState<BatchRecord | null>(null);
   const [canManage, setCanManage] = useState(false);
+  const [canManageRoutine, setCanManageRoutine] = useState(false);
+  const [assignedSubjectIds, setAssignedSubjectIds] = useState<string[]>([]);
   const [weekly, setWeekly] = useState<WeeklyDay[]>([]);
   const [scheduleDraft, setScheduleDraft] = useState<BatchScheduleSlot[]>([]);
   const [liveClasses, setLiveClasses] = useState<LiveClassRecord[]>([]);
@@ -258,6 +265,8 @@ export function BatchDetailWorkspace({
 
       setBatch(detail.data.batch);
       setCanManage(detail.data.canManage);
+      setCanManageRoutine(Boolean(detail.data.canManageRoutine ?? detail.data.canManage));
+      setAssignedSubjectIds(detail.data.assignedSubjectIds ?? []);
       syncBatchForm(detail.data.batch);
 
       if (routine.success && routine.data) {
@@ -500,9 +509,16 @@ export function BatchDetailWorkspace({
 
   const tabs: { id: TabId; label: string }[] = [
     { id: 'routine', label: 'Class routine' },
-    { id: 'batchClasses', label: 'Subjects' },
+    ...(workspaceRole === 'admin'
+      ? [{ id: 'batchClasses' as TabId, label: 'Subjects' }]
+      : []),
+    ...(workspaceRole === 'instructor'
+      ? [{ id: 'curriculum' as TabId, label: 'My curriculum' }]
+      : []),
+    ...(workspaceRole === 'student'
+      ? [{ id: 'batchClasses' as TabId, label: 'Subjects' }]
+      : []),
     { id: 'sessions', label: 'Live sessions' },
-    { id: 'calendar', label: 'Calendar' },
     ...(canManage ? [{ id: 'attendance' as TabId, label: 'Attendance' }] : []),
     ...(canManage ? [{ id: 'settings' as TabId, label: 'Settings' }] : []),
   ];
@@ -641,7 +657,7 @@ export function BatchDetailWorkspace({
           batchId={batchId}
           batchStartDate={batch.startDate}
           batchEndDate={batch.endDate}
-          canManage={canManage}
+          canManage={canManageRoutine}
         />
       )}
 
@@ -651,6 +667,14 @@ export function BatchDetailWorkspace({
           canManage={canManage}
           subjectBasePath={subjectBasePath}
           studentSubjectBasePath={studentSubjectBasePath}
+        />
+      )}
+
+      {tab === 'curriculum' && workspaceRole === 'instructor' && (
+        <BatchInstructorCurriculumPanel
+          batchId={batchId}
+          backHref={listHref.replace(/\/$/, '') + `/${batchId}`}
+          assignedSubjectIds={assignedSubjectIds}
         />
       )}
 
@@ -761,8 +785,6 @@ export function BatchDetailWorkspace({
           </div>
         </div>
       )}
-
-      {tab === 'calendar' && <BatchCalendar batchId={batchId} />}
 
       {tab === 'attendance' && canManage && (
         <div className="space-y-4">

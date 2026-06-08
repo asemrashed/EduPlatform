@@ -109,7 +109,12 @@ export const batchesService = {
     const res = await fetch(`/api/batches/${id}`);
     return parseJson<{
       success: boolean;
-      data?: { batch: BatchRecord; canManage: boolean };
+      data?: {
+        batch: BatchRecord;
+        canManage: boolean;
+        canManageRoutine?: boolean;
+        assignedSubjectIds?: string[];
+      };
       error?: string;
     }>(res);
   },

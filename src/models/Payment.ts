@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from "mongoose";
 
-export type PaymentEntityType = "course" | "batch";
+export type PaymentEntityType = "course" | "batch" | "qb_access";
 
 export interface IPayment extends Document {
   user: mongoose.Types.ObjectId;
@@ -9,6 +9,7 @@ export interface IPayment extends Document {
   enrollment?: mongoose.Types.ObjectId;
   batchId?: mongoose.Types.ObjectId;
   batchEnrollment?: mongoose.Types.ObjectId;
+  qbAccessRequest?: mongoose.Types.ObjectId;
   amount: number;
   transactionId: string;
   gateway: "sslcommerz";
@@ -28,7 +29,7 @@ const PaymentSchema = new Schema<IPayment>(
     },
     entityType: {
       type: String,
-      enum: ["course", "batch"],
+      enum: ["course", "batch", "qb_access"],
       default: "course",
       required: true,
       index: true,
@@ -48,6 +49,11 @@ const PaymentSchema = new Schema<IPayment>(
     batchEnrollment: {
       type: Schema.Types.ObjectId,
       ref: "BatchEnrollment",
+    },
+    qbAccessRequest: {
+      type: Schema.Types.ObjectId,
+      ref: "QBAccessRequest",
+      index: true,
     },
     amount: {
       type: Number,

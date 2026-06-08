@@ -1,4 +1,8 @@
 import QBAccessRequest from "@/models/QBAccessRequest";
+import {
+  PLATFORM_QB_ACCESS_FEE,
+  isPlatformQbPaidAccessEnabled,
+} from "@/lib/platformQbAccess";
 import type { SessionUser } from "@/app/api/_lib/phase12";
 import {
   isObjectId,
@@ -105,6 +109,8 @@ export async function getInstructorAccessSummary(requesterId: string) {
     pendingRequest: latestPending
       ? serializeAccessRequest(latestPending as Record<string, unknown>)
       : null,
+    paidAccessEnabled: isPlatformQbPaidAccessEnabled(),
+    paidAccessFee: PLATFORM_QB_ACCESS_FEE,
   };
 }
 

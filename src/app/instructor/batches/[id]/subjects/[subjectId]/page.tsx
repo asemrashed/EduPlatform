@@ -1,23 +1,10 @@
-import type { Metadata } from "next";
-import { SubjectCurriculumPanel } from "@/components/batches/SubjectCurriculumPanel";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Subject curriculum",
-};
-
-export default async function InstructorBatchSubjectPage({
+export default async function InstructorBatchSubjectRedirect({
   params,
 }: {
-  params: Promise<{ id: string; subjectId: string }>;
+  params: Promise<{ id: string }>;
 }) {
-  const { id, subjectId } = await params;
-  return (
-    <div className="p-4 md:p-6">
-      <SubjectCurriculumPanel
-        batchId={id}
-        subjectId={subjectId}
-        backHref={`/instructor/batches/${id}`}
-      />
-    </div>
-  );
+  const { id } = await params;
+  redirect(`/instructor/batches/${id}?tab=curriculum`);
 }

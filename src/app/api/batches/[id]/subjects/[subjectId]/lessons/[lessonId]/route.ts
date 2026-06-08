@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import SubjectLesson from "@/models/SubjectLesson";
-import { requireBatchManageAccess } from "@/app/api/_lib/batchAccess";
+import { requireSubjectCurriculumManage } from "@/app/api/_lib/batchAccess";
 import { mapSubjectLesson } from "@/app/api/_lib/mapSubjectCurriculum";
 import { requireSubjectInBatch } from "@/app/api/_lib/subjectAccess";
 import { extractYoutubeVideoId } from "@/lib/youtube";
@@ -18,7 +18,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     if (auth.error) return auth.error;
 
     const { id: batchId, subjectId, lessonId } = await context.params;
-    const access = await requireBatchManageAccess(batchId, auth.user);
+    const access = await requireSubjectCurriculumManage(batchId, subjectId, auth.user);
     if (access.error) return access.error;
 
     const subjectResolved = await requireSubjectInBatch(batchId, subjectId);
@@ -41,34 +41,36 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     if (typeof body.order === "number" && body.order > 0) updates.order = body.order;
     if (typeof body.isPublished === "boolean") updates.isPublished = body.isPublished;
 
-    if (body.type === "live" || body.type === "recorded") {
+    if (auth.user.role === "admin" && (body.type === "live" || body.type === "recorded")) {
       updates.type = body.type;
     }
 
-    if (typeof body.scheduledAt === "string") {
-      if (!body.scheduledAt.trim()) {
-        updates.scheduledAt = undefined;
-      } else {
-        const d = new Date(body.scheduledAt);
-        if (Number.isNaN(d.getTime())) {
-          return NextResponse.json(
-            { success: false, error: "Invalid scheduledAt" },
-            { status: 400 },
-          );
+    if (auth.user.role === "admin") {
+      if (typeof body.scheduledAt === "string") {
+        if (!body.scheduledAt.trim()) {
+          updates.scheduledAt = undefined;
+        } else {
+          const d = new Date(body.scheduledAt);
+          if (Number.isNaN(d.getTime())) {
+            return NextResponse.json(
+              { success: false, error: "Invalid scheduledAt" },
+              { status: 400 },
+            );
+          }
+          updates.scheduledAt = d;
         }
-        updates.scheduledAt = d;
       }
-    }
 
-    if (body.durationMinutes !== undefined) {
-      updates.durationMinutes =
-        body.durationMinutes != null
-          ? Math.max(1, Number(body.durationMinutes))
-          : undefined;
-    }
+      if (body.durationMinutes !== undefined) {
+        updates.durationMinutes =
+          body.durationMinutes != null
+            ? Math.max(1, Number(body.durationMinutes))
+            : undefined;
+      }
 
-    if (typeof body.meetLink === "string") {
-      updates.meetLink = body.meetLink.trim() || undefined;
+      if (typeof body.meetLink === "string") {
+        updates.meetLink = body.meetLink.trim() || undefined;
+      }
     }
     if (typeof body.recordingUrl === "string") {
       updates.recordingUrl = body.recordingUrl.trim() || undefined;
@@ -118,7 +120,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     if (auth.error) return auth.error;
 
     const { id: batchId, subjectId, lessonId } = await context.params;
-    const access = await requireBatchManageAccess(batchId, auth.user);
+    const access = await requireSubjectCurriculumManage(batchId, subjectId, auth.user);
     if (access.error) return access.error;
 
     const subjectResolved = await requireSubjectInBatch(batchId, subjectId);

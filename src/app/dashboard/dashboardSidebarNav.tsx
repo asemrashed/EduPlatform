@@ -4,6 +4,7 @@ import {
   LuCalendar as Calendar,
   LuBookmark,
   LuChartBar,
+  LuClipboardCheck,
   LuClipboardList,
   LuClock,
   LuDatabase,
@@ -90,19 +91,30 @@ const instructorNav: SidebarNavCategory[] = [
     ],
   },
   {
+    category: "Resources",
+    items: [
+      { icon: LuLibrary, label: "Notes", href: "/instructor/resources/notes", badge: null },
+      {
+        icon: LuClipboardList,
+        label: "Worksheets",
+        href: "/instructor/resources/worksheets",
+        badge: null,
+      },
+      {
+        icon: LuClipboardCheck,
+        label: "Test Yourself",
+        href: "/instructor/resources/test-yourself",
+        badge: null,
+      },
+    ],
+  },
+  {
     category: "Teaching",
     items: [
       { icon: BookOpen, label: "My Courses", href: "/instructor/courses", badge: null },
       { icon: Users, label: "Students", href: "/instructor/students", badge: null },
       { icon: LuClipboardList, label: "Assignments", href: "/instructor/assignments", badge: "3" },
       { icon: LuBookmark, label: "Past Papers", href: "/instructor/past-papers", badge: null },
-      { icon: LuLibrary, label: "Resource Notes", href: "/instructor/resources/notes", badge: null },
-      {
-        icon: LuClipboardList,
-        label: "Resource Worksheets",
-        href: "/instructor/resources/worksheets",
-        badge: null,
-      },
       { icon: LuFileText, label: "Question Bank", href: "/instructor/question-bank", badge: null },
       { icon: LuDatabase, label: "Platform Question Bank", href: "/instructor/platform-question-bank", badge: null },
       { icon: LuFileText, label: "Exams", href: "/instructor/exams", badge: null },
@@ -138,6 +150,12 @@ const adminNav: SidebarNavCategory[] = [
         icon: LuClipboardList,
         label: "Worksheets",
         href: "/admin/resources/worksheets",
+        badge: null,
+      },
+      {
+        icon: LuClipboardCheck,
+        label: "Test Yourself",
+        href: "/admin/resources/test-yourself",
         badge: null,
       },
     ],

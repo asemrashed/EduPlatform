@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -24,19 +25,19 @@ import {
   LuPlus,
   LuSparkles,
   LuSearch,
-  LuChevronRight,
-  LuChevronDown,
   LuPencil,
   LuTrash2,
   LuLayers,
   LuUsers,
+  LuExternalLink,
+  LuClipboardCheck,
 } from 'react-icons/lu';
 
 type BankRole = 'admin' | 'instructor';
 
 type SubjectNode = {
   subject: string;
-  topics: { topic: string; count: number }[];
+  topics: { topic: string; count: number; testYourselfCount?: number }[];
 };
 
 const DIFFICULTY_LABEL: Record<number, string> = {
@@ -57,9 +58,8 @@ export default function PlatformQuestionBankWorkspace({
   description = 'Subject and topic organized questions for batches and resources',
 }: Props) {
   const [subjectTree, setSubjectTree] = useState<SubjectNode[]>([]);
-  const [expandedSubjects, setExpandedSubjects] = useState<Set<string>>(new Set());
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [selectedLessonTopic, setSelectedLessonTopic] = useState('');
 
   const [questions, setQuestions] = useState<PlatformQuestionRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,6 +69,9 @@ export default function PlatformQuestionBankWorkspace({
   const [difficultyFilter, setDifficultyFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [accessFilter, setAccessFilter] = useState('all');
+  const [testYourselfFilter, setTestYourselfFilter] = useState('all');
+  const [testYourselfTotal, setTestYourselfTotal] = useState(0);
+  const [testYourselfTopics, setTestYourselfTopics] = useState(0);
 
   const [showModal, setShowModal] = useState(false);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
@@ -89,8 +92,9 @@ export default function PlatformQuestionBankWorkspace({
     if (difficultyFilter !== 'all') params.set('difficulty', difficultyFilter);
     if (statusFilter !== 'all') params.set('status', statusFilter);
     if (accessFilter !== 'all' && role === 'admin') params.set('accessPolicy', accessFilter);
+    if (testYourselfFilter === 'published') params.set('testYourself', '1');
     if (selectedSubject) params.set('subject', selectedSubject);
-    if (selectedTopic) params.set('topic', selectedTopic);
+    if (selectedLessonTopic) params.set('topic', selectedLessonTopic);
     return params.toString();
   }, [
     pagination.page,
@@ -99,8 +103,9 @@ export default function PlatformQuestionBankWorkspace({
     difficultyFilter,
     statusFilter,
     accessFilter,
+    testYourselfFilter,
     selectedSubject,
-    selectedTopic,
+    selectedLessonTopic,
     role,
   ]);
 
@@ -109,6 +114,14 @@ export default function PlatformQuestionBankWorkspace({
     if (!res.ok) return;
     const json = await res.json();
     setSubjectTree(json.data?.subjects || []);
+  }, []);
+
+  const loadTestYourselfSummary = useCallback(async () => {
+    const res = await platformQuestionsService.testYourselfSummary();
+    if (!res.ok) return;
+    const json = await res.json();
+    setTestYourselfTotal(json.data?.total ?? 0);
+    setTestYourselfTopics(json.data?.topicCount ?? 0);
   }, []);
 
   const loadQuestions = useCallback(async () => {
@@ -129,7 +142,8 @@ export default function PlatformQuestionBankWorkspace({
 
   useEffect(() => {
     loadSubjects();
-  }, [loadSubjects]);
+    void loadTestYourselfSummary();
+  }, [loadSubjects, loadTestYourselfSummary]);
 
   useEffect(() => {
     loadQuestions();
@@ -137,29 +151,21 @@ export default function PlatformQuestionBankWorkspace({
 
   const scopeLabel = useMemo(() => {
     if (!selectedSubject) return 'All subjects';
-    if (!selectedTopic) return selectedSubject;
-    return `${selectedSubject} › ${selectedTopic}`;
-  }, [selectedSubject, selectedTopic]);
+    return selectedSubject;
+  }, [selectedSubject]);
 
-  const toggleSubject = (subject: string) => {
-    setExpandedSubjects((prev) => {
-      const next = new Set(prev);
-      if (next.has(subject)) next.delete(subject);
-      else next.add(subject);
-      return next;
-    });
-  };
+  const lessonOptions = useMemo(() => {
+    if (!selectedSubject) return [];
+    const node = subjectTree.find((n) => n.subject === selectedSubject);
+    return (node?.topics ?? [])
+      .map((t) => t.topic)
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b));
+  }, [selectedSubject, subjectTree]);
 
   const selectSubject = (subject: string | null, closeMobile = false) => {
     setSelectedSubject(subject);
-    setSelectedTopic(null);
-    setPagination((p) => ({ ...p, page: 1 }));
-    if (closeMobile) setMobileNavOpen(false);
-  };
-
-  const selectTopic = (subject: string, topic: string, closeMobile = false) => {
-    setSelectedSubject(subject);
-    setSelectedTopic(topic);
+    setSelectedLessonTopic('');
     setPagination((p) => ({ ...p, page: 1 }));
     if (closeMobile) setMobileNavOpen(false);
   };
@@ -171,6 +177,7 @@ export default function PlatformQuestionBankWorkspace({
       if (res.ok) {
         await loadQuestions();
         await loadSubjects();
+        await loadTestYourselfSummary();
       }
     } finally {
       setBusy(false);
@@ -193,48 +200,16 @@ export default function PlatformQuestionBankWorkspace({
             : 'space-y-0.5'
         }
       >
-        {subjectTree.map((node) => {
-          const open = expandedSubjects.has(node.subject);
-          return (
-            <div key={node.subject}>
-              <div className="flex items-center gap-0.5">
-                <button
-                  type="button"
-                  className="rounded p-1 hover:bg-muted"
-                  onClick={() => toggleSubject(node.subject)}
-                  aria-label="Expand topics"
-                >
-                  {open ? <LuChevronDown size={14} /> : <LuChevronRight size={14} />}
-                </button>
-                <button
-                  type="button"
-                  className={`flex-1 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted ${selectedSubject === node.subject && !selectedTopic ? 'bg-primary/10 font-medium' : ''}`}
-                  onClick={() => selectSubject(node.subject, closeOnSelect)}
-                >
-                  {node.subject}
-                </button>
-              </div>
-              {open && (
-                <div className="ml-5 border-l pl-2">
-                  {node.topics.map((t) => (
-                    <button
-                      key={t.topic}
-                      type="button"
-                      className={`mb-0.5 flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-xs hover:bg-muted ${selectedTopic === t.topic && selectedSubject === node.subject ? 'bg-primary/10 font-medium' : 'text-muted-foreground'}`}
-                      onClick={() => selectTopic(node.subject, t.topic, closeOnSelect)}
-                    >
-                      <span>{t.topic}</span>
-                      <span className="text-[10px] opacity-70">{t.count}</span>
-                    </button>
-                  ))}
-                  {!node.topics.length && (
-                    <p className="px-2 py-1 text-xs text-muted-foreground">No topics yet</p>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {subjectTree.map((node) => (
+          <button
+            key={node.subject}
+            type="button"
+            className={`mb-0.5 w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted ${selectedSubject === node.subject ? 'bg-primary/10 font-medium' : ''}`}
+            onClick={() => selectSubject(node.subject, closeOnSelect)}
+          >
+            {node.subject}
+          </button>
+        ))}
         {!subjectTree.length && (
           <p className="px-2 py-2 text-xs text-muted-foreground">No subjects yet — add a question</p>
         )}
@@ -256,6 +231,7 @@ export default function PlatformQuestionBankWorkspace({
             onAccessChanged={() => {
               void loadQuestions();
               void loadSubjects();
+              void loadTestYourselfSummary();
             }}
           />
         </div>
@@ -321,7 +297,7 @@ export default function PlatformQuestionBankWorkspace({
 
         <div className="scrollbar-hide min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain lg:min-h-0">
           <div className="space-y-4 pb-4">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <Card className="p-3 text-center">
                 <p className="text-2xl font-bold">{pagination.total}</p>
                 <p className="text-xs text-muted-foreground">In scope</p>
@@ -333,6 +309,14 @@ export default function PlatformQuestionBankWorkspace({
               <Card className="p-3 text-center">
                 <p className="text-2xl font-bold">{subjectTree.length}</p>
                 <p className="text-xs text-muted-foreground">Subjects</p>
+              </Card>
+              <Card className="p-3 text-center">
+                <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
+                  {testYourselfTotal}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Test Yourself ({testYourselfTopics} topics)
+                </p>
               </Card>
             </div>
 
@@ -382,6 +366,26 @@ export default function PlatformQuestionBankWorkspace({
                   <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
+              <Select
+                value={selectedLessonTopic || 'all'}
+                onValueChange={(v) => {
+                  setSelectedLessonTopic(v === 'all' ? '' : v);
+                  setPagination((p) => ({ ...p, page: 1 }));
+                }}
+                disabled={!selectedSubject}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Lesson / topic" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All lessons / topics</SelectItem>
+                  {lessonOptions.map((topic) => (
+                    <SelectItem key={topic} value={topic}>
+                      {topic}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {role === 'admin' && (
                 <Select
                   value={accessFilter}
@@ -401,6 +405,26 @@ export default function PlatformQuestionBankWorkspace({
                   </SelectContent>
                 </Select>
               )}
+              <Select
+                value={testYourselfFilter}
+                onValueChange={(v) => {
+                  setTestYourselfFilter(v);
+                  setPagination((p) => ({ ...p, page: 1 }));
+                }}
+              >
+                <SelectTrigger className="w-[170px]">
+                  <SelectValue placeholder="Test Yourself" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All questions</SelectItem>
+                  <SelectItem value="published">In Test Yourself</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button asChild size="sm" variant="outline">
+                <Link href="/resources/test-yourself" target="_blank" rel="noopener noreferrer">
+                  <LuExternalLink className="mr-1" size={16} /> Preview
+                </Link>
+              </Button>
               <Button
                 size="sm"
                 variant="outline"
@@ -448,6 +472,12 @@ export default function PlatformQuestionBankWorkspace({
                         {q.hasDiagram && (
                           <Badge variant="outline" className="text-xs">
                             diagram
+                          </Badge>
+                        )}
+                        {q.inTestYourself && (
+                          <Badge className="bg-emerald-600 text-xs hover:bg-emerald-600">
+                            <LuClipboardCheck className="mr-0.5 inline" size={10} />
+                            Test Yourself
                           </Badge>
                         )}
                       </div>
@@ -526,7 +556,7 @@ export default function PlatformQuestionBankWorkspace({
         question={editingQuestion}
         role={role}
         defaultSubject={selectedSubject}
-        defaultTopic={selectedTopic}
+        defaultTopic={selectedLessonTopic || null}
         onClose={() => {
           setShowModal(false);
           setEditingQuestion(null);
@@ -536,18 +566,20 @@ export default function PlatformQuestionBankWorkspace({
           setEditingQuestion(null);
           void loadQuestions();
           void loadSubjects();
+          void loadTestYourselfSummary();
         }}
       />
       <GenerateQuestionsModal
         open={showGenerateModal}
         role={role}
         defaultSubject={selectedSubject}
-        defaultTopic={selectedTopic}
+        defaultTopic={selectedLessonTopic || null}
         onClose={() => setShowGenerateModal(false)}
         onSuccess={() => {
           setShowGenerateModal(false);
           void loadQuestions();
           void loadSubjects();
+          void loadTestYourselfSummary();
         }}
       />
         </>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import SubjectLesson from "@/models/SubjectLesson";
-import { requireBatchManageAccess } from "@/app/api/_lib/batchAccess";
+import { requireSubjectCurriculumManage } from "@/app/api/_lib/batchAccess";
 import { mapSubjectLesson } from "@/app/api/_lib/mapSubjectCurriculum";
 import { requireModuleInSubject } from "@/app/api/_lib/subjectAccess";
 import { extractYoutubeVideoId } from "@/lib/youtube";
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     if (auth.error) return auth.error;
 
     const { id: batchId, subjectId } = await context.params;
-    const access = await requireBatchManageAccess(batchId, auth.user);
+    const access = await requireSubjectCurriculumManage(batchId, subjectId, auth.user);
     if (access.error) return access.error;
 
     const body = (await request.json()) as Record<string, unknown>;
@@ -39,14 +39,19 @@ export async function POST(request: NextRequest, context: RouteContext) {
       );
     }
 
-    const type = body.type === "live" ? "live" : "recorded";
+    const type =
+      auth.user.role === "admin" && body.type === "live" ? "live" : "recorded";
     const count = await SubjectLesson.countDocuments({
       batchId: toObjectId(batchId),
       moduleId: toObjectId(moduleId),
     });
 
     let scheduledAt: Date | undefined;
-    if (typeof body.scheduledAt === "string" && body.scheduledAt.trim()) {
+    if (
+      auth.user.role === "admin" &&
+      typeof body.scheduledAt === "string" &&
+      body.scheduledAt.trim()
+    ) {
       scheduledAt = new Date(body.scheduledAt);
       if (Number.isNaN(scheduledAt.getTime())) {
         return NextResponse.json(
@@ -76,11 +81,15 @@ export async function POST(request: NextRequest, context: RouteContext) {
       type,
       scheduledAt: type === "live" ? scheduledAt : undefined,
       durationMinutes:
-        type === "live" && body.durationMinutes != null
+        auth.user.role === "admin" &&
+        type === "live" &&
+        body.durationMinutes != null
           ? Math.max(1, Number(body.durationMinutes))
           : undefined,
       meetLink:
-        typeof body.meetLink === "string" ? body.meetLink.trim() || undefined : undefined,
+        auth.user.role === "admin" && typeof body.meetLink === "string"
+          ? body.meetLink.trim() || undefined
+          : undefined,
       recordingUrl:
         typeof body.recordingUrl === "string"
           ? body.recordingUrl.trim() || undefined

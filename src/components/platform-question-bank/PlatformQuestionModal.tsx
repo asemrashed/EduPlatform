@@ -12,6 +12,7 @@ import {
   platformQuestionsService,
   type PlatformQuestionPayload,
 } from '@/services/platformQuestionsService';
+import { PlatformSubjectTopicSelect } from '@/components/platform-question-bank/PlatformSubjectTopicSelect';
 
 export type PlatformQuestionRow = {
   _id: string;
@@ -30,7 +31,18 @@ export type PlatformQuestionRow = {
   accessPolicy?: 'private' | 'shared_with_instructors' | 'public';
   tags?: string[];
   isActive?: boolean;
+  inTestYourself?: boolean;
   readOnly?: boolean;
+};
+
+type CurriculumContext = {
+  batchId?: string;
+  batchClassId?: string;
+  subjectModuleId?: string;
+  subjectLessonId?: string;
+  courseId?: string;
+  chapterId?: string;
+  lessonId?: string;
 };
 
 interface Props {
@@ -39,6 +51,7 @@ interface Props {
   role: 'admin' | 'instructor';
   defaultSubject?: string | null;
   defaultTopic?: string | null;
+  curriculumContext?: CurriculumContext;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -68,6 +81,7 @@ export default function PlatformQuestionModal({
   role,
   defaultSubject,
   defaultTopic,
+  curriculumContext,
   onClose,
   onSuccess,
 }: Props) {
@@ -132,14 +146,19 @@ export default function PlatformQuestionModal({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!form.subject.trim() || !form.topic.trim()) {
+      setError('Select a subject and topic / lesson from the list');
+      return;
+    }
     setLoading(true);
     try {
-      const payload: PlatformQuestionPayload = {
+      const payload: PlatformQuestionPayload & CurriculumContext = {
         ...form,
         subtopic: form.subtopic?.trim() || undefined,
         answerText: form.answerText?.trim() || undefined,
         explanation: form.explanation?.trim() || undefined,
         diagramUrl: form.diagramUrl?.trim() || undefined,
+        ...(curriculumContext ?? {}),
       };
       const res = question
         ? await platformQuestionsService.update(question._id, payload)
@@ -169,24 +188,12 @@ export default function PlatformQuestionModal({
         <p className="mb-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
       )}
       <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="mb-1 block text-sm font-medium">Subject</label>
-          <AttractiveInput
-            value={form.subject}
-            onChange={(e) => setForm((p) => ({ ...p, subject: e.target.value }))}
-            placeholder="e.g. Physics"
-            required
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium">Topic</label>
-          <AttractiveInput
-            value={form.topic}
-            onChange={(e) => setForm((p) => ({ ...p, topic: e.target.value }))}
-            placeholder="e.g. Mechanics"
-            required
-          />
-        </div>
+        <PlatformSubjectTopicSelect
+          subject={form.subject}
+          topic={form.topic}
+          onSubjectChange={(subject) => setForm((p) => ({ ...p, subject }))}
+          onTopicChange={(topic) => setForm((p) => ({ ...p, topic }))}
+        />
         <div>
           <label className="mb-1 block text-sm font-medium">Subtopic (optional)</label>
           <AttractiveInput
@@ -278,9 +285,18 @@ export default function PlatformQuestionModal({
               <SelectContent>
                 <SelectItem value="private">Private</SelectItem>
                 <SelectItem value="shared_with_instructors">Shared with instructors</SelectItem>
-                <SelectItem value="public">Public</SelectItem>
+                <SelectItem value="public">Public (Test Yourself)</SelectItem>
               </SelectContent>
             </Select>
+            {form.accessPolicy === 'public' && form.isActive !== false ? (
+              <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-400">
+                Published to Test Yourself when saved as active.
+              </p>
+            ) : form.accessPolicy === 'public' ? (
+              <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                Public but inactive — will not appear in Test Yourself until active.
+              </p>
+            ) : null}
           </div>
         )}
       </div>

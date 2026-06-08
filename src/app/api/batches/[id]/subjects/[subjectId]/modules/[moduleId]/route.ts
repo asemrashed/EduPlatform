@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import SubjectModule from "@/models/SubjectModule";
 import SubjectLesson from "@/models/SubjectLesson";
-import { requireBatchManageAccess } from "@/app/api/_lib/batchAccess";
+import { requireSubjectCurriculumManage } from "@/app/api/_lib/batchAccess";
 import { mapSubjectModule } from "@/app/api/_lib/mapSubjectCurriculum";
 import { requireModuleInSubject } from "@/app/api/_lib/subjectAccess";
 import { requireSessionUser, toObjectId } from "@/app/api/_lib/phase12";
@@ -18,7 +18,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     if (auth.error) return auth.error;
 
     const { id: batchId, subjectId, moduleId } = await context.params;
-    const access = await requireBatchManageAccess(batchId, auth.user);
+    const access = await requireSubjectCurriculumManage(batchId, subjectId, auth.user);
     if (access.error) return access.error;
 
     const resolved = await requireModuleInSubject(batchId, subjectId, moduleId);
@@ -60,7 +60,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     if (auth.error) return auth.error;
 
     const { id: batchId, subjectId, moduleId } = await context.params;
-    const access = await requireBatchManageAccess(batchId, auth.user);
+    const access = await requireSubjectCurriculumManage(batchId, subjectId, auth.user);
     if (access.error) return access.error;
 
     const resolved = await requireModuleInSubject(batchId, subjectId, moduleId);

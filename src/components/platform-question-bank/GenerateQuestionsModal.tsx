@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { AttractiveInput } from '@/components/ui/attractive-input';
 import { AttractiveTextarea } from '@/components/ui/attractive-textarea';
 import { platformQuestionsService } from '@/services/platformQuestionsService';
+import { PlatformSubjectTopicSelect } from '@/components/platform-question-bank/PlatformSubjectTopicSelect';
 import type { GeneratedQuestionDraft } from '@/services/platformQuestionsService';
 import { LuSparkles, LuSave, LuFileText, LuUpload } from 'react-icons/lu';
 
@@ -256,22 +257,16 @@ export default function GenerateQuestionsModal({
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium">Default subject (optional)</label>
-              <AttractiveInput
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="e.g. Physics"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium">Default topic (optional)</label>
-              <AttractiveInput
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                placeholder="e.g. Mechanics"
-              />
-            </div>
+            <PlatformSubjectTopicSelect
+              subject={subject}
+              topic={topic}
+              onSubjectChange={setSubject}
+              onTopicChange={setTopic}
+              subjectRequired={false}
+              topicRequired={false}
+              subjectLabel="Default subject (optional)"
+              topicLabel="Default topic / lesson (optional)"
+            />
           </div>
 
           {inputMode === 'paste' ? (
