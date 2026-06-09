@@ -6,19 +6,12 @@ import {
   countActivePaidEnrollmentsByBatchIds,
   listRoutineSlotsForBatch,
 } from "@/app/api/_lib/batchAccess";
+import { deriveUpcomingFromLiveClassRows } from "@/app/api/_lib/upcomingLiveClasses";
 import type {
   StudentDashboardBatchSummary,
   StudentDashboardRoutineDay,
   StudentDashboardUpcomingClass,
 } from "@/types/studentDashboard";
-
-function mapLiveClassJoinUrl(row: Record<string, unknown>): string | undefined {
-  if (row.type === "recorded" && row.recordingUrl) {
-    return String(row.recordingUrl);
-  }
-  if (row.meetLink) return String(row.meetLink);
-  return undefined;
-}
 
 export async function loadStudentBatchDashboardData(studentId: string): Promise<{
   batches: StudentDashboardBatchSummary[];
@@ -45,10 +38,8 @@ export async function loadStudentBatchDashboardData(studentId: string): Promise<
     LiveClass.find({
       batchId: { $in: batchIds },
       isActive: true,
-      scheduledAt: { $gte: new Date() },
     })
       .sort({ scheduledAt: 1 })
-      .limit(8)
       .lean(),
     countActivePaidEnrollmentsByBatchIds(batchIds),
   ]);
@@ -68,23 +59,12 @@ export async function loadStudentBatchDashboardData(studentId: string): Promise<
     enrolledCount: countMap.get(String(b._id)) ?? 0,
   }));
 
-  const upcomingClasses: StudentDashboardUpcomingClass[] = liveClassRows.map(
-    (row) => {
-      const r = row as Record<string, unknown>;
-      const batchId = String(r.batchId);
-      return {
-        _id: String(r._id),
-        batchId,
-        batchName: nameById.get(batchId) ?? "Batch",
-        title: String(r.title ?? ""),
-        scheduledAt:
-          (r.scheduledAt as Date)?.toISOString?.() ?? String(r.scheduledAt ?? ""),
-        durationMinutes: Number(r.durationMinutes) || 0,
-        type: (r.type === "recorded" ? "recorded" : "live") as "live" | "recorded",
-        joinUrl: mapLiveClassJoinUrl(r),
-      };
-    },
-  );
+  const upcomingClasses: StudentDashboardUpcomingClass[] =
+    deriveUpcomingFromLiveClassRows(
+      liveClassRows as Parameters<typeof deriveUpcomingFromLiveClassRows>[0],
+      nameById,
+      { horizonDays: 14, limit: 8 },
+    );
 
   const routineByBatch: StudentDashboardRoutineDay[] = [];
   for (const batch of batchRows) {

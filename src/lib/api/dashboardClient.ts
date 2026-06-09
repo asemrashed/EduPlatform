@@ -118,6 +118,10 @@ function normalizeStudentDashboard(
           durationMinutes: c.durationMinutes ?? 0,
           type: c.type === "recorded" ? "recorded" : "live",
           joinUrl: c.joinUrl,
+          liveClassId: c.liveClassId,
+          endsAt: c.endsAt,
+          recurrence: c.recurrence,
+          status: c.status,
         }))
       : [],
     weeklyRoutine: Array.isArray(raw.weeklyRoutine)

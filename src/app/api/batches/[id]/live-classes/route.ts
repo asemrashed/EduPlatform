@@ -5,6 +5,7 @@ import {
   type ClassRecurrence,
 } from "@/app/api/_lib/batchRoutineSync";
 import { requireBatchManageAccess, requireBatchViewAccess } from "@/app/api/_lib/batchAccess";
+import { notifyLiveClassScheduled } from "@/app/api/_lib/scheduleNotifications";
 import { isObjectId, requireSessionUser, toObjectId } from "@/app/api/_lib/phase12";
 
 function parseRecurrence(value: unknown): ClassRecurrence {
@@ -133,6 +134,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
     });
 
     await syncLiveClassToBatchRoutine(batchId, liveClass, recurrence);
+    await notifyLiveClassScheduled(batchId, {
+      _id: liveClass._id,
+      title: liveClass.title,
+      scheduledAt: liveClass.scheduledAt,
+      instructorId: liveClass.instructorId,
+    });
 
     return NextResponse.json(
       {

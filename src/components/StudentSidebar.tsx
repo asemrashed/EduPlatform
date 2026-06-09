@@ -1,6 +1,6 @@
 'use client';
 
-import { LuLayoutDashboard, LuBookOpen as BookOpen, LuCalendar as Calendar, LuBell, LuAward as Award, LuBookmark, LuClipboardList, LuUserCheck as UserCheck, LuTrendingUp as TrendingUp, LuCircle as HelpCircle, LuSettings as Settings, LuLogOut, LuPlay as PlayCircle, LuFileText as LuFileText, LuTarget as Target, LuChartBar, LuUsers as Users, LuStar as Star, LuGraduationCap as GraduationCap, LuClock as Clock, LuCheck as CheckCircle2, LuTimer as Timer } from 'react-icons/lu';;
+import { LuLayoutDashboard, LuBookOpen as BookOpen, LuCalendar as Calendar, LuBell, LuAward as Award, LuBookmark, LuClipboardList, LuUserCheck as UserCheck, LuTrendingUp as TrendingUp, LuCircle as HelpCircle, LuSettings as Settings, LuLogOut, LuPlay as PlayCircle, LuFileText as LuFileText, LuTarget as Target, LuChartBar, LuUsers as Users, LuStar as Star, LuGraduationCap as GraduationCap, LuClock as Clock, LuCheck as CheckCircle2, LuTimer as Timer, LuMegaphone } from 'react-icons/lu';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/lib/hooks';
 import { logoutUser } from '@/lib/slices/authSlice';
@@ -84,6 +84,20 @@ const StudentSidebar = () => {
           href: '/student/assignments',
           description: 'Tasks & projects',
           badge: '2'
+        },
+        {
+          icon: Calendar,
+          label: 'My Batches',
+          href: '/student/batches',
+          description: 'Live classes & routine',
+          badge: null,
+        },
+        {
+          icon: LuMegaphone,
+          label: 'Notice Board',
+          href: '/student/notice-board',
+          description: 'Classes, schedule & notices',
+          badge: null,
         },
         { 
           icon: LuBookmark, 

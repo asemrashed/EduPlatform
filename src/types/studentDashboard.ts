@@ -66,6 +66,11 @@ export interface StudentDashboardUpcomingClass {
   durationMinutes: number;
   type: "live" | "recorded";
   joinUrl?: string;
+  /** Source LiveClass id (Phase 19.2). */
+  liveClassId?: string;
+  endsAt?: string;
+  recurrence?: "once" | "weekly" | "monthly";
+  status?: "live_now" | "starting_soon" | "upcoming";
 }
 
 export interface StudentDashboardRoutineDay {

@@ -15,24 +15,10 @@ import type {
   StudentDashboardUpcomingClass,
 } from '@/types/studentDashboard';
 import {
-  LuCalendar,
-  LuClipboardList,
-  LuExternalLink,
-  LuVideo,
-} from 'react-icons/lu';
-
-function formatDateTime(iso: string) {
-  try {
-    return new Date(iso).toLocaleString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return iso;
-  }
-}
+  BatchAcademicPreviewGrid,
+  StaffAcademicPreviewGrid,
+} from '@/components/academic-hub/BatchAcademicPreviewGrid';
+import { LuCalendar, LuClipboardList } from 'react-icons/lu';
 
 function BatchCardGrid({
   batches,
@@ -124,50 +110,13 @@ export function StudentBatchDashboardSection({
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="space-y-3">
-          <h3 className="flex items-center gap-2 text-sm font-semibold">
-            <LuVideo className="h-4 w-4" />
-            Upcoming classes
-          </h3>
-          {upcomingClasses.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No upcoming classes scheduled.</p>
-          ) : (
-            <ul className="space-y-2">
-              {upcomingClasses.map((cls) => (
-                <li
-                  key={cls._id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm"
-                >
-                  <div>
-                    <p className="font-medium">{cls.title}</p>
-                    <p className="text-muted-foreground">
-                      {cls.batchName} · {formatDateTime(cls.scheduledAt)}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    {cls.joinUrl ? (
-                      <Button size="sm" variant="outline" asChild>
-                        <a href={cls.joinUrl} target="_blank" rel="noopener noreferrer">
-                          {cls.type === 'recorded' ? 'Watch' : 'Join'}
-                          <LuExternalLink className="ml-1 h-3 w-3" />
-                        </a>
-                      </Button>
-                    ) : null}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => router.push(`${batchesHref}/${cls.batchId}`)}
-                    >
-                      Batch
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+      <BatchAcademicPreviewGrid
+        noticeBoardHref="/student/notice-board"
+        upcomingClasses={upcomingClasses}
+        batchesHref={batchesHref}
+      />
 
+      <div className="mt-6 grid gap-6 lg:grid-cols-1">
         <div className="space-y-3">
           <h3 className="flex items-center gap-2 text-sm font-semibold">
             <LuCalendar className="h-4 w-4" />
@@ -254,10 +203,14 @@ export function StaffBatchDashboardSection({
     maxStudents: b.maxStudents,
   }));
 
+  const sectionTitle = roleLabel === 'instructor' ? 'My batches' : 'Batch management';
+  const noticeBoardHref =
+    roleLabel === 'instructor' ? '/instructor/notice-board' : '/admin/notices';
+
   return (
     <PageSection
-      title="Batch management"
-      description="Live classes, routine, and attendance"
+      title={sectionTitle}
+      description="Live classes, routine, notices, and attendance"
       className="mt-2"
     >
       <div className="mb-4 flex flex-wrap gap-2">
@@ -276,37 +229,19 @@ export function StaffBatchDashboardSection({
         {attendanceHint}
       </p>
 
-      {summary.upcomingClasses.length > 0 ? (
+      {cardBatches.length > 0 ? (
         <div className="mb-6">
-          <h3 className="mb-2 text-sm font-semibold">Upcoming live classes</h3>
-          <ul className="space-y-2">
-            {summary.upcomingClasses.map((cls) => (
-              <li
-                key={cls._id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm"
-              >
-                <div>
-                  <p className="font-medium">{cls.title}</p>
-                  <p className="text-muted-foreground">
-                    {cls.batchName} · {formatDateTime(cls.scheduledAt)}
-                  </p>
-                </div>
-                <Button asChild size="sm" variant="outline">
-                  <Link href={`${batchesBasePath}/${cls.batchId}`}>Manage</Link>
-                </Button>
-              </li>
-            ))}
-          </ul>
+          <BatchCardGrid batches={cardBatches} manageBasePath={batchesBasePath} />
         </div>
       ) : (
-        <p className="mb-6 text-sm text-muted-foreground">No upcoming live classes.</p>
+        <p className="mb-6 text-sm text-muted-foreground">No active batches yet.</p>
       )}
 
-      {cardBatches.length > 0 ? (
-        <BatchCardGrid batches={cardBatches} manageBasePath={batchesBasePath} />
-      ) : (
-        <p className="text-sm text-muted-foreground">No active batches yet.</p>
-      )}
+      <StaffAcademicPreviewGrid
+        noticeBoardHref={noticeBoardHref}
+        upcomingClasses={summary.upcomingClasses}
+        batchesHref={batchesBasePath}
+      />
     </PageSection>
   );
 }

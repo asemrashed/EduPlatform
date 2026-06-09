@@ -6,6 +6,11 @@ import {
   type ClassRecurrence,
 } from "@/app/api/_lib/batchRoutineSync";
 import { requireBatchManageAccess, requireBatchViewAccess } from "@/app/api/_lib/batchAccess";
+import {
+  liveClassChangeLabels,
+  notifyLiveClassCancelled,
+  notifyLiveClassUpdated,
+} from "@/app/api/_lib/scheduleNotifications";
 import { isObjectId, requireSessionUser, toObjectId } from "@/app/api/_lib/phase12";
 
 function parseRecurrence(value: unknown): ClassRecurrence {
@@ -93,6 +98,17 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const access = await requireBatchManageAccess(batchId, auth.user);
     if (access.error) return access.error;
 
+    const existing = await LiveClass.findOne({
+      _id: liveClassId,
+      batchId: toObjectId(batchId),
+    }).lean();
+    if (!existing) {
+      return NextResponse.json(
+        { success: false, error: "Live class not found" },
+        { status: 404 },
+      );
+    }
+
     const body = (await request.json()) as Record<string, unknown>;
     const updates: Record<string, unknown> = {};
 
@@ -127,6 +143,30 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const recurrence = parseRecurrence(liveClass.recurrence);
     await syncLiveClassToBatchRoutine(batchId, liveClass, recurrence);
 
+    const before = existing as Record<string, unknown>;
+    const after = liveClass as Record<string, unknown>;
+    const changes = liveClassChangeLabels(before, after);
+    if (typeof body.isActive === "boolean" && body.isActive === false) {
+      await notifyLiveClassCancelled(batchId, {
+        _id: liveClass._id,
+        title: String(liveClass.title),
+        scheduledAt: liveClass.scheduledAt as Date,
+        instructorId: liveClass.instructorId,
+      });
+    } else {
+      await notifyLiveClassUpdated(
+        batchId,
+        {
+          _id: liveClass._id,
+          title: String(liveClass.title),
+          instructorId: liveClass.instructorId,
+        },
+        changes,
+        { scheduledAt: existing.scheduledAt as Date },
+        { scheduledAt: liveClass.scheduledAt as Date },
+      );
+    }
+
     return NextResponse.json({
       success: true,
       data: { liveClass: mapLiveClass(liveClass as Record<string, unknown>) },
@@ -149,13 +189,18 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     const access = await requireBatchManageAccess(batchId, auth.user);
     if (access.error) return access.error;
 
+    const existing = await LiveClass.findOne({
+      _id: liveClassId,
+      batchId: toObjectId(batchId),
+    }).lean();
+
     const liveClass = await LiveClass.findOneAndUpdate(
       { _id: liveClassId, batchId: toObjectId(batchId) },
       { $set: { isActive: false } },
       { new: true },
     ).lean();
 
-    if (!liveClass) {
+    if (!liveClass || !existing) {
       return NextResponse.json(
         { success: false, error: "Live class not found" },
         { status: 404 },
@@ -163,6 +208,12 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     }
 
     await removeLiveClassFromBatchRoutine(batchId, liveClassId);
+    await notifyLiveClassCancelled(batchId, {
+      _id: existing._id,
+      title: String(existing.title),
+      scheduledAt: existing.scheduledAt as Date,
+      instructorId: existing.instructorId,
+    });
 
     return NextResponse.json({ success: true, data: { deactivated: true } });
   } catch (error) {

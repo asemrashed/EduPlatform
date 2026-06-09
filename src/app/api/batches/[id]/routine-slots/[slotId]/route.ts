@@ -4,6 +4,11 @@ import RoutineSlot from "@/models/RoutineSlot";
 import BatchClass from "@/models/BatchClass";
 import User from "@/models/User";
 import { requireBatchManageAccess } from "@/app/api/_lib/batchAccess";
+import {
+  notifyRoutineSlotRemoved,
+  notifyRoutineSlotUpdated,
+  routineSlotChangeLabels,
+} from "@/app/api/_lib/scheduleNotifications";
 import { mapRoutineSlot } from "@/app/api/_lib/mapBatchClass";
 import { isObjectId, requireSessionUser, toObjectId } from "@/app/api/_lib/phase12";
 
@@ -20,6 +25,17 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const { id: batchId, slotId } = await context.params;
     const access = await requireBatchManageAccess(batchId, auth.user);
     if (access.error) return access.error;
+
+    const existing = await RoutineSlot.findOne({
+      _id: toObjectId(slotId),
+      batchId: toObjectId(batchId),
+    }).lean();
+    if (!existing) {
+      return NextResponse.json(
+        { success: false, error: "Routine slot not found" },
+        { status: 404 },
+      );
+    }
 
     const body = (await request.json()) as Record<string, unknown>;
     const updates: Record<string, unknown> = {};
@@ -80,6 +96,20 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
+    const changes = routineSlotChangeLabels(
+      existing as Record<string, unknown>,
+      row as Record<string, unknown>,
+    );
+    await notifyRoutineSlotUpdated(
+      batchId,
+      {
+        _id: row._id,
+        topic: String(row.topic ?? ""),
+        instructorId: row.instructorId,
+      },
+      changes,
+    );
+
     return NextResponse.json({
       success: true,
       data: { slot: mapRoutineSlot(row as Record<string, unknown>) },
@@ -103,17 +133,28 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     const access = await requireBatchManageAccess(batchId, auth.user);
     if (access.error) return access.error;
 
+    const existing = await RoutineSlot.findOne({
+      _id: toObjectId(slotId),
+      batchId: toObjectId(batchId),
+    }).lean();
+
     const result = await RoutineSlot.deleteOne({
       _id: toObjectId(slotId),
       batchId: toObjectId(batchId),
     });
 
-    if (result.deletedCount === 0) {
+    if (result.deletedCount === 0 || !existing) {
       return NextResponse.json(
         { success: false, error: "Routine slot not found" },
         { status: 404 },
       );
     }
+
+    await notifyRoutineSlotRemoved(batchId, {
+      _id: existing._id,
+      topic: String(existing.topic ?? ""),
+      instructorId: existing.instructorId,
+    });
 
     return NextResponse.json({ success: true, data: { deleted: true } });
   } catch (error) {

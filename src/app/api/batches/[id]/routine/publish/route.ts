@@ -9,6 +9,7 @@ import {
   slotDurationMinutes,
 } from "@/app/api/_lib/routineGeneration";
 import { ensureRoutineSlotsMigrated } from "@/app/api/_lib/legacyRoutineMigrate";
+import { notifyRoutinePublished } from "@/app/api/_lib/scheduleNotifications";
 import { requireSessionUser, toObjectId } from "@/app/api/_lib/phase12";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -77,6 +78,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
         scheduledAt: live.scheduledAt.toISOString(),
       });
     }
+
+    await notifyRoutinePublished(batchId, created.length);
 
     return NextResponse.json({
       success: true,

@@ -4,6 +4,7 @@ import {
   countActivePaidEnrollmentsByBatchIds,
   instructorBatchFilter,
 } from "@/app/api/_lib/batchAccess";
+import { deriveUpcomingFromLiveClassRows } from "@/app/api/_lib/upcomingLiveClasses";
 import type { StaffBatchDashboardSummary } from "@/types/dashboard";
 
 export async function loadStaffBatchDashboardSummary(options: {
@@ -27,15 +28,13 @@ export async function loadStaffBatchDashboardSummary(options: {
     return { totalBatches: 0, batches: [], upcomingClasses: [] };
   }
 
-  const [countMap, upcomingRows, totalBatches] = await Promise.all([
+  const [countMap, liveClassRows, totalBatches] = await Promise.all([
     countActivePaidEnrollmentsByBatchIds(batchIds),
     LiveClass.find({
       batchId: { $in: batchIds },
       isActive: true,
-      scheduledAt: { $gte: new Date() },
     })
       .sort({ scheduledAt: 1 })
-      .limit(6)
       .lean(),
     Batch.countDocuments(filter),
   ]);
@@ -44,14 +43,16 @@ export async function loadStaffBatchDashboardSummary(options: {
     batches.map((b) => [String(b._id), String(b.name ?? "Batch")]),
   );
 
+  const derived = deriveUpcomingFromLiveClassRows(
+    liveClassRows as Parameters<typeof deriveUpcomingFromLiveClassRows>[0],
+    nameMap,
+    { horizonDays: 14, limit: 6 },
+  );
+
   const nextByBatch = new Map<string, string>();
-  for (const row of upcomingRows) {
-    const id = String(row.batchId);
-    if (!nextByBatch.has(id)) {
-      nextByBatch.set(
-        id,
-        (row.scheduledAt as Date)?.toISOString?.() ?? String(row.scheduledAt),
-      );
+  for (const row of derived) {
+    if (!nextByBatch.has(row.batchId)) {
+      nextByBatch.set(row.batchId, row.scheduledAt);
     }
   }
 
@@ -68,15 +69,13 @@ export async function loadStaffBatchDashboardSummary(options: {
       enrolledCount: countMap.get(String(b._id)) ?? 0,
       nextClassAt: nextByBatch.get(String(b._id)),
     })),
-    upcomingClasses: upcomingRows.map((row) => ({
-      _id: String(row._id),
-      batchId: String(row.batchId),
-      batchName: nameMap.get(String(row.batchId)) ?? "Batch",
-      title: String(row.title ?? ""),
-      scheduledAt:
-        (row.scheduledAt as Date)?.toISOString?.() ??
-        String(row.scheduledAt ?? ""),
-      type: row.type === "recorded" ? "recorded" : "live",
+    upcomingClasses: derived.map((row) => ({
+      _id: row._id,
+      batchId: row.batchId,
+      batchName: row.batchName,
+      title: row.title,
+      scheduledAt: row.scheduledAt,
+      type: row.type,
     })),
   };
 }
